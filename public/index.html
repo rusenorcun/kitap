@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kitap Bağış Platformu</title>
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">📚 Kitap Bağış</div>
+    <nav id="nav-user" class="nav-user hidden">
+      <span id="user-greeting"></span>
+      <button id="btn-logout" class="btn btn-ghost">Çıkış</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- GİRİŞ / KAYIT -->
+    <section id="auth-view">
+      <div class="card auth-card">
+        <div class="tabs">
+          <button class="tab active" data-tab="login">Giriş Yap</button>
+          <button class="tab" data-tab="register-donor">Bağışçı Ol</button>
+          <button class="tab" data-tab="register-student">Öğrenci Kaydı</button>
+        </div>
+
+        <form id="form-login" class="tab-panel active">
+          <h2>Giriş Yap</h2>
+          <input type="email" name="email" placeholder="E-posta" required />
+          <input type="password" name="password" placeholder="Şifre" required />
+          <button class="btn btn-primary" type="submit">Giriş</button>
+        </form>
+
+        <form id="form-register-donor" class="tab-panel">
+          <h2>Bağışçı Kaydı</h2>
+          <p class="muted">Bağışçılar için kitap alma sınırı yoktur.</p>
+          <input type="text" name="name" placeholder="Ad Soyad" required />
+          <input type="email" name="email" placeholder="E-posta" required />
+          <input type="password" name="password" placeholder="Şifre (en az 6 karakter)" required />
+          <button class="btn btn-primary" type="submit">Kayıt Ol</button>
+        </form>
+
+        <form id="form-register-student" class="tab-panel" enctype="multipart/form-data">
+          <h2>Öğrenci Kaydı</h2>
+          <p class="muted">Öğrenci belgesi zorunludur. Bir belge ile yalnızca tek kayıt açılabilir.</p>
+          <input type="text" name="name" placeholder="Ad Soyad" required />
+          <input type="email" name="email" placeholder="E-posta" required />
+          <input type="password" name="password" placeholder="Şifre (en az 6 karakter)" required />
+          <select name="school_level" required>
+            <option value="">Okul seviyesi seçin</option>
+            <option value="ortaokul">Ortaokul</option>
+            <option value="lise">Lise</option>
+            <option value="universite">Üniversite</option>
+          </select>
+          <input type="text" name="document_no" placeholder="Öğrenci belge numarası" required />
+          <label class="file-label">Öğrenci belgesi (PDF / görsel)
+            <input type="file" name="document" accept="image/png,image/jpeg,image/webp,application/pdf" required />
+          </label>
+          <button class="btn btn-primary" type="submit">Kayıt Ol</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- BAĞIŞÇI PANELİ -->
+    <section id="donor-view" class="hidden">
+      <div class="grid">
+        <div class="card">
+          <h2>Kitap Bağışla</h2>
+          <p class="muted">Bağışlamak istediğiniz kitabı ve miktarını girin; öğrenciler talep etsin.</p>
+          <form id="form-donation">
+            <input type="text" name="book_title" placeholder="Kitap adı" required />
+            <input type="text" name="book_author" placeholder="Yazar (opsiyonel)" />
+            <textarea name="description" placeholder="Açıklama (opsiyonel)"></textarea>
+            <div class="row">
+              <input type="number" name="quantity" placeholder="Miktar" min="1" value="1" required />
+              <select name="target_level">
+                <option value="hepsi">Tüm seviyeler</option>
+                <option value="ortaokul">Ortaokul</option>
+                <option value="lise">Lise</option>
+                <option value="universite">Üniversite</option>
+              </select>
+            </div>
+            <button class="btn btn-primary" type="submit">Bağışı Yayınla</button>
+          </form>
+        </div>
+
+        <div class="card">
+          <h2>Öğrenci İstekleri</h2>
+          <p class="muted">Öğrencilerin ihtiyaç duyduğu kitapları satın alarak karşılayın.</p>
+          <div id="open-requests" class="list"></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Bağışlarım</h2>
+        <div id="my-donations" class="list"></div>
+      </div>
+    </section>
+
+    <!-- ÖĞRENCİ PANELİ -->
+    <section id="student-view" class="hidden">
+      <div class="card quota-card">
+        <h2>Bağış Hakkım</h2>
+        <div id="quota-info" class="quota"></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>Bağışlanan Kitaplar</h2>
+          <p class="muted">Uygun bağışlardan kitap alabilirsiniz.</p>
+          <div id="open-donations" class="list"></div>
+        </div>
+
+        <div class="card">
+          <h2>Kitap İste</h2>
+          <p class="muted">İhtiyaç duyduğunuz kitabı listeleyin; bir bağışçı satın alsın.</p>
+          <form id="form-request">
+            <input type="text" name="book_title" placeholder="Kitap adı" required />
+            <input type="text" name="book_author" placeholder="Yazar (opsiyonel)" />
+            <textarea name="description" placeholder="Neden ihtiyaç duyuyorsunuz? (opsiyonel)"></textarea>
+            <button class="btn btn-primary" type="submit">İstek Oluştur</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <h2>İsteklerim</h2>
+          <div id="my-requests" class="list"></div>
+        </div>
+        <div class="card">
+          <h2>Aldığım Kitaplar</h2>
+          <div id="my-claims" class="list"></div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <div id="toast" class="toast hidden"></div>
+  <script src="/app.js"></script>
+</body>
+</html>
