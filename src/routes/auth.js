@@ -6,12 +6,12 @@ const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { signToken } = require('../auth');
+const { signToken, publicUser } = require('../auth');
 
 const router = express.Router();
 
 // Öğrenci belgesi yüklemeleri için depolama
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'documents');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -32,17 +32,7 @@ const upload = multer({
 
 const VALID_LEVELS = ['ortaokul', 'lise', 'universite'];
 
-function publicUser(user) {
-  return {
-    id: user.id,
-    role: user.role,
-    name: user.name,
-    email: user.email,
-    school_level: user.school_level || null,
-  };
-}
-
-// Bağışçı kaydı
+// Bağışçı kaydı (sınır yok, anında onaylı)
 router.post('/register/donor', (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) {
@@ -51,29 +41,31 @@ router.post('/register/donor', (req, res) => {
   if (String(password).length < 6) {
     return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
   }
-  const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (exists) return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
+  if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) {
+    return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
+  }
 
   const hash = bcrypt.hashSync(password, 10);
   const info = db
-    .prepare("INSERT INTO users (role, name, email, password_hash) VALUES ('donor', ?, ?, ?)")
+    .prepare("INSERT INTO users (role, name, email, password_hash, status) VALUES ('donor', ?, ?, ?, 'approved')")
     .run(name, email, hash);
   const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
   res.status(201).json({ token: signToken(user), user: publicUser(user) });
 });
 
-// Öğrenci kaydı — Öğrenci belgesi (belge no + dosya) zorunludur.
+// Öğrenci kaydı — Öğrenci belgesi (belge no + dosya) ve teslimat adresi zorunludur.
+// Kayıt 'pending' durumunda açılır; admin onayına kadar işlem yapılamaz.
 router.post('/register/student', upload.single('document'), (req, res) => {
-  const { name, email, password, school_level, document_no } = req.body || {};
+  const { name, email, password, school_level, document_no, address, phone } = req.body || {};
 
   const cleanup = () => {
     if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
   };
 
-  if (!name || !email || !password || !school_level || !document_no) {
+  if (!name || !email || !password || !school_level || !document_no || !address) {
     cleanup();
     return res.status(400).json({
-      error: 'Ad, e-posta, şifre, okul seviyesi ve öğrenci belgesi numarası zorunludur.',
+      error: 'Ad, e-posta, şifre, okul seviyesi, öğrenci belge numarası ve teslimat adresi zorunludur.',
     });
   }
   if (!VALID_LEVELS.includes(school_level)) {
@@ -101,9 +93,9 @@ router.post('/register/student', upload.single('document'), (req, res) => {
   const hash = bcrypt.hashSync(password, 10);
   try {
     const info = db
-      .prepare(`INSERT INTO users (role, name, email, password_hash, school_level, document_no, document_path)
-                VALUES ('student', ?, ?, ?, ?, ?, ?)`)
-      .run(name, email, hash, school_level, document_no, path.basename(req.file.path));
+      .prepare(`INSERT INTO users (role, name, email, password_hash, status, school_level, document_no, document_path, address, phone)
+                VALUES ('student', ?, ?, ?, 'pending', ?, ?, ?, ?, ?)`)
+      .run(name, email, hash, school_level, document_no, path.basename(req.file.path), address, phone || null);
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
     res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
@@ -124,6 +116,7 @@ router.post('/login', (req, res) => {
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
     return res.status(401).json({ error: 'E-posta veya şifre hatalı.' });
   }
+  if (user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
   res.json({ token: signToken(user), user: publicUser(user) });
 });
 

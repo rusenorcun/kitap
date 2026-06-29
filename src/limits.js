@@ -3,41 +3,36 @@
 const db = require('./db');
 
 // Öğrenci bağış alma sınırları
-const WEEKLY_LIMIT = 3;     // haftalık en fazla 3 kitap
-const QUARTERLY_LIMIT = 10; // 3 ayda (90 gün) en fazla 10 kitap
+const WEEKLY_LIMIT = 3;    // son 7 günde en fazla 3 kitap
+const MONTHLY_LIMIT = 10;  // son 30 günde en fazla 10 kitap
 
 // Bir öğrencinin "aldığı kitap" sayısı = onaylanmış talepler (claims) +
 // karşılanmış istekler (fulfilled requests). Her ikisi de fiilen alınan kitaptır.
-const countWeekly = db.prepare(`
+const countSince = db.prepare(`
   SELECT
     (SELECT COUNT(*) FROM claims
-       WHERE student_id = @sid AND created_at >= datetime('now', '-7 days')) +
+       WHERE student_id = @sid AND created_at >= datetime('now', @window)) +
     (SELECT COUNT(*) FROM requests
-       WHERE student_id = @sid AND status = 'fulfilled'
-         AND fulfilled_at >= datetime('now', '-7 days')) AS total
+       WHERE student_id = @sid AND status IN ('fulfilled', 'shipped', 'delivered')
+         AND fulfilled_at >= datetime('now', @window)) AS total
 `);
 
-const countQuarterly = db.prepare(`
-  SELECT
-    (SELECT COUNT(*) FROM claims
-       WHERE student_id = @sid AND created_at >= datetime('now', '-90 days')) +
-    (SELECT COUNT(*) FROM requests
-       WHERE student_id = @sid AND status = 'fulfilled'
-         AND fulfilled_at >= datetime('now', '-90 days')) AS total
-`);
+function countWindow(studentId, window) {
+  return countSince.get({ sid: studentId, window }).total;
+}
 
 // Öğrencinin güncel kotasını döndürür.
 function getQuota(studentId) {
-  const weeklyUsed = countWeekly.get({ sid: studentId }).total;
-  const quarterlyUsed = countQuarterly.get({ sid: studentId }).total;
+  const weeklyUsed = countWindow(studentId, '-7 days');
+  const monthlyUsed = countWindow(studentId, '-30 days');
   return {
     weeklyUsed,
     weeklyLimit: WEEKLY_LIMIT,
     weeklyRemaining: Math.max(0, WEEKLY_LIMIT - weeklyUsed),
-    quarterlyUsed,
-    quarterlyLimit: QUARTERLY_LIMIT,
-    quarterlyRemaining: Math.max(0, QUARTERLY_LIMIT - quarterlyUsed),
-    canReceive: weeklyUsed < WEEKLY_LIMIT && quarterlyUsed < QUARTERLY_LIMIT,
+    monthlyUsed,
+    monthlyLimit: MONTHLY_LIMIT,
+    monthlyRemaining: Math.max(0, MONTHLY_LIMIT - monthlyUsed),
+    canReceive: weeklyUsed < WEEKLY_LIMIT && monthlyUsed < MONTHLY_LIMIT,
   };
 }
 
@@ -45,12 +40,12 @@ function getQuota(studentId) {
 function checkCanReceive(studentId) {
   const q = getQuota(studentId);
   if (q.weeklyUsed >= WEEKLY_LIMIT) {
-    return { ok: false, reason: `Haftalık ${WEEKLY_LIMIT} kitap sınırına ulaştınız.`, quota: q };
+    return { ok: false, reason: `Haftalık ${WEEKLY_LIMIT} kitap sınırına ulaşıldı.`, quota: q };
   }
-  if (q.quarterlyUsed >= QUARTERLY_LIMIT) {
-    return { ok: false, reason: `3 aylık ${QUARTERLY_LIMIT} kitap sınırına ulaştınız.`, quota: q };
+  if (q.monthlyUsed >= MONTHLY_LIMIT) {
+    return { ok: false, reason: `30 günlük ${MONTHLY_LIMIT} kitap sınırına ulaşıldı.`, quota: q };
   }
   return { ok: true, quota: q };
 }
 
-module.exports = { getQuota, checkCanReceive, WEEKLY_LIMIT, QUARTERLY_LIMIT };
+module.exports = { getQuota, checkCanReceive, WEEKLY_LIMIT, MONTHLY_LIMIT };

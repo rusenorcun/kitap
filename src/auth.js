@@ -14,6 +14,20 @@ function signToken(user) {
   );
 }
 
+function publicUser(user) {
+  return {
+    id: user.id,
+    role: user.role,
+    name: user.name,
+    email: user.email,
+    status: user.status,
+    blocked: !!user.blocked,
+    school_level: user.school_level || null,
+    address: user.address || null,
+    phone: user.phone || null,
+  };
+}
+
 // Token varsa req.user'ı doldurur; yoksa sessizce devam eder.
 function authenticate(req, res, next) {
   const header = req.headers.authorization || '';
@@ -21,7 +35,9 @@ function authenticate(req, res, next) {
   if (token) {
     try {
       const payload = jwt.verify(token, JWT_SECRET);
-      const user = db.prepare('SELECT id, role, name, email, school_level FROM users WHERE id = ?').get(payload.id);
+      const user = db
+        .prepare('SELECT id, role, name, email, status, blocked, school_level, address, phone FROM users WHERE id = ?')
+        .get(payload.id);
       if (user) req.user = user;
     } catch (_err) {
       // geçersiz token: kullanıcıyı anonim kabul et
@@ -32,17 +48,43 @@ function authenticate(req, res, next) {
 
 function requireAuth(req, res, next) {
   if (!req.user) return res.status(401).json({ error: 'Giriş yapmanız gerekiyor.' });
+  if (req.user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
   next();
 }
 
-function requireRole(role) {
+// Bir veya birden fazla rolü kabul eder: requireRole('admin'), requireRole('donor', 'admin')
+function requireRole(...roles) {
   return (req, res, next) => {
     if (!req.user) return res.status(401).json({ error: 'Giriş yapmanız gerekiyor.' });
-    if (req.user.role !== role) {
+    if (req.user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
+    if (!roles.includes(req.user.role)) {
       return res.status(403).json({ error: 'Bu işlem için yetkiniz yok.' });
     }
     next();
   };
 }
 
-module.exports = { signToken, authenticate, requireAuth, requireRole, JWT_SECRET };
+// Onaylı öğrenci gerektirir (belge admin tarafından onaylanmış olmalı).
+function requireApprovedStudent(req, res, next) {
+  if (!req.user) return res.status(401).json({ error: 'Giriş yapmanız gerekiyor.' });
+  if (req.user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
+  if (req.user.role !== 'student') {
+    return res.status(403).json({ error: 'Bu işlem yalnızca öğrenciler içindir.' });
+  }
+  if (req.user.status !== 'approved') {
+    return res.status(403).json({
+      error: 'Öğrenci belgeniz henüz onaylanmadı. Onaylandıktan sonra işlem yapabilirsiniz.',
+    });
+  }
+  next();
+}
+
+module.exports = {
+  signToken,
+  publicUser,
+  authenticate,
+  requireAuth,
+  requireRole,
+  requireApprovedStudent,
+  JWT_SECRET,
+};
