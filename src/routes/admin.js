@@ -6,6 +6,7 @@ const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { requireRole } = require('../auth');
+const { notify } = require('../notifications');
 
 const router = express.Router();
 const DOC_DIR = path.join(__dirname, '..', '..', 'uploads', 'documents');
@@ -66,6 +67,13 @@ function setStatus(req, res, status) {
   if (!user) return res.status(404).json({ error: 'Kullanıcı bulunamadı.' });
   if (user.role !== 'student') return res.status(400).json({ error: 'Yalnızca öğrenci kayıtları onaylanır/reddedilir.' });
   db.prepare('UPDATE users SET status = ? WHERE id = ?').run(status, user.id);
+  notify(
+    user.id,
+    status === 'approved' ? 'document_approved' : 'document_rejected',
+    status === 'approved'
+      ? 'Öğrenci belgeniz onaylandı. Artık kitap alabilir ve istek oluşturabilirsiniz.'
+      : 'Öğrenci belgeniz reddedildi. Lütfen yöneticiyle iletişime geçin.'
+  );
   res.json({ ok: true, status });
 }
 

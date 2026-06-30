@@ -7,6 +7,7 @@ const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken, publicUser } = require('../auth');
+const { isEmail, normalizeEmail, cleanStr } = require('../validate');
 
 const router = express.Router();
 
@@ -34,9 +35,14 @@ const VALID_LEVELS = ['ortaokul', 'lise', 'universite'];
 
 // Bağışçı kaydı (sınır yok, anında onaylı)
 router.post('/register/donor', (req, res) => {
-  const { name, email, password } = req.body || {};
+  const name = cleanStr(req.body && req.body.name, 120);
+  const email = normalizeEmail(req.body && req.body.email);
+  const { password } = req.body || {};
   if (!name || !email || !password) {
     return res.status(400).json({ error: 'Ad, e-posta ve şifre zorunludur.' });
+  }
+  if (!isEmail(email)) {
+    return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   }
   if (String(password).length < 6) {
     return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
@@ -56,7 +62,14 @@ router.post('/register/donor', (req, res) => {
 // Öğrenci kaydı — Öğrenci belgesi (belge no + dosya) ve teslimat adresi zorunludur.
 // Kayıt 'pending' durumunda açılır; admin onayına kadar işlem yapılamaz.
 router.post('/register/student', upload.single('document'), (req, res) => {
-  const { name, email, password, school_level, document_no, address, phone } = req.body || {};
+  const body = req.body || {};
+  const name = cleanStr(body.name, 120);
+  const email = normalizeEmail(body.email);
+  const password = body.password;
+  const school_level = body.school_level;
+  const document_no = cleanStr(body.document_no, 100);
+  const address = cleanStr(body.address, 500);
+  const phone = cleanStr(body.phone, 40);
 
   const cleanup = () => {
     if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
@@ -67,6 +80,10 @@ router.post('/register/student', upload.single('document'), (req, res) => {
     return res.status(400).json({
       error: 'Ad, e-posta, şifre, okul seviyesi, öğrenci belge numarası ve teslimat adresi zorunludur.',
     });
+  }
+  if (!isEmail(email)) {
+    cleanup();
+    return res.status(400).json({ error: 'Geçerli bir e-posta adresi girin.' });
   }
   if (!VALID_LEVELS.includes(school_level)) {
     cleanup();
@@ -109,7 +126,8 @@ router.post('/register/student', upload.single('document'), (req, res) => {
 
 // Giriş
 router.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
+  const email = normalizeEmail(req.body && req.body.email);
+  const password = req.body && req.body.password;
   if (!email || !password) return res.status(400).json({ error: 'E-posta ve şifre zorunludur.' });
 
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);

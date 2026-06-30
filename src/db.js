@@ -94,6 +94,18 @@ db.exec(`
     created_at    TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
+  -- Kullanıcı bildirimleri (talep alındı, istek karşılandı, kargolandı, onaylandı vb.)
+  CREATE TABLE IF NOT EXISTS notifications (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id       INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    type          TEXT NOT NULL,
+    message       TEXT NOT NULL,
+    data          TEXT,                  -- ilişkili kimlikler vb. (JSON)
+    is_read       INTEGER NOT NULL DEFAULT 0,
+    created_at    TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+  CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(user_id, is_read);
+
   CREATE INDEX IF NOT EXISTS idx_claims_student ON claims(student_id);
   CREATE INDEX IF NOT EXISTS idx_requests_student ON requests(student_id);
   CREATE INDEX IF NOT EXISTS idx_donations_donor ON donations(donor_id);

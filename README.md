@@ -78,9 +78,14 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | GET    | `/`                          | herkes          | Açık bağışlar                             |
 | GET    | `/mine`                      | donor           | Bağışlarım + alan öğrenciler (adresli)    |
 | POST   | `/:id/claim`                 | onaylı öğrenci  | Bağıştan kitap al (kota kontrolü)         |
+| POST   | `/:id/close`                 | donor           | Kendi bağışını kapat                      |
+| DELETE | `/:id`                       | donor           | Kendi bağışını sil (talep yoksa)          |
 | GET    | `/claimed/mine`              | student         | Aldığım kitaplar                          |
 | POST   | `/claims/:claimId/ship`      | donor           | Kargoya verildi                           |
 | POST   | `/claims/:claimId/deliver`   | student         | Teslim alındı                             |
+| DELETE | `/claims/:claimId`           | student         | Talebi iptal et (kargolanmadan; adet geri açılır) |
+
+> Listeleme filtreleri: `GET /api/donations?level=lise&book_id=3&q=metin`
 
 ### İstekler (`/api/requests`)
 
@@ -95,11 +100,26 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | POST   | `/:id/ship`        | donor           | Kargoya verildi                                |
 | POST   | `/:id/deliver`     | student         | Teslim alındı                                  |
 
-### Bana özel & Admin
+> Listeleme filtreleri: `GET /api/requests?status=open&level=lise&book_id=3&q=metin`
+
+### Bana özel (`/api/me`)
+
+| Yöntem | Yol                              | Erişim       | Açıklama                                      |
+| ------ | -------------------------------- | ------------ | --------------------------------------------- |
+| GET    | `/`                              | giriş yapan  | Profil bilgisi                                |
+| PATCH  | `/`                              | giriş yapan  | Profil güncelle (ad, adres/telefon, şifre)    |
+| GET    | `/quota`                         | student      | Kalan bağış hakkı (haftalık/aylık)            |
+| GET    | `/notifications`                 | giriş yapan  | Bildirimler (`?unread=true`)                  |
+| GET    | `/notifications/unread-count`    | giriş yapan  | Okunmamış bildirim sayısı                     |
+| POST   | `/notifications/:id/read`        | giriş yapan  | Bildirimi okundu işaretle                     |
+| POST   | `/notifications/read-all`        | giriş yapan  | Tümünü okundu işaretle                        |
+
+> Bildirim olayları: belge onay/ret, bağış talep edildi, istek karşılandı, kargolandı, teslim alındı, talep iptali.
+
+### Admin
 
 | Yöntem | Yol                            | Erişim  | Açıklama                                     |
 | ------ | ------------------------------ | ------- | -------------------------------------------- |
-| GET    | `/api/me/quota`                | student | Kalan bağış hakkı (haftalık/aylık)           |
 | GET    | `/api/admin/stats`             | admin   | İstatistikler                                |
 | GET    | `/api/admin/users`             | admin   | Kullanıcılar (`?role= ?status= ?blocked=`)   |
 | GET    | `/api/admin/users/:id`         | admin   | Kullanıcı detayı                             |
@@ -133,12 +153,15 @@ kitap/
 │   ├── auth.js            # JWT + rol/onay/engel middleware'leri
 │   ├── limits.js          # Öğrenci kota mantığı (7 gün / 30 gün)
 │   ├── og.js              # OpenGraph üst veri ayrıştırıcı + getirici
+│   ├── notifications.js   # Bildirim yardımcıları
+│   ├── validate.js        # Girdi doğrulama (e-posta vb.)
 │   ├── seed.js            # Ortam değişkeninden ilk admin
 │   └── routes/
 │       ├── auth.js        # kayıt / giriş
 │       ├── books.js       # kitap veri tabanı (find-or-create, link/kapak)
-│       ├── donations.js   # bağışlar + talep + teslimat
+│       ├── donations.js   # bağışlar + talep + teslimat + yönetim
 │       ├── requests.js    # istekler + karşılama + teslimat
+│       ├── me.js          # profil, kota, bildirimler
 │       └── admin.js       # yönetici işlemleri
 └── test/api.test.js       # uçtan uca testler
 ```

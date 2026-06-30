@@ -2,14 +2,14 @@
 
 const express = require('express');
 
-const { authenticate, requireRole } = require('./src/auth');
-const { getQuota } = require('./src/limits');
+const { authenticate } = require('./src/auth');
 const { seedAdmin } = require('./src/seed');
 const authRoutes = require('./src/routes/auth');
 const bookRoutes = require('./src/routes/books');
 const donationRoutes = require('./src/routes/donations');
 const requestRoutes = require('./src/routes/requests');
 const adminRoutes = require('./src/routes/admin');
+const meRoutes = require('./src/routes/me');
 
 const app = express();
 
@@ -33,11 +33,7 @@ app.use('/api/books', bookRoutes);
 app.use('/api/donations', donationRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/admin', adminRoutes);
-
-// Giriş yapan öğrencinin kalan bağış hakkı (kota)
-app.get('/api/me/quota', requireRole('student'), (req, res) => {
-  res.json(getQuota(req.user.id));
-});
+app.use('/api/me', meRoutes);
 
 // Hata yakalama (multer ve diğer hatalar)
 app.use((err, req, res, next) => {
