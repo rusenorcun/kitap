@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 const multer = require('multer');
 const db = require('../db');
-const { requireAuth, requireRole } = require('../auth');
+const { requireAuth, requireAdmin } = require('../auth');
 const { fetchMetadata } = require('../og');
 
 const router = express.Router();
@@ -136,7 +136,7 @@ router.post('/', requireAuth, upload.single('cover'), async (req, res) => {
 });
 
 // Kitap güncelle (yalnızca admin) — örn. eksik yazar/kapak düzeltme
-router.patch('/:id', requireRole('admin'), (req, res) => {
+router.patch('/:id', requireAdmin, (req, res) => {
   const book = db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
   if (!book) return res.status(404).json({ error: 'Kitap bulunamadı.' });
   const fields = ['title', 'author', 'cover_url', 'purchase_link', 'description'];

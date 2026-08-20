@@ -17,8 +17,9 @@ router.get('/stats', (req, res) => {
     openDonations: one("SELECT COUNT(*) AS n FROM donations WHERE status = 'open'"),
     openRequests: one("SELECT COUNT(*) AS n FROM requests WHERE status = 'open'"),
     booksDelivered: delivered,
-    activeStudents: one("SELECT COUNT(*) AS n FROM users WHERE role = 'student' AND status = 'approved' AND blocked = 0"),
-    donors: one("SELECT COUNT(*) AS n FROM users WHERE role = 'donor' AND blocked = 0"),
+    swapsCompleted: one("SELECT COUNT(*) AS n FROM swap_offers WHERE status = 'completed'"),
+    members: one('SELECT COUNT(*) AS n FROM users WHERE is_admin = 0 AND blocked = 0'),
+    students: one("SELECT COUNT(*) AS n FROM users WHERE student_status = 'approved' AND blocked = 0"),
   });
 });
 

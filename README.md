@@ -1,28 +1,32 @@
 # 📚 Kitap Bağış Platformu — Backend API
 
-Bağışçıların ortaokul, lise ve üniversite öğrencilerine kitap hediye edebileceği bir bağış platformunun **backend (REST API)** bölümü. Mobil uygulama ve web sitesi bu API'yi tüketecek şekilde ayrıca geliştirilecektir.
+Öğrencilere öncelik veren, herkesin katılabildiği bir kitap bağış ve takas platformunun **backend (REST API)** bölümü. Mobil uygulama ve web sitesi bu API'yi tüketecek şekilde ayrıca geliştirilecektir.
+
+## Hesap modeli
+
+Tek hesap; herkes hem **bağış yapabilir** hem de **kitap alabilir**. Alıcı iki katmandan biridir:
+
+- **Üye** — belgesiz. Bağış yapar, takas eder, kitap alır. Öncelik yok, kotası düşüktür.
+- **Öğrenci** — belgesi admin tarafından onaylanmış üye. Bağışta **48 saat öncelik** ve daha yüksek kota kazanır.
+
+Üye, istediği zaman `POST /api/me/verify-student` ile öğrenci doğrulamasına başvurabilir (belge admin onayına gider). **admin** ise `is_admin` bayrağıyla tanımlanır.
 
 ## Akışlar
 
-1. **Bağışçı → Öğrenci:** Bağışçı kitap veri tabanından bir kitap seçer (yoksa oluşturur), miktarını ve hedef seviyeyi belirler. Kaynak `purchase` (satın alıp gönderir) ya da `own` (elindeki kopyayı gönderir) olabilir. Uygun öğrenciler bu bağıştan kitap alır.
-2. **Öğrenci → Bağışçı:** Öğrenci ihtiyaç duyduğu kitabı (yine veri tabanından) istek olarak listeler; bir bağışçı satın alarak ya da elindeki kopyayla karşılar.
+1. **Bağış:** Bir üye kitap veri tabanından kitap seçip miktar, hedef seviye ve kaynak (`purchase` = satın alıp gönderir / `own` = elindeki kopya) belirler. Uygun alıcılar alır.
+2. **İstek:** Bir alıcı ihtiyaç duyduğu kitabı istek olarak listeler; başka biri satın alarak ya da elindeki kopyayla karşılar.
+3. **Takas:** Üyeler ellerindeki kitapları takasa açar, başkasının kitabına kendi kitabıyla teklif verir; karşı taraf kabul edince iki taraf adres paylaşıp karşılıklı kargolar. Kotadan bağımsızdır.
 
-Her iki akışta da kitap, eşleşen tarafın **teslimat adresine kargolanır**. Adres yalnızca eşleşilen karşı tarafa gösterilir. Teslimat `matched → shipped → delivered` olarak takip edilir.
+Her akışta kitap, eşleşen tarafın **teslimat adresine kargolanır**. Adres yalnızca eşleşilen karşı tarafa gösterilir. Teslimat `matched → shipped → delivered` (takas: çift kargo → `completed`) olarak takip edilir.
 
 ## Kurallar
 
-- **Öğrenci belgesi zorunlu:** Kayıtta belge numarası + belge dosyası (PDF/görsel) ve teslimat adresi gerekir.
-- **Tek belge, tek kayıt:** Aynı belge numarası ile ikinci hesap açılamaz (DB benzersizlik kısıtı).
-- **Belge onayı:** Öğrenci `pending` başlar; **admin onaylayana kadar** kitap alamaz / istek oluşturamaz.
-- **Öğrenci bağış sınırı:** Son **7 günde en fazla 3**, son **30 günde en fazla 10** kitap. Bağıştan alınanlar ve karşılanan istekler bu sayıma dahildir.
-- **Bağışçı için sınır yoktur.**
-- **Kitap veri tabanı:** Bağış/istekler buradan kitap seçer. Aynı **ad + yazar** ikinci kez oluşturulamaz (find-or-create). Kitap, alışveriş linkiyle eklenirse başlık ve kapak **OpenGraph** (og:title / og:image) üzerinden otomatik doldurulur; yazar elle girilir/onaylanır.
-
-## Roller
-
-- **donor** — kitap bağışlar, öğrenci isteklerini karşılar. Sınırsız.
-- **student** — kitap alır ve istek oluşturur. Belge + adres + admin onayı gerektirir.
-- **admin** — tüm yetkiler: belge onay/ret, engelleme, silme, admin atama, içerik (kitap/bağış/istek) denetimi, belge görüntüleme, istatistik.
+- **Öğrenci önceliği:** Yeni bağış ilk **48 saat** yalnızca onaylı öğrencilere açıktır; süre dolunca tüm üyelere açılır.
+- **Bağış alma sınırı (kota):** Öğrenci son 7 günde **3**, 30 günde **10**; üye son 7 günde **1**, 30 günde **3**. Bağıştan alınanlar ve karşılanan istekler sayıma dahildir. Bağış yapmanın sınırı yoktur.
+- **Teslimat adresi:** Kitap almak / istek oluşturmak / takas için profilde adres tanımlı olmalıdır (`ADDRESS_REQUIRED`).
+- **Öğrenci belgesi:** Öğrenci doğrulaması belge no + belge dosyası (PDF/görsel) gerektirir. Aynı belge numarası ile iki kayıt olmaz (DB benzersizlik). Belge admin onayına kadar `pending`'dir.
+- **Kitap veri tabanı:** Bağış/istek/takas buradan kitap seçer. Aynı **ad + yazar** ikinci kez oluşturulamaz (find-or-create). Alışveriş linki verilirse başlık ve kapak **OpenGraph** (og:title / og:image) ile otomatik doldurulur; yazar elle onaylanır.
+- **admin** — tüm yetkiler: öğrenci belge onay/ret, engelleme, silme, admin atama, içerik (kitap/bağış/istek/takas) denetimi, belge görüntüleme, istatistik.
 
 ## Kurulum ve çalıştırma
 
@@ -53,11 +57,10 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 
 ### Kimlik (`/api/auth`)
 
-| Yöntem | Yol                  | Açıklama                                                            |
-| ------ | -------------------- | ------------------------------------------------------------------ |
-| POST   | `/register/donor`    | Bağışçı kaydı                                                       |
-| POST   | `/register/student`  | Öğrenci kaydı (`multipart/form-data`: `document` dosyası + `address`) |
-| POST   | `/login`             | Giriş (engelli kullanıcı giremez)                                  |
+| Yöntem | Yol         | Açıklama                                                                                          |
+| ------ | ----------- | ------------------------------------------------------------------------------------------------ |
+| POST   | `/register` | Üye kaydı. `document` + `school_level` + `document_no` gönderilirse öğrenci doğrulaması `pending` başlar (`multipart/form-data`) |
+| POST   | `/login`    | Giriş (engelli kullanıcı giremez; başarısız denemelere oran sınırı)                             |
 
 ### Kitaplar (`/api/books`)
 
@@ -74,17 +77,17 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 
 | Yöntem | Yol                          | Erişim          | Açıklama                                  |
 | ------ | ---------------------------- | --------------- | ----------------------------------------- |
-| POST   | `/`                          | donor           | Bağış oluştur (`book_id`, `quantity`, `source`, `target_level`) |
-| GET    | `/`                          | herkes          | Açık bağışlar                             |
-| GET    | `/mine`                      | donor           | Bağışlarım + alan öğrenciler (adresli)    |
-| POST   | `/:id/claim`                 | onaylı öğrenci  | Bağıştan kitap al (kota kontrolü)         |
-| POST   | `/:id/close`                 | donor           | Kendi bağışını kapat                      |
-| DELETE | `/:id`                       | donor           | Kendi bağışını sil (talep yoksa)          |
-| GET    | `/claimed/mine`              | student         | Aldığım kitaplar                          |
-| POST   | `/claims/:claimId/ship`      | donor           | Kargoya verildi                           |
-| POST   | `/claims/:claimId/deliver`   | student         | Teslim alındı                             |
-| POST   | `/claims/:claimId/thank`     | student         | Bağışçıya teşekkür notu (teslim sonrası)  |
-| DELETE | `/claims/:claimId`           | student         | Talebi iptal et (kargolanmadan; adet geri açılır) |
+| POST   | `/`                          | üye             | Bağış oluştur (`book_id`, `quantity`, `source`, `target_level`) |
+| GET    | `/`                          | herkes          | Açık bağışlar (`priority_active`, `priority_until` alanlarıyla) |
+| GET    | `/mine`                      | üye             | Bağışlarım + alanların adresi             |
+| POST   | `/:id/claim`                 | alıcı (adresli) | Bağıştan kitap al (öncelik penceresi + kota) |
+| POST   | `/:id/close`                 | bağış sahibi    | Kendi bağışını kapat                      |
+| DELETE | `/:id`                       | bağış sahibi    | Kendi bağışını sil (talep yoksa)          |
+| GET    | `/claimed/mine`              | alıcı           | Aldığım kitaplar                          |
+| POST   | `/claims/:claimId/ship`      | bağış sahibi    | Kargoya verildi                           |
+| POST   | `/claims/:claimId/deliver`   | alıcı           | Teslim alındı                             |
+| POST   | `/claims/:claimId/thank`     | alıcı           | Bağışçıya teşekkür notu (teslim sonrası)  |
+| DELETE | `/claims/:claimId`           | alıcı           | Talebi iptal et (kargolanmadan; adet geri açılır) |
 
 > Listeleme filtreleri: `GET /api/donations?level=lise&book_id=3&q=metin`
 
@@ -92,30 +95,50 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 
 | Yöntem | Yol                | Erişim          | Açıklama                                       |
 | ------ | ------------------ | --------------- | ---------------------------------------------- |
-| POST   | `/`                | onaylı öğrenci  | İstek oluştur (`book_id`)                      |
+| POST   | `/`                | alıcı (adresli) | İstek oluştur (`book_id`)                      |
 | GET    | `/`                | herkes          | Açık istekler (adres gizli; `?status=all`)     |
-| GET    | `/mine`            | student         | Kendi isteklerim                               |
-| GET    | `/fulfilled/mine`  | donor           | Karşıladığım istekler (öğrenci adresli)        |
-| DELETE | `/:id`             | student         | Açık isteği sil                                |
-| POST   | `/:id/fulfill`     | donor           | İsteği karşıla (`source`; kota kontrolü)       |
-| POST   | `/:id/ship`        | donor           | Kargoya verildi                                |
-| POST   | `/:id/deliver`     | student         | Teslim alındı                                  |
+| GET    | `/mine`            | alıcı           | Kendi isteklerim                               |
+| GET    | `/fulfilled/mine`  | karşılayan      | Karşıladığım istekler (alıcı adresli)          |
+| DELETE | `/:id`             | istek sahibi    | Açık isteği sil                                |
+| POST   | `/:id/fulfill`     | üye             | İsteği karşıla (`source`; alıcının kotası kontrol edilir) |
+| POST   | `/:id/ship`        | karşılayan      | Kargoya verildi                                |
+| POST   | `/:id/deliver`     | istek sahibi    | Teslim alındı                                  |
 
 > Listeleme filtreleri: `GET /api/requests?status=open&level=lise&book_id=3&q=metin`
+
+### Takas (`/api/swaps`)
+
+| Yöntem | Yol                       | Erişim          | Açıklama                                             |
+| ------ | ------------------------- | --------------- | --------------------------------------------------- |
+| GET    | `/books`                  | giriş yapan     | Başkalarının takasa açık kitapları (`?q=`)          |
+| GET    | `/books/mine`             | giriş yapan     | Kendi takas kitaplarım                              |
+| POST   | `/books`                  | giriş yapan     | Kitabımı takasa aç (`book_id`, `note`)              |
+| PATCH  | `/books/:id`              | sahibi          | Aç/kapat (`status`)                                 |
+| DELETE | `/books/:id`              | sahibi          | Takastan kaldır                                     |
+| POST   | `/offers`                 | teklif eden     | Teklif ver (`target_swap_book_id`, `offered_swap_book_id`) |
+| GET    | `/offers/incoming`        | giriş yapan     | Bana gelen teklifler                                |
+| GET    | `/offers/outgoing`        | giriş yapan     | Gönderdiğim teklifler                               |
+| POST   | `/offers/:id/accept`      | hedef sahibi    | Kabul et (kitaplar kapanır, adresler paylaşılır)    |
+| POST   | `/offers/:id/reject`      | hedef sahibi    | Reddet                                              |
+| POST   | `/offers/:id/cancel`      | teklif eden     | Geri çek                                            |
+| POST   | `/offers/:id/ship`        | iki taraf       | Kargoya verdim (ikisi de verince `completed`)       |
+
+> Kabul edilmiş/tamamlanmış takasta `from_address` / `to_address` iki tarafa gösterilir; öncesinde gizlidir.
 
 ### Bana özel (`/api/me`)
 
 | Yöntem | Yol                              | Erişim       | Açıklama                                      |
 | ------ | -------------------------------- | ------------ | --------------------------------------------- |
-| GET    | `/`                              | giriş yapan  | Profil bilgisi                                |
+| GET    | `/`                              | giriş yapan  | Profil bilgisi (`isStudent`, `recipientTier`) |
 | PATCH  | `/`                              | giriş yapan  | Profil güncelle (ad, adres/telefon, şifre)    |
-| GET    | `/quota`                         | student      | Kalan bağış hakkı (haftalık/aylık)            |
+| POST   | `/verify-student`                | giriş yapan  | Öğrenci doğrulaması başlat (`multipart`: `document` + `school_level` + `document_no`) |
+| GET    | `/quota`                         | giriş yapan  | Kalan bağış hakkı (tier'a göre haftalık/aylık) |
 | GET    | `/notifications`                 | giriş yapan  | Bildirimler (`?unread=true`)                  |
 | GET    | `/notifications/unread-count`    | giriş yapan  | Okunmamış bildirim sayısı                     |
 | POST   | `/notifications/:id/read`        | giriş yapan  | Bildirimi okundu işaretle                     |
 | POST   | `/notifications/read-all`        | giriş yapan  | Tümünü okundu işaretle                        |
 
-> Bildirim olayları: belge onay/ret, bağış talep edildi, istek karşılandı, kargolandı, teslim alındı, talep iptali.
+> Bildirim olayları: belge onay/ret, bağış talep edildi, istek karşılandı, kargolandı, teslim alındı, talep iptali, teşekkür, takas teklifi/kabul/ret/kargo/tamamlandı.
 
 ### Admin
 
@@ -124,7 +147,7 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | GET    | `/api/admin/stats`             | admin   | İstatistikler                                |
 | GET    | `/api/admin/donations`         | admin   | Tüm bağışları listele (denetim)              |
 | GET    | `/api/admin/requests`          | admin   | Tüm istekleri listele (denetim)              |
-| GET    | `/api/admin/users`             | admin   | Kullanıcılar (`?role= ?status= ?blocked=`)   |
+| GET    | `/api/admin/users`             | admin   | Kullanıcılar (`?student_status= ?blocked= ?admin=`) |
 | GET    | `/api/admin/users/:id`         | admin   | Kullanıcı detayı                             |
 | GET    | `/api/admin/users/:id/document`| admin   | Öğrenci belgesini görüntüle                  |
 | POST   | `/api/admin/users/:id/approve` | admin   | Belge onayla                                 |
@@ -161,9 +184,9 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 kitap/
 ├── server.js              # Express uygulaması (saf API)
 ├── src/
-│   ├── db.js              # SQLite şeması (users, books, donations, claims, requests)
+│   ├── db.js              # SQLite şeması (users, books, donations, claims, requests, swap_books, swap_offers, notifications)
 │   ├── auth.js            # JWT + rol/onay/engel middleware'leri
-│   ├── limits.js          # Öğrenci kota mantığı (7 gün / 30 gün)
+│   ├── limits.js          # Tier kotası (üye/öğrenci) + öncelik penceresi
 │   ├── og.js              # OpenGraph üst veri ayrıştırıcı + getirici
 │   ├── notifications.js   # Bildirim yardımcıları
 │   ├── validate.js        # Girdi doğrulama (e-posta vb.)
@@ -172,9 +195,10 @@ kitap/
 │   └── routes/
 │       ├── auth.js        # kayıt / giriş (oran sınırlı)
 │       ├── books.js       # kitap veri tabanı (find-or-create, link/kapak)
-│       ├── donations.js   # bağışlar + talep + teslimat + yönetim + teşekkür
+│       ├── donations.js   # bağışlar + talep + teslimat + öncelik + teşekkür
 │       ├── requests.js    # istekler + karşılama + teslimat
-│       ├── me.js          # profil, kota, bildirimler
+│       ├── swaps.js       # kitap takası (takas kitapları + teklifler)
+│       ├── me.js          # profil, öğrenci doğrulama, kota, bildirimler
 │       ├── public.js      # kamuya açık istatistikler
 │       └── admin.js       # yönetici işlemleri
 └── test/api.test.js       # uçtan uca testler

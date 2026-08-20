@@ -10,16 +10,15 @@ function seedAdmin() {
   if (!email || !password) return null;
 
   const name = process.env.ADMIN_NAME || 'Yönetici';
-  const existing = db.prepare('SELECT id, role FROM users WHERE email = ?').get(email);
+  const existing = db.prepare('SELECT id, is_admin FROM users WHERE email = ?').get(email);
   if (existing) {
-    // Mevcut kullanıcıyı admin'e yükselt (rol farklıysa)
-    if (existing.role !== 'admin') {
-      db.prepare("UPDATE users SET role = 'admin', status = 'approved', blocked = 0 WHERE id = ?").run(existing.id);
+    if (!existing.is_admin) {
+      db.prepare('UPDATE users SET is_admin = 1, blocked = 0 WHERE id = ?').run(existing.id);
     }
     return existing.id;
   }
   const info = db
-    .prepare("INSERT INTO users (role, name, email, password_hash, status) VALUES ('admin', ?, ?, ?, 'approved')")
+    .prepare('INSERT INTO users (name, email, password_hash, is_admin) VALUES (?, ?, ?, 1)')
     .run(name, email, bcrypt.hashSync(password, 10));
   return info.lastInsertRowid;
 }
