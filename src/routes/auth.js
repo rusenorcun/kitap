@@ -8,8 +8,12 @@ const bcrypt = require('bcryptjs');
 const db = require('../db');
 const { signToken, publicUser } = require('../auth');
 const { isEmail, normalizeEmail, cleanStr } = require('../validate');
+const { createRateLimiter } = require('../ratelimit');
 
 const router = express.Router();
+
+// Başarısız giriş denemeleri için oran sınırı (ip + e-posta bazlı)
+const loginLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 8 });
 
 // Öğrenci belgesi yüklemeleri için depolama
 const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'documents');
@@ -130,11 +134,18 @@ router.post('/login', (req, res) => {
   const password = req.body && req.body.password;
   if (!email || !password) return res.status(400).json({ error: 'E-posta ve şifre zorunludur.' });
 
+  const key = `${req.ip}:${email}`;
+  if (loginLimiter.check(key).limited) {
+    return res.status(429).json({ error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.' });
+  }
+
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    loginLimiter.record(key);
     return res.status(401).json({ error: 'E-posta veya şifre hatalı.' });
   }
   if (user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
+  loginLimiter.reset(key); // başarılı girişte sayaç sıfırlanır
   res.json({ token: signToken(user), user: publicUser(user) });
 });
 

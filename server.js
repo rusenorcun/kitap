@@ -10,6 +10,7 @@ const donationRoutes = require('./src/routes/donations');
 const requestRoutes = require('./src/routes/requests');
 const adminRoutes = require('./src/routes/admin');
 const meRoutes = require('./src/routes/me');
+const publicRoutes = require('./src/routes/public');
 
 const app = express();
 
@@ -23,7 +24,7 @@ app.get('/', (req, res) => {
     name: 'Kitap Bağış Platformu API',
     version: '2.0.0',
     docs: 'README.md',
-    endpoints: ['/api/auth', '/api/books', '/api/donations', '/api/requests', '/api/admin', '/api/me'],
+    endpoints: ['/api/auth', '/api/books', '/api/donations', '/api/requests', '/api/admin', '/api/me', '/api/stats'],
   });
 });
 app.get('/api/health', (req, res) => res.json({ status: 'ok' }));
@@ -34,6 +35,7 @@ app.use('/api/donations', donationRoutes);
 app.use('/api/requests', requestRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/me', meRoutes);
+app.use('/api', publicRoutes);
 
 // Hata yakalama (multer ve diğer hatalar)
 app.use((err, req, res, next) => {

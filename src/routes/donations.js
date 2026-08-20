@@ -5,6 +5,7 @@ const db = require('../db');
 const { requireRole, requireApprovedStudent } = require('../auth');
 const { checkCanReceive } = require('../limits');
 const { notify } = require('../notifications');
+const { cleanStr } = require('../validate');
 
 const router = express.Router();
 
@@ -175,6 +176,26 @@ router.post('/claims/:claimId/deliver', requireRole('student'), (req, res) => {
   notify(row.donor_id, 'claim_delivered', `${req.user.name}, "${row.book_title}" kitabını teslim aldı.`,
     { claim_id: row.id, donation_id: row.donation_id });
   res.json({ ok: true, status: 'delivered' });
+});
+
+// Öğrenci teslim aldığı kitap için bağışçıya teşekkür notu gönderir
+router.post('/claims/:claimId/thank', requireRole('student'), (req, res) => {
+  const row = db.prepare(`
+    SELECT c.*, d.donor_id, b.title AS book_title FROM claims c
+    JOIN donations d ON d.id = c.donation_id
+    JOIN books b ON b.id = d.book_id
+    WHERE c.id = ? AND c.student_id = ?
+  `).get(req.params.claimId, req.user.id);
+  if (!row) return res.status(404).json({ error: 'Teslimat kaydı bulunamadı.' });
+  if (row.status !== 'delivered') {
+    return res.status(409).json({ error: 'Teşekkür notu yalnızca teslim alınan kitaplar için gönderilebilir.' });
+  }
+  const message = cleanStr(req.body && req.body.message, 300);
+  const suffix = message ? ` Notu: "${message}"` : '';
+  notify(row.donor_id, 'thank_you',
+    `${req.user.name}, "${row.book_title}" bağışınız için teşekkür etti.${suffix}`,
+    { donation_id: row.donation_id });
+  res.status(201).json({ ok: true });
 });
 
 // Öğrenci aldığı kitabı iptal eder (kargolanmadan önce). Adet geri açılır, kota serbest kalır.

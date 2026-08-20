@@ -83,6 +83,7 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | GET    | `/claimed/mine`              | student         | Aldığım kitaplar                          |
 | POST   | `/claims/:claimId/ship`      | donor           | Kargoya verildi                           |
 | POST   | `/claims/:claimId/deliver`   | student         | Teslim alındı                             |
+| POST   | `/claims/:claimId/thank`     | student         | Bağışçıya teşekkür notu (teslim sonrası)  |
 | DELETE | `/claims/:claimId`           | student         | Talebi iptal et (kargolanmadan; adet geri açılır) |
 
 > Listeleme filtreleri: `GET /api/donations?level=lise&book_id=3&q=metin`
@@ -121,6 +122,8 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | Yöntem | Yol                            | Erişim  | Açıklama                                     |
 | ------ | ------------------------------ | ------- | -------------------------------------------- |
 | GET    | `/api/admin/stats`             | admin   | İstatistikler                                |
+| GET    | `/api/admin/donations`         | admin   | Tüm bağışları listele (denetim)              |
+| GET    | `/api/admin/requests`          | admin   | Tüm istekleri listele (denetim)              |
 | GET    | `/api/admin/users`             | admin   | Kullanıcılar (`?role= ?status= ?blocked=`)   |
 | GET    | `/api/admin/users/:id`         | admin   | Kullanıcı detayı                             |
 | GET    | `/api/admin/users/:id/document`| admin   | Öğrenci belgesini görüntüle                  |
@@ -134,6 +137,15 @@ Kimlik doğrulama: `Authorization: Bearer <token>`. Token, kayıt/giriş yanıt�
 | DELETE | `/api/admin/donations/:id`     | admin   | Bağış sil                                    |
 | DELETE | `/api/admin/requests/:id`      | admin   | İstek sil                                    |
 | DELETE | `/api/admin/books/:id`         | admin   | Kitap sil (kullanılmıyorsa)                  |
+
+### Genel (kimlik gerektirmez)
+
+| Yöntem | Yol           | Açıklama                                                    |
+| ------ | ------------- | ---------------------------------------------------------- |
+| GET    | `/api/stats`  | Ana sayfa için özet istatistikler (kişisel veri içermez)   |
+| GET    | `/api/health` | Sağlık kontrolü                                            |
+
+> **Güvenlik:** Giriş uçları başarısız denemelere karşı oran sınırlıdır (ip + e-posta başına 15 dakikada 8 başarısız deneme); başarılı girişte sayaç sıfırlanır.
 
 ## Teknoloji
 
@@ -155,13 +167,15 @@ kitap/
 │   ├── og.js              # OpenGraph üst veri ayrıştırıcı + getirici
 │   ├── notifications.js   # Bildirim yardımcıları
 │   ├── validate.js        # Girdi doğrulama (e-posta vb.)
+│   ├── ratelimit.js       # Bellek-içi oran sınırlayıcı (giriş koruması)
 │   ├── seed.js            # Ortam değişkeninden ilk admin
 │   └── routes/
-│       ├── auth.js        # kayıt / giriş
+│       ├── auth.js        # kayıt / giriş (oran sınırlı)
 │       ├── books.js       # kitap veri tabanı (find-or-create, link/kapak)
-│       ├── donations.js   # bağışlar + talep + teslimat + yönetim
+│       ├── donations.js   # bağışlar + talep + teslimat + yönetim + teşekkür
 │       ├── requests.js    # istekler + karşılama + teslimat
 │       ├── me.js          # profil, kota, bildirimler
+│       ├── public.js      # kamuya açık istatistikler
 │       └── admin.js       # yönetici işlemleri
 └── test/api.test.js       # uçtan uca testler
 ```

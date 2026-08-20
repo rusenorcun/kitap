@@ -150,4 +150,31 @@ router.delete('/books/:id', (req, res) => {
   res.json({ ok: true });
 });
 
+// Denetim için tüm bağışları listele (kitap + bağışçı + alınan adet ile)
+router.get('/donations', (req, res) => {
+  const rows = db.prepare(`
+    SELECT d.*, u.name AS donor_name, b.title AS book_title, b.author AS book_author,
+           (SELECT COUNT(*) FROM claims c WHERE c.donation_id = d.id) AS claimed
+    FROM donations d
+    JOIN users u ON u.id = d.donor_id
+    JOIN books b ON b.id = d.book_id
+    ORDER BY d.created_at DESC
+  `).all();
+  res.json(rows);
+});
+
+// Denetim için tüm istekleri listele
+router.get('/requests', (req, res) => {
+  const rows = db.prepare(`
+    SELECT r.*, u.name AS student_name, b.title AS book_title, b.author AS book_author,
+           f.name AS fulfilled_by_name
+    FROM requests r
+    JOIN users u ON u.id = r.student_id
+    JOIN books b ON b.id = r.book_id
+    LEFT JOIN users f ON f.id = r.fulfilled_by
+    ORDER BY r.created_at DESC
+  `).all();
+  res.json(rows);
+});
+
 module.exports = router;

@@ -63,7 +63,14 @@ router.get('/', (req, res) => {
 router.get('/:id', (req, res) => {
   const book = db.prepare('SELECT * FROM books WHERE id = ?').get(req.params.id);
   if (!book) return res.status(404).json({ error: 'Kitap bulunamadı.' });
-  res.json(book);
+  // Uygunluk bilgisi: bu kitap için açık bağış ve istek sayıları
+  const availableDonations = db.prepare(`
+    SELECT COUNT(*) AS n FROM donations d
+    WHERE d.book_id = ? AND d.status = 'open'
+      AND (d.quantity - (SELECT COUNT(*) FROM claims c WHERE c.donation_id = d.id)) > 0
+  `).get(book.id).n;
+  const openRequests = db.prepare("SELECT COUNT(*) AS n FROM requests WHERE book_id = ? AND status = 'open'").get(book.id).n;
+  res.json({ ...book, availableDonations, openRequests });
 });
 
 // Yüklenen kapak görselini sun (genel erişim)

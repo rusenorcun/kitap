@@ -382,3 +382,75 @@ test('bağış listesi seviye ve metin ile filtrelenir', async () => {
   const uni = await req('/api/donations?level=universite&q=Coğrafya');
   assert.ok(uni.data.some((d) => d.book_id === bookId));
 });
+
+// ---------- Kamuya açık istatistikler ----------
+test('genel istatistik uçları erişilebilir', async () => {
+  const r = await req('/api/stats');
+  assert.strictEqual(r.status, 200);
+  assert.ok(typeof r.data.books === 'number');
+  assert.ok('booksDelivered' in r.data);
+  assert.ok('activeStudents' in r.data);
+});
+
+// ---------- Kitap detayı uygunluk bilgisi ----------
+test('kitap detayı açık bağış/istek sayılarını içerir', async () => {
+  const donorToken = await makeDonor('donor-detail@test.com');
+  const bookId = await makeBook(donorToken, 'Detay Kitabı', 'Yazar');
+  await req('/api/donations', { method: 'POST', token: donorToken, body: { book_id: bookId, quantity: 2 } });
+
+  const detail = await req(`/api/books/${bookId}`);
+  assert.strictEqual(detail.status, 200);
+  assert.strictEqual(detail.data.availableDonations, 1);
+  assert.strictEqual(detail.data.openRequests, 0);
+});
+
+// ---------- Admin içerik listeleme ----------
+test('admin tüm bağış ve istekleri listeler', async () => {
+  const donorToken = await makeDonor('donor-adminlist@test.com');
+  const bookId = await makeBook(donorToken, 'Admin Liste Kitabı', 'Yazar');
+  await req('/api/donations', { method: 'POST', token: donorToken, body: { book_id: bookId, quantity: 1 } });
+
+  const dons = await req('/api/admin/donations', { token: adminToken });
+  assert.strictEqual(dons.status, 200);
+  assert.ok(dons.data.some((d) => d.book_title === 'Admin Liste Kitabı'));
+
+  const reqs = await req('/api/admin/requests', { token: adminToken });
+  assert.strictEqual(reqs.status, 200);
+  assert.ok(Array.isArray(reqs.data));
+});
+
+// ---------- Giriş oran sınırı ----------
+test('çok sayıda başarısız girişte oran sınırı devreye girer', async () => {
+  await makeDonor('donor-brute@test.com');
+  let sawLimit = false;
+  for (let i = 0; i < 10; i++) {
+    const r = await req('/api/auth/login', { method: 'POST', body: { email: 'donor-brute@test.com', password: 'yanlissifre' } });
+    if (r.status === 429) { sawLimit = true; break; }
+    assert.strictEqual(r.status, 401);
+  }
+  assert.ok(sawLimit, '8 başarısız denemeden sonra 429 dönmeli');
+});
+
+// ---------- Teşekkür notu ----------
+test('teslim sonrası öğrenci bağışçıya teşekkür gönderir', async () => {
+  const donorToken = await makeDonor('donor-thanks@test.com');
+  const student = await approvedStudent({ name: 'Teşekkür', email: 'tesekkur@test.com', password: 'sifre123', school_level: 'lise', document_no: 'BELGE-THX', address: 'Adres' });
+  const bookId = await makeBook(donorToken, 'Teşekkür Kitabı', 'Yazar');
+
+  const don = await req('/api/donations', { method: 'POST', token: donorToken, body: { book_id: bookId, quantity: 1, target_level: 'lise' } });
+  const claim = await req(`/api/donations/${don.data.id}/claim`, { method: 'POST', token: student.token });
+  const claimId = claim.data.claim_id;
+
+  // teslim alınmadan teşekkür -> 409
+  const early = await req(`/api/donations/claims/${claimId}/thank`, { method: 'POST', token: student.token, body: { message: 'Sağ olun' } });
+  assert.strictEqual(early.status, 409);
+
+  await req(`/api/donations/claims/${claimId}/ship`, { method: 'POST', token: donorToken });
+  await req(`/api/donations/claims/${claimId}/deliver`, { method: 'POST', token: student.token });
+
+  const thank = await req(`/api/donations/claims/${claimId}/thank`, { method: 'POST', token: student.token, body: { message: 'Çok teşekkürler!' } });
+  assert.strictEqual(thank.status, 201);
+
+  const donorNotifs = await req('/api/me/notifications', { token: donorToken });
+  assert.ok(donorNotifs.data.some((n) => n.type === 'thank_you'));
+});
