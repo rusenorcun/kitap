@@ -1,56 +1,61 @@
 'use strict';
 
 const db = require('./db');
+const { isApprovedStudent } = require('./auth');
 
-// Öğrenci bağış alma sınırları
-const WEEKLY_LIMIT = 3;     // haftalık en fazla 3 kitap
-const QUARTERLY_LIMIT = 10; // 3 ayda (90 gün) en fazla 10 kitap
+// Öğrenci önceliği: yeni bağış ilk 48 saat yalnızca öğrencilere açık
+const PRIORITY_WINDOW_HOURS = 48;
 
-// Bir öğrencinin "aldığı kitap" sayısı = onaylanmış talepler (claims) +
-// karşılanmış istekler (fulfilled requests). Her ikisi de fiilen alınan kitaptır.
-const countWeekly = db.prepare(`
+// Alıcı tier'ına göre bağış alma sınırları
+const LIMITS = {
+  student: { weekly: 3, monthly: 10 },
+  member: { weekly: 1, monthly: 3 },
+};
+
+function tierOf(user) {
+  return isApprovedStudent(user) ? 'student' : 'member';
+}
+
+const countSince = db.prepare(`
   SELECT
     (SELECT COUNT(*) FROM claims
-       WHERE student_id = @sid AND created_at >= datetime('now', '-7 days')) +
+       WHERE student_id = @sid AND created_at >= datetime('now', @window)) +
     (SELECT COUNT(*) FROM requests
-       WHERE student_id = @sid AND status = 'fulfilled'
-         AND fulfilled_at >= datetime('now', '-7 days')) AS total
+       WHERE student_id = @sid AND status IN ('fulfilled', 'shipped', 'delivered')
+         AND fulfilled_at >= datetime('now', @window)) AS total
 `);
 
-const countQuarterly = db.prepare(`
-  SELECT
-    (SELECT COUNT(*) FROM claims
-       WHERE student_id = @sid AND created_at >= datetime('now', '-90 days')) +
-    (SELECT COUNT(*) FROM requests
-       WHERE student_id = @sid AND status = 'fulfilled'
-         AND fulfilled_at >= datetime('now', '-90 days')) AS total
-`);
+function countWindow(userId, window) {
+  return countSince.get({ sid: userId, window }).total;
+}
 
-// Öğrencinin güncel kotasını döndürür.
-function getQuota(studentId) {
-  const weeklyUsed = countWeekly.get({ sid: studentId }).total;
-  const quarterlyUsed = countQuarterly.get({ sid: studentId }).total;
+// user: authenticate ile yüklenmiş kullanıcı satırı (student_status içerir)
+function getQuota(user) {
+  const tier = tierOf(user);
+  const limit = LIMITS[tier];
+  const weeklyUsed = countWindow(user.id, '-7 days');
+  const monthlyUsed = countWindow(user.id, '-30 days');
   return {
+    tier,
     weeklyUsed,
-    weeklyLimit: WEEKLY_LIMIT,
-    weeklyRemaining: Math.max(0, WEEKLY_LIMIT - weeklyUsed),
-    quarterlyUsed,
-    quarterlyLimit: QUARTERLY_LIMIT,
-    quarterlyRemaining: Math.max(0, QUARTERLY_LIMIT - quarterlyUsed),
-    canReceive: weeklyUsed < WEEKLY_LIMIT && quarterlyUsed < QUARTERLY_LIMIT,
+    weeklyLimit: limit.weekly,
+    weeklyRemaining: Math.max(0, limit.weekly - weeklyUsed),
+    monthlyUsed,
+    monthlyLimit: limit.monthly,
+    monthlyRemaining: Math.max(0, limit.monthly - monthlyUsed),
+    canReceive: weeklyUsed < limit.weekly && monthlyUsed < limit.monthly,
   };
 }
 
-// Öğrenci bir kitap daha alabilir mi? Alamıyorsa sebep mesajı döner.
-function checkCanReceive(studentId) {
-  const q = getQuota(studentId);
-  if (q.weeklyUsed >= WEEKLY_LIMIT) {
-    return { ok: false, reason: `Haftalık ${WEEKLY_LIMIT} kitap sınırına ulaştınız.`, quota: q };
+function checkCanReceive(user) {
+  const q = getQuota(user);
+  if (q.weeklyUsed >= q.weeklyLimit) {
+    return { ok: false, reason: `Haftalık ${q.weeklyLimit} kitap sınırına ulaşıldı.`, quota: q };
   }
-  if (q.quarterlyUsed >= QUARTERLY_LIMIT) {
-    return { ok: false, reason: `3 aylık ${QUARTERLY_LIMIT} kitap sınırına ulaştınız.`, quota: q };
+  if (q.monthlyUsed >= q.monthlyLimit) {
+    return { ok: false, reason: `30 günlük ${q.monthlyLimit} kitap sınırına ulaşıldı.`, quota: q };
   }
   return { ok: true, quota: q };
 }
 
-module.exports = { getQuota, checkCanReceive, WEEKLY_LIMIT, QUARTERLY_LIMIT };
+module.exports = { getQuota, checkCanReceive, tierOf, LIMITS, PRIORITY_WINDOW_HOURS };

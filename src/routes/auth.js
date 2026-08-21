@@ -6,12 +6,15 @@ const fs = require('fs');
 const multer = require('multer');
 const bcrypt = require('bcryptjs');
 const db = require('../db');
-const { signToken } = require('../auth');
+const { signToken, publicUser } = require('../auth');
+const { isEmail, normalizeEmail, cleanStr } = require('../validate');
+const { createRateLimiter } = require('../ratelimit');
 
 const router = express.Router();
 
-// Öğrenci belgesi yüklemeleri için depolama
-const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads');
+const loginLimiter = createRateLimiter({ windowMs: 15 * 60 * 1000, max: 8 });
+
+const UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'documents');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const storage = multer.diskStorage({
@@ -23,7 +26,7 @@ const storage = multer.diskStorage({
 });
 const upload = multer({
   storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
+  limits: { fileSize: 5 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
     const ok = /^(image\/(png|jpe?g|webp)|application\/pdf)$/.test(file.mimetype);
     cb(ok ? null : new Error('Belge yalnızca PDF veya görsel (PNG/JPG/WEBP) olabilir.'), ok);
@@ -32,78 +35,53 @@ const upload = multer({
 
 const VALID_LEVELS = ['ortaokul', 'lise', 'universite'];
 
-function publicUser(user) {
-  return {
-    id: user.id,
-    role: user.role,
-    name: user.name,
-    email: user.email,
-    school_level: user.school_level || null,
-  };
-}
+// Tek kayıt ucu: her kayıt bir ÜYE oluşturur (bağış yapabilir + üye olarak alabilir).
+// Belge + okul seviyesi + belge no verilirse öğrenci doğrulaması 'pending' başlar.
+router.post('/register', upload.single('document'), (req, res) => {
+  const body = req.body || {};
+  const name = cleanStr(body.name, 120);
+  const email = normalizeEmail(body.email);
+  const password = body.password;
+  const address = cleanStr(body.address, 500);
+  const phone = cleanStr(body.phone, 40);
+  const wantsStudent = !!(req.file || body.document_no || body.school_level);
+  const school_level = body.school_level;
+  const document_no = cleanStr(body.document_no, 100);
 
-// Bağışçı kaydı
-router.post('/register/donor', (req, res) => {
-  const { name, email, password } = req.body || {};
-  if (!name || !email || !password) {
-    return res.status(400).json({ error: 'Ad, e-posta ve şifre zorunludur.' });
-  }
-  if (String(password).length < 6) {
-    return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
-  }
-  const exists = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
-  if (exists) return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
+  const cleanup = () => { if (req.file) fs.promises.unlink(req.file.path).catch(() => {}); };
+  const fail = (code, msg) => { cleanup(); return res.status(code).json({ error: msg }); };
 
-  const hash = bcrypt.hashSync(password, 10);
-  const info = db
-    .prepare("INSERT INTO users (role, name, email, password_hash) VALUES ('donor', ?, ?, ?)")
-    .run(name, email, hash);
-  const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
-  res.status(201).json({ token: signToken(user), user: publicUser(user) });
-});
+  if (!name || !email || !password) return fail(400, 'Ad, e-posta ve şifre zorunludur.');
+  if (!isEmail(email)) return fail(400, 'Geçerli bir e-posta adresi girin.');
+  if (String(password).length < 6) return fail(400, 'Şifre en az 6 karakter olmalıdır.');
 
-// Öğrenci kaydı — Öğrenci belgesi (belge no + dosya) zorunludur.
-router.post('/register/student', upload.single('document'), (req, res) => {
-  const { name, email, password, school_level, document_no } = req.body || {};
-
-  const cleanup = () => {
-    if (req.file) fs.promises.unlink(req.file.path).catch(() => {});
-  };
-
-  if (!name || !email || !password || !school_level || !document_no) {
-    cleanup();
-    return res.status(400).json({
-      error: 'Ad, e-posta, şifre, okul seviyesi ve öğrenci belgesi numarası zorunludur.',
-    });
+  if (wantsStudent) {
+    if (!req.file) return res.status(400).json({ error: 'Öğrenci doğrulaması için belge (PDF/görsel) gerekir.' });
+    if (!VALID_LEVELS.includes(school_level)) return fail(400, 'Okul seviyesi ortaokul, lise veya universite olmalıdır.');
+    if (!document_no) return fail(400, 'Öğrenci belge numarası zorunludur.');
+    if (!address) return fail(400, 'Öğrenci doğrulaması için teslimat adresi zorunludur.');
+    if (db.prepare('SELECT id FROM users WHERE document_no = ?').get(document_no)) {
+      return fail(409, 'Bu öğrenci belgesi numarası ile zaten bir kayıt mevcut.');
+    }
   }
-  if (!VALID_LEVELS.includes(school_level)) {
-    cleanup();
-    return res.status(400).json({ error: 'Okul seviyesi ortaokul, lise veya universite olmalıdır.' });
-  }
-  if (String(password).length < 6) {
-    cleanup();
-    return res.status(400).json({ error: 'Şifre en az 6 karakter olmalıdır.' });
-  }
-  if (!req.file) {
-    return res.status(400).json({ error: 'Öğrenci belgesi (PDF/görsel) yüklenmesi zorunludur.' });
-  }
-
   if (db.prepare('SELECT id FROM users WHERE email = ?').get(email)) {
-    cleanup();
-    return res.status(409).json({ error: 'Bu e-posta zaten kayıtlı.' });
-  }
-  // Tek belge ile iki kayıt açılamaz.
-  if (db.prepare('SELECT id FROM users WHERE document_no = ?').get(document_no)) {
-    cleanup();
-    return res.status(409).json({ error: 'Bu öğrenci belgesi numarası ile zaten bir kayıt mevcut.' });
+    return fail(409, 'Bu e-posta zaten kayıtlı.');
   }
 
   const hash = bcrypt.hashSync(password, 10);
   try {
-    const info = db
-      .prepare(`INSERT INTO users (role, name, email, password_hash, school_level, document_no, document_path)
-                VALUES ('student', ?, ?, ?, ?, ?, ?)`)
-      .run(name, email, hash, school_level, document_no, path.basename(req.file.path));
+    const info = db.prepare(`
+      INSERT INTO users (name, email, password_hash, student_status, school_level, document_no, document_path, address, phone)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      name, email, hash,
+      wantsStudent ? 'pending' : 'none',
+      wantsStudent ? school_level : null,
+      wantsStudent ? document_no : null,
+      wantsStudent ? path.basename(req.file.path) : null,
+      address || null,
+      phone || null
+    );
     const user = db.prepare('SELECT * FROM users WHERE id = ?').get(info.lastInsertRowid);
     res.status(201).json({ token: signToken(user), user: publicUser(user) });
   } catch (err) {
@@ -115,15 +93,23 @@ router.post('/register/student', upload.single('document'), (req, res) => {
   }
 });
 
-// Giriş
 router.post('/login', (req, res) => {
-  const { email, password } = req.body || {};
+  const email = normalizeEmail(req.body && req.body.email);
+  const password = req.body && req.body.password;
   if (!email || !password) return res.status(400).json({ error: 'E-posta ve şifre zorunludur.' });
+
+  const key = `${req.ip}:${email}`;
+  if (loginLimiter.check(key).limited) {
+    return res.status(429).json({ error: 'Çok fazla başarısız giriş denemesi. Lütfen daha sonra tekrar deneyin.' });
+  }
 
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email);
   if (!user || !bcrypt.compareSync(password, user.password_hash)) {
+    loginLimiter.record(key);
     return res.status(401).json({ error: 'E-posta veya şifre hatalı.' });
   }
+  if (user.blocked) return res.status(403).json({ error: 'Hesabınız engellenmiş.' });
+  loginLimiter.reset(key);
   res.json({ token: signToken(user), user: publicUser(user) });
 });
 

@@ -1,7 +1,7 @@
 {
   "name": "kitap",
-  "version": "1.0.0",
-  "description": "Bağışçıların ortaokul, lise ve üniversite öğrencilerine kitap hediye edebileceği bağış platformu",
+  "version": "3.0.0",
+  "description": "Öğrencilere öncelikli, herkese açık kitap bağış ve takas platformu (backend API)",
   "main": "server.js",
   "type": "commonjs",
   "scripts": {
@@ -13,6 +13,7 @@
     "kitap",
     "bağış",
     "öğrenci",
+    "takas",
     "donation"
   ],
   "license": "MIT",
