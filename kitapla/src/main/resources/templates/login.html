@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Giriş')}"></head>
+<body>
+<div style="min-height:100vh; display:grid; grid-template-columns:minmax(0,520px) 1fr;">
+  <!-- SOL marka -->
+  <div style="background:var(--espresso); color:#F3EAD3; padding:48px; display:flex; flex-direction:column; position:relative; overflow:hidden;">
+    <a class="brand" th:href="@{/}" style="color:#F3EAD3">
+      <svg th:replace="~{fragments :: logo(34)}"></svg><span style="font-size:24px">KİTAPLA</span>
+    </a>
+    <div style="margin-top:auto">
+      <div style="font-size:38px;font-weight:800;line-height:1.15;letter-spacing:-1px">Bir kitap,<br>bir öğrenciye.</div>
+      <p style="font-size:17px;color:#C6B6AC;font-weight:500;line-height:1.6;margin:18px 0 0;max-width:360px">İhtiyacı olana kitap bağışla, elindekini takas et. Öğrencilere öncelikli, herkese açık.</p>
+    </div>
+  </div>
+  <!-- SAĞ form -->
+  <div style="display:flex; align-items:center; justify-content:center; padding:48px;">
+    <div style="width:100%; max-width:380px;">
+      <h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px">Tekrar hoş geldin</h1>
+      <p class="muted" style="margin:0 0 24px;font-weight:500">Hesabına giriş yap.</p>
+
+      <div th:if="${param.error}" class="alert alert-error">E-posta veya şifre hatalı.</div>
+      <div th:if="${param.cikis}" class="alert alert-ok">Çıkış yapıldı.</div>
+      <div th:if="${param.kayit}" class="alert alert-ok">Kaydın oluştu, giriş yapabilirsin.</div>
+
+      <form th:action="@{/login}" method="post">
+        <div class="field">
+          <label class="label" for="email">E-posta</label>
+          <input class="input" type="email" id="email" name="email" required autofocus placeholder="elif@ornek.com"/>
+        </div>
+        <div class="field">
+          <label class="label" for="password">Şifre</label>
+          <input class="input" type="password" id="password" name="password" required placeholder="••••••••"/>
+        </div>
+        <button class="btn btn-primary btn-block" type="submit" style="margin-top:8px">Giriş yap</button>
+      </form>
+
+      <p class="muted" style="text-align:center;margin-top:22px;font-weight:500">Hesabın yok mu?
+        <a th:href="@{/register}" style="font-weight:700">Üye ol</a></p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

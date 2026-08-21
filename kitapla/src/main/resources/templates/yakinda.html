@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav(${active})}"></div>
+<div class="container" style="padding:80px 32px; text-align:center;">
+  <div class="badge badge-sage" style="width:64px;height:64px;border-radius:20px;justify-content:center;margin:0 auto 20px;padding:0">
+    <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/></svg>
+  </div>
+  <h1 style="font-size:28px;font-weight:800;letter-spacing:-.6px;margin:0 0 8px"><span th:text="${baslik}">Sayfa</span> yakında</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 24px">Bu bölüm bir sonraki adımda tasarıma uygun olarak eklenecek.</p>
+  <a class="btn btn-primary" th:href="@{/panom}">Panoya dön</a>
+</div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — SSS')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="padding-top:56px; padding-bottom:20px; text-align:center;">
+  <div class="eyebrow" style="margin-bottom:10px">Sık sorulanlar</div>
+  <h1 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:0">Merak ettiklerin</h1>
+</div>
+
+<div class="container-narrow" style="padding-bottom:48px; display:flex; flex-direction:column; gap:14px;">
+  <details class="card card-pad" open>
+    <summary style="font-size:18px;font-weight:800;cursor:pointer;list-style:none">Öğrenci önceliği ne demek?</summary>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:14px 0 0">Her yeni bağış ilk 48 saat yalnızca belgesi onaylı öğrencilere açılır. Süre dolunca tüm üyelere açılır. Böylece sınırlı kaynak önce en çok ihtiyaç sahibine ulaşır.</p>
+  </details>
+  <details class="card card-pad">
+    <summary style="font-size:18px;font-weight:800;cursor:pointer;list-style:none">Kimler katılabilir?</summary>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:14px 0 0">Herkes üye olabilir; bağış yapabilir, takas edebilir ve kitap alabilir. Öğrenciler belge doğrulamasıyla öncelik ve daha yüksek kota kazanır.</p>
+  </details>
+  <details class="card card-pad">
+    <summary style="font-size:18px;font-weight:800;cursor:pointer;list-style:none">Kaç kitap alabilirim? (Kota)</summary>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:14px 0 0">Öğrenci: 7 günde 3, 30 günde 10 kitap. Üye: 7 günde 1, 30 günde 3. Bağış yapmanın sınırı yoktur.</p>
+  </details>
+  <details class="card card-pad">
+    <summary style="font-size:18px;font-weight:800;cursor:pointer;list-style:none">Takas nasıl çalışır?</summary>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:14px 0 0">Elindeki kitabı takasa açarsın, başkasının kitabına kendi kitabınla teklif verirsin. Karşı taraf kabul edince adresler paylaşılır ve karşılıklı kargolanır. Takas, bağış kotasından bağımsızdır.</p>
+  </details>
+  <details class="card card-pad">
+    <summary style="font-size:18px;font-weight:800;cursor:pointer;list-style:none">Adresim güvende mi?</summary>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:14px 0 0">Teslimat adresin yalnızca eşleştiğin karşı tarafa (bağışçı ya da takas eşi) gösterilir; açık listelerde görünmez.</p>
+  </details>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

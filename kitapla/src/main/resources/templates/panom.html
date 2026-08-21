@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Panom')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('panom')}"></div>
+
+<div class="container" style="padding-top:32px; padding-bottom:48px;">
+  <div class="row" style="justify-content:space-between; align-items:flex-end; margin-bottom:24px;">
+    <div>
+      <div style="font-size:28px;font-weight:800;letter-spacing:-.6px">Merhaba, <span th:text="${user.name}">Elif</span></div>
+      <div class="muted" style="font-weight:500;margin-top:2px" th:text="${user.isStudent()} ? 'Öğrenci · doğrulandı' : 'Üye'">Üye</div>
+    </div>
+  </div>
+
+  <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:26px;">
+    <div class="card card-pad" style="background:var(--accent);color:#fff;border:none">
+      <div style="font-size:13px;font-weight:700;opacity:.9">Bu hafta kalan hak</div>
+      <div style="font-size:34px;font-weight:800;margin-top:4px">
+        <span th:text="${quota.weeklyRemaining}">1</span> <span style="font-size:16px;opacity:.8">/ <span th:text="${quota.weeklyLimit}">3</span></span>
+      </div>
+    </div>
+    <div class="card card-pad">
+      <div class="muted" style="font-size:13px;font-weight:700">30 günlük hak</div>
+      <div style="font-size:34px;font-weight:800;margin-top:4px"><span th:text="${quota.monthlyRemaining}">9</span> <span class="muted" style="font-size:16px">/ <span th:text="${quota.monthlyLimit}">10</span></span></div>
+    </div>
+    <div class="card card-pad">
+      <div class="muted" style="font-size:13px;font-weight:700">Hesap türün</div>
+      <div style="font-size:22px;font-weight:800;margin-top:8px;color:var(--sage)" th:text="${quota.tier=='student'} ? 'Öğrenci' : 'Üye'">Üye</div>
+    </div>
+  </div>
+
+  <div class="row gap-12">
+    <a class="btn btn-primary" th:href="@{/kesfet}">Bağışları keşfet</a>
+    <a class="btn btn-soft" th:href="@{/bagis/yeni}">Bağış yap</a>
+    <a class="btn btn-soft" th:href="@{/takas}">Takas</a>
+  </div>
+
+  <div class="card card-pad" style="margin-top:26px" th:if="${user.studentStatus.name() == 'PENDING'}">
+    <b>Öğrenci belgen incelemede.</b> <span class="muted">Onaylanınca öncelikli kitap alabileceksin.</span>
+  </div>
+  <div class="card card-pad" style="margin-top:26px; background:var(--sage-soft); border-color:transparent"
+       th:if="${user.studentStatus.name() == 'NONE'}">
+    <b>Öğrenci misin?</b> <span class="muted">Belgeni doğrula, bağışlarda 48 saat öncelik ve haftada 3 kitap hakkı kazan.</span>
+    <a th:href="@{/register}" style="font-weight:700; margin-left:6px">Öğrenci ol →</a>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Kitap Bağış & Takas')}"></head>
+<body>
+
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<!-- HERO -->
+<div class="container" style="display:grid; grid-template-columns:1.05fr .95fr; gap:40px; align-items:center; padding-top:64px; padding-bottom:48px;">
+  <div>
+    <div class="badge badge-accent" style="margin-bottom:22px; padding:7px 15px; font-size:13px;">
+      <span style="width:7px;height:7px;border-radius:50%;background:var(--accent);display:inline-block"></span>
+      Öğrencilere öncelik veren bağış ağı
+    </div>
+    <h1 style="font-size:54px; line-height:1.05; font-weight:800; letter-spacing:-1.5px; margin:0 0 20px;">Bir kitabın,<br>bir öğrencinin<br>eline ulaşsın.</h1>
+    <p style="font-size:18px; line-height:1.6; color:var(--muted); font-weight:500; margin:0 0 30px; max-width:470px;">İhtiyacı olan öğrenciye kitap bağışla, elindeki kitapları takas et. Öğrenciler öncelikli; herkes katılabilir.</p>
+    <div class="row gap-12" style="margin-bottom:24px;">
+      <a class="btn btn-primary" th:href="@{/register}" style="padding:16px 28px;">Kitap bağışla</a>
+      <a class="btn btn-soft" th:href="@{/kesfet}" style="padding:16px 28px;">Bağışları keşfet</a>
+    </div>
+    <div class="row gap-8" style="font-size:14px; color:var(--muted); font-weight:600;">
+      <div class="row">
+        <span style="width:30px;height:30px;border-radius:50%;background:var(--sage);border:2px solid var(--bg)"></span>
+        <span style="width:30px;height:30px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);margin-left:-10px"></span>
+        <span style="width:30px;height:30px;border-radius:50%;background:#7A2E2A;border:2px solid var(--bg);margin-left:-10px"></span>
+      </div>
+      420+ üye şimdiden katıldı
+    </div>
+  </div>
+  <div style="position:relative; height:420px;">
+    <div style="position:absolute; inset:0; background:var(--sage-soft); border-radius:28px;"></div>
+    <div style="position:absolute; left:56px; top:52px; display:flex; gap:16px; align-items:flex-end;">
+      <div style="width:96px;height:240px;border-radius:10px;background:var(--sage);box-shadow:inset -8px 0 0 rgba(0,0,0,.14),var(--shadow);transform:rotate(-5deg)"></div>
+      <div class="cover" style="width:104px;height:292px;background:var(--accent);box-shadow:inset -8px 0 0 rgba(0,0,0,.16),var(--shadow-lg)"><div class="ct">Suç ve Ceza</div><div class="ca">Dostoyevski</div></div>
+      <div style="width:96px;height:256px;border-radius:10px;background:#7A2E2A;box-shadow:inset -8px 0 0 rgba(0,0,0,.18),var(--shadow);transform:rotate(5deg)"></div>
+    </div>
+    <div class="card card-pad" style="position:absolute; right:24px; bottom:24px; width:230px; box-shadow:var(--shadow-lg);">
+      <div class="row gap-8" style="margin-bottom:8px;">
+        <span class="badge badge-accent" style="width:30px;height:30px;border-radius:9px;justify-content:center;padding:0">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        </span>
+        <span style="font-size:13px;font-weight:800">Öğrenci önceliği</span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);font-weight:500;line-height:1.45">Yeni bağışlar ilk 48 saat öğrencilere açık.</div>
+    </div>
+  </div>
+</div>
+
+<!-- İSTATİSTİK -->
+<div class="container" style="display:grid; grid-template-columns:repeat(4,1fr); gap:24px; padding-bottom:56px;">
+  <div><div style="font-size:40px;font-weight:800;letter-spacing:-1px" th:text="${stats.donations}">1.240</div><div class="muted" style="font-size:14px;font-weight:600">Bağışlanan kitap</div></div>
+  <div><div style="font-size:40px;font-weight:800;letter-spacing:-1px;color:var(--accent)" th:text="${stats.delivered}">960</div><div class="muted" style="font-size:14px;font-weight:600">Öğrenciye ulaştı</div></div>
+  <div><div style="font-size:40px;font-weight:800;letter-spacing:-1px;color:var(--sage)" th:text="${stats.swaps}">318</div><div class="muted" style="font-size:14px;font-weight:600">Tamamlanan takas</div></div>
+  <div><div style="font-size:40px;font-weight:800;letter-spacing:-1px" th:text="${stats.members}">420</div><div class="muted" style="font-size:14px;font-weight:600">Aktif üye</div></div>
+</div>
+
+<!-- NASIL ÇALIŞIR -->
+<div id="nasil" style="background:var(--surface); border-top:1px solid var(--line); border-bottom:1px solid var(--line);">
+  <div class="container section">
+    <div style="text-align:center; margin-bottom:44px;">
+      <div class="eyebrow" style="margin-bottom:10px">Nasıl çalışır</div>
+      <h2 style="font-size:36px;font-weight:800;letter-spacing:-.8px;margin:0">Üç basit yol</h2>
+    </div>
+    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:24px;">
+      <div class="card card-pad" style="background:var(--bg)">
+        <div class="badge badge-accent" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S12 3 8.5 3 5 7 12 7"/><path d="M12 7s0-4 3.5-4S19 7 12 7"/></svg></div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Bağışla</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">Linki yapıştır, kapak otomatik gelsin. Satın alıp gönder ya da elindeki kopyayı bağışla.</div>
+      </div>
+      <div class="card card-pad" style="background:var(--bg)">
+        <div class="badge badge-sage" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Al</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">İhtiyacın olan kitabı bul ya da iste. Öğrenciysen öncelikli, üyeysen sıradan alırsın.</div>
+      </div>
+      <div class="card card-pad" style="background:var(--bg)">
+        <div class="badge badge-accent" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Takas et</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">Okuduğun kitabı başkasınınkiyle değiştir. Kabul edilince adresler paylaşılır, kotadan bağımsız.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CTA -->
+<div class="container" style="padding:64px 32px;">
+  <div style="background:var(--accent); border-radius:28px; padding:56px; text-align:center; color:#fff;">
+    <h2 style="font-size:38px;font-weight:800;letter-spacing:-1px;margin:0 0 14px">Bugün bir kitap bağışla</h2>
+    <p style="font-size:17px;font-weight:500;opacity:.92;margin:0 0 26px">Rafındaki bir kitap, bir öğrencinin dönemini kurtarabilir.</p>
+    <div class="row gap-12" style="justify-content:center">
+      <a class="btn" th:href="@{/register}" style="background:#fff;color:var(--accent)">Ücretsiz üye ol</a>
+      <a class="btn" th:href="@{/kesfet}" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4)">Bağışları keşfet</a>
+    </div>
+  </div>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

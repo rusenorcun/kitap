@@ -1,0 +1,68 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:fragment="head(title)">
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title th:text="${title}">KİTAPLA</title>
+  <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
+  <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
+  <link rel="stylesheet" th:href="@{/css/kitapla.css}"/>
+  <script defer th:src="@{/webjars/htmx.org/1.9.12/dist/htmx.min.js}"></script>
+  <script th:inline="javascript">
+    document.addEventListener('htmx:configRequest', function (e) {
+      var t = document.querySelector('meta[name="_csrf"]');
+      var h = document.querySelector('meta[name="_csrf_header"]');
+      if (t && h && h.content) e.detail.headers[h.content] = t.content;
+    });
+  </script>
+</head>
+<body>
+
+<!-- Marka logosu (üç kitap sırtı) -->
+<svg th:fragment="logo(size)" th:width="${size}" th:height="${size}" viewBox="0 0 120 120" aria-hidden="true">
+  <g transform="rotate(-9 45 62)"><rect x="34" y="34" width="20" height="58" rx="5" fill="#8FA89B"/></g>
+  <rect x="52" y="24" width="21" height="70" rx="5" fill="#C65D47"/>
+  <g transform="rotate(9 78 60)"><rect x="72" y="30" width="20" height="62" rx="5" fill="#7A2E2A"/></g>
+</svg>
+
+<!-- Genel (public) nav -->
+<div th:fragment="publicnav" class="nav">
+  <a class="brand" th:href="@{/}"><svg th:replace="~{fragments :: logo(30)}"></svg><span>KİTAPLA</span></a>
+  <div class="nav-links">
+    <a th:href="@{/#nasil}">Nasıl çalışır</a>
+    <a th:href="@{/sss}">SSS</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="row gap-16">
+    <a sec:authorize="!isAuthenticated()" class="btn-soft btn btn-sm" th:href="@{/login}">Giriş</a>
+    <a sec:authorize="!isAuthenticated()" class="btn btn-primary btn-sm" th:href="@{/register}">Üye ol</a>
+    <a sec:authorize="isAuthenticated()" class="btn btn-primary btn-sm" th:href="@{/panom}">Panom</a>
+  </div>
+</div>
+
+<!-- Uygulama (app) nav -->
+<div th:fragment="appnav(active)" class="nav">
+  <a class="brand" th:href="@{/panom}"><svg th:replace="~{fragments :: logo(26)}"></svg><span>KİTAPLA</span></a>
+  <div class="nav-links">
+    <a th:href="@{/kesfet}" th:classappend="${active=='kesfet'}?'active'">Keşfet</a>
+    <a th:href="@{/isteklerim}" th:classappend="${active=='istekler'}?'active'">İsteklerim</a>
+    <a th:href="@{/takas}" th:classappend="${active=='takas'}?'active'">Takas</a>
+    <a th:href="@{/panom}" th:classappend="${active=='panom'}?'active'">Panom</a>
+  </div>
+  <div class="nav-spacer"></div>
+  <div class="row gap-16">
+    <a class="btn btn-primary btn-sm" th:href="@{/bagis/yeni}">Bağış yap</a>
+    <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn btn-soft btn-sm" type="submit">Çıkış</button></form>
+    <div class="avatar" th:text="${#authentication?.principal?.user?.initials}">EY</div>
+  </div>
+</div>
+
+<!-- Footer -->
+<div th:fragment="footer" class="footer">
+  <a class="brand" style="font-size:15px" th:href="@{/}"><svg th:replace="~{fragments :: logo(24)}"></svg><span>KİTAPLA</span></a>
+  <div class="links"><a th:href="@{/sss}">SSS</a><span>Kurallar</span><span>Gizlilik</span><span>İletişim</span></div>
+  <span class="muted" style="font-size:13px">© 2026 KİTAPLA</span>
+</div>
+
+</body>
+</html>

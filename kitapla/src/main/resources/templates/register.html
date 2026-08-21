@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Üye ol')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="padding-top:40px; padding-bottom:56px;">
+  <h1 style="font-size:30px;font-weight:800;letter-spacing:-.7px;margin:0 0 6px">Aramıza katıl</h1>
+  <p class="muted" style="margin:0 0 26px;font-weight:500">Herkes bağış yapabilir ve kitap alabilir. Öğrenciysen belgeni doğrulayıp öncelik kazanırsın.</p>
+
+  <div th:if="${error}" class="alert alert-error" th:text="${error}">Hata</div>
+
+  <form th:action="@{/register}" method="post" enctype="multipart/form-data" class="card card-pad" style="max-width:640px">
+    <div class="field">
+      <label class="label" for="name">Ad soyad</label>
+      <input class="input" id="name" name="name" required th:value="${form?.name}"/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="field">
+        <label class="label" for="email">E-posta</label>
+        <input class="input" type="email" id="email" name="email" required th:value="${form?.email}"/>
+      </div>
+      <div class="field">
+        <label class="label" for="password">Şifre</label>
+        <input class="input" type="password" id="password" name="password" required placeholder="en az 6 karakter"/>
+      </div>
+    </div>
+    <div class="field">
+      <label class="label" for="address">Teslimat adresi <span class="muted" style="font-weight:500">(kitap almak/takas için)</span></label>
+      <textarea class="input" id="address" name="address" th:text="${form?.address}"></textarea>
+    </div>
+    <div class="field">
+      <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <input class="input" id="phone" name="phone" th:value="${form?.phone}"/>
+    </div>
+
+    <label class="row gap-8" style="margin:8px 0 4px; cursor:pointer; font-weight:700; font-size:14px">
+      <input type="checkbox" name="wantsStudent" value="true" onchange="document.getElementById('ogr').style.display=this.checked?'block':'none'"/>
+      Öğrenciyim — belgeyle doğrula, öncelik kazan
+    </label>
+
+    <div id="ogr" style="display:none; border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="field">
+          <label class="label" for="schoolLevel">Okul seviyesi</label>
+          <select class="input" id="schoolLevel" name="schoolLevel">
+            <option value="">Seçin</option>
+            <option value="ORTAOKUL">Ortaokul</option>
+            <option value="LISE">Lise</option>
+            <option value="UNIVERSITE">Üniversite</option>
+          </select>
+        </div>
+        <div class="field">
+          <label class="label" for="documentNo">Öğrenci belge numarası</label>
+          <input class="input" id="documentNo" name="documentNo"/>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="document">Öğrenci belgesi (PDF/görsel)</label>
+        <input class="input" type="file" id="document" name="document" accept="application/pdf,image/*"/>
+      </div>
+    </div>
+
+    <button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Hesabımı oluştur</button>
+    <p class="muted" style="text-align:center;margin:16px 0 0;font-weight:500">Zaten hesabın var mı?
+      <a th:href="@{/login}" style="font-weight:700">Giriş yap</a></p>
+  </form>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>
