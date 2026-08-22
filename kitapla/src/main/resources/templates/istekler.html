@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Açık istekler')}"></head>
+<body>
+<th:block th:if="${currentUser != null}"><div th:replace="~{fragments :: appnav('istekler')}"></div></th:block>
+<th:block th:if="${currentUser == null}"><div th:replace="~{fragments :: publicnav}"></div></th:block>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:900px">
+  <div class="row" style="justify-content:space-between; margin-bottom:6px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Açık istekler</h1>
+    <a th:if="${currentUser != null}" class="btn btn-primary btn-sm" th:href="@{/istek/yeni}">Kitap iste</a>
+  </div>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">Birinin ihtiyacı olan kitabı sen karşılayabilirsin.</p>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <form th:action="@{/istekler}" method="get" class="row gap-8" style="margin-bottom:20px">
+    <input class="input" type="search" name="q" th:value="${q}" placeholder="Kitap veya yazar ara" style="max-width:320px"/>
+    <button class="btn btn-soft btn-sm" type="submit">Ara</button>
+  </form>
+
+  <div th:if="${#lists.isEmpty(requests)}" class="card card-pad" style="text-align:center; padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Şu an açık istek yok</div>
+    <p class="muted" style="font-weight:500;margin:0">Daha sonra tekrar bakabilir ya da kendi isteğini oluşturabilirsin.</p>
+  </div>
+
+  <div class="stack gap-12" th:unless="${#lists.isEmpty(requests)}">
+    <div th:each="r : ${requests}" class="card card-pad row gap-16" style="align-items:flex-start">
+      <div th:if="${!r.book.hasCover()}" class="cover"
+           th:style="'width:50px;height:70px;flex-shrink:0;padding:0;background:' + ${r.book.coverColor}"></div>
+      <img th:if="${r.book.hasCover()}" th:src="${r.book.coverUrl}" alt=""
+           style="width:50px;height:70px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800" th:text="${r.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${r.book.author}">Yazar</div>
+        <div class="row gap-8" style="flex-wrap:wrap;margin-top:8px">
+          <span class="badge badge-muted">İsteyen: <span th:text="${r.student.name}">Kişi</span></span>
+          <span th:if="${r.student.student}" class="badge badge-sage">Öğrenci</span>
+          <span th:if="${r.student.schoolLevel != null}" class="badge badge-sage"
+                th:text="${#strings.capitalize(#strings.toLowerCase(r.student.schoolLevel.name()))}">Seviye</span>
+        </div>
+        <p th:if="${r.description}" class="muted" style="font-size:13px;font-weight:500;line-height:1.5;margin:10px 0 0"
+           th:text="${r.description}">Not</p>
+      </div>
+
+      <!-- Karşılama: kendi isteği değilse ve giriş yapılmışsa -->
+      <th:block th:if="${currentUser != null and !r.student.id.equals(currentUser.id)}">
+        <form th:action="@{'/istek/' + ${r.id} + '/karsila'}" method="post" class="stack gap-8" style="min-width:180px">
+          <select class="input" name="source" style="padding:9px 12px;font-size:13px">
+            <option value="PURCHASE">Satın alıp göndereceğim</option>
+            <option value="OWN">Elimdeki kopya</option>
+          </select>
+          <button class="btn btn-primary btn-sm" type="submit">Bu isteği karşıla</button>
+        </form>
+      </th:block>
+      <span th:if="${currentUser != null and r.student.id.equals(currentUser.id)}" class="badge badge-muted">Senin isteğin</span>
+      <a th:if="${currentUser == null}" class="btn btn-soft btn-sm" th:href="@{/login}">Karşılamak için giriş yap</a>
+    </div>
+  </div>
+</div>
+
+<th:block th:if="${currentUser == null}"><div th:replace="~{fragments :: footer}"></div></th:block>
+</body>
+</html>

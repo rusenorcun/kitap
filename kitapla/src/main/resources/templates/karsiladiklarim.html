@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Karşıladıklarım')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:900px">
+  <div class="row" style="justify-content:space-between; margin-bottom:20px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Karşıladığım istekler</h1>
+    <a class="btn btn-soft btn-sm" th:href="@{/istekler}">Açık istekler</a>
+  </div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <div th:if="${#lists.isEmpty(requests)}" class="card card-pad" style="text-align:center; padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz bir istek karşılamadın</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">Açık isteklere göz at; birinin ihtiyacını karşılayabilirsin.</p>
+    <a class="btn btn-primary" th:href="@{/istekler}">Açık isteklere bak</a>
+  </div>
+
+  <div class="stack gap-14" th:unless="${#lists.isEmpty(requests)}">
+    <div th:each="r : ${requests}" class="card card-pad">
+      <div class="row gap-16">
+        <div th:if="${!r.book.hasCover()}" class="cover"
+             th:style="'width:50px;height:70px;flex-shrink:0;padding:0;background:' + ${r.book.coverColor}"></div>
+        <img th:if="${r.book.hasCover()}" th:src="${r.book.coverUrl}" alt=""
+             style="width:50px;height:70px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:800" th:text="${r.book.title}">Kitap</div>
+          <div class="muted" style="font-size:13px;font-weight:500">
+            <span th:text="${r.book.author}">Yazar</span> ·
+            <span th:text="${r.source != null and r.source.name() == 'OWN'} ? 'Elimdeki kopya' : 'Satın alıp göndereceğim'">Kaynak</span>
+          </div>
+        </div>
+        <span class="badge"
+              th:classappend="${r.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
+              th:text="${r.status.name() == 'FULFILLED'} ? 'Kargo bekleniyor'
+                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
+      </div>
+
+      <!-- Teslimat adresi: yalnızca karşılayana gösterilir -->
+      <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+        <div class="label" style="margin-bottom:8px">Teslimat bilgileri</div>
+        <div class="row gap-12" style="align-items:flex-start;background:var(--surface2);border-radius:12px;padding:12px">
+          <div class="avatar" style="width:34px;height:34px;font-size:11px" th:text="${r.student.initials}">EY</div>
+          <div style="flex:1">
+            <div style="font-size:14px;font-weight:800" th:text="${r.student.name}">Alıcı</div>
+            <div class="muted" style="font-size:12px;font-weight:500;line-height:1.5">
+              <span th:text="${r.student.address}">Adres</span>
+              <span th:if="${r.student.phone}"> · <span th:text="${r.student.phone}">Telefon</span></span>
+            </div>
+          </div>
+          <form th:if="${r.status.name() == 'FULFILLED'}" th:action="@{'/istek/' + ${r.id} + '/kargola'}" method="post">
+            <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

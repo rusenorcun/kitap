@@ -29,10 +29,29 @@
     </div>
   </div>
 
-  <div class="row gap-12">
+  <div class="row gap-12" style="flex-wrap:wrap">
     <a class="btn btn-primary" th:href="@{/kesfet}">Bağışları keşfet</a>
     <a class="btn btn-soft" th:href="@{/bagis/yeni}">Bağış yap</a>
-    <a class="btn btn-soft" th:href="@{/takas}">Takas</a>
+    <a class="btn btn-soft" th:href="@{/istek/yeni}">Kitap iste</a>
+  </div>
+
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-top:24px">
+    <a class="card card-pad" th:href="@{/aldiklarim}" style="color:inherit">
+      <div style="font-size:15px;font-weight:800">Aldıklarım</div>
+      <div class="muted" style="font-size:13px;font-weight:500">Teslimat durumunu takip et</div>
+    </a>
+    <a class="card card-pad" th:href="@{/isteklerim}" style="color:inherit">
+      <div style="font-size:15px;font-weight:800">İsteklerim</div>
+      <div class="muted" style="font-size:13px;font-weight:500">Açık ve karşılanan isteklerin</div>
+    </a>
+    <a class="card card-pad" th:href="@{/bagislarim}" style="color:inherit">
+      <div style="font-size:15px;font-weight:800">Bağışlarım</div>
+      <div class="muted" style="font-size:13px;font-weight:500">Bağışların ve kargo işlemleri</div>
+    </a>
+    <a class="card card-pad" th:href="@{/karsiladiklarim}" style="color:inherit">
+      <div style="font-size:15px;font-weight:800">Karşıladıklarım</div>
+      <div class="muted" style="font-size:13px;font-weight:500">Karşıladığın istekler ve adresler</div>
+    </a>
   </div>
 
   <div class="card card-pad" style="margin-top:26px" th:if="${user.studentStatus.name() == 'PENDING'}">

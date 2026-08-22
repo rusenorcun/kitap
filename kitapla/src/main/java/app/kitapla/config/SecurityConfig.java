@@ -23,7 +23,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Herkese açık: tanıtım sayfaları, keşif ve kitap detayı, kimlik, statik dosyalar.
                 // Öğrenci belgeleri BİLEREK dışarıda: yalnızca /admin ucundan erişilir.
-                .requestMatchers("/", "/sss", "/kesfet/**", "/kesfet", "/kitap/**", "/register", "/login",
+                .requestMatchers("/", "/sss", "/kesfet/**", "/kesfet", "/kitap/**", "/istekler", "/register", "/login",
                         "/css/**", "/js/**", "/webjars/**", "/uploads/covers/**",
                         "/favicon.ico", "/error", "/h2/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
