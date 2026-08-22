@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Keşfet')}"></head>
+<body>
+<th:block th:if="${currentUser != null}"><div th:replace="~{fragments :: appnav('kesfet')}"></div></th:block>
+<th:block th:if="${currentUser == null}"><div th:replace="~{fragments :: publicnav}"></div></th:block>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px;">
+  <div style="display:grid; grid-template-columns:244px 1fr; gap:28px; align-items:start;">
+
+    <aside>
+      <h1 style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin:0 0 16px">Bağışları keşfet</h1>
+      <form id="filtre" class="card card-pad"
+            th:action="@{/kesfet}" method="get"
+            hx-get="/kesfet/liste" hx-target="#grid" hx-trigger="change, search delay:300ms"
+            hx-indicator="#yukleniyor">
+        <label class="label" for="q">Ara</label>
+        <input class="input" type="search" id="q" name="q" th:value="${q}"
+               placeholder="Kitap veya yazar" style="margin-bottom:18px"/>
+
+        <div class="label">Seviye</div>
+        <div class="stack" style="gap:2px; margin-bottom:18px">
+          <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
+            <input type="radio" name="level" value="hepsi" th:checked="${level == 'hepsi'}" style="accent-color:var(--accent)"/> Hepsi
+          </label>
+          <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
+            <input type="radio" name="level" value="ORTAOKUL" th:checked="${level == 'ORTAOKUL'}" style="accent-color:var(--accent)"/> Ortaokul
+          </label>
+          <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
+            <input type="radio" name="level" value="LISE" th:checked="${level == 'LISE'}" style="accent-color:var(--accent)"/> Lise
+          </label>
+          <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
+            <input type="radio" name="level" value="UNIVERSITE" th:checked="${level == 'UNIVERSITE'}" style="accent-color:var(--accent)"/> Üniversite
+          </label>
+        </div>
+
+        <label class="row gap-8" style="cursor:pointer; font-size:14px; font-weight:600">
+          <input type="checkbox" name="available" value="true" th:checked="${available}" style="accent-color:var(--accent)"/>
+          Yalnızca uygun olanlar
+        </label>
+
+        <noscript><button class="btn btn-primary btn-block btn-sm" type="submit" style="margin-top:14px">Filtrele</button></noscript>
+      </form>
+    </aside>
+
+    <section>
+      <div class="row" style="justify-content:space-between; margin-bottom:16px;">
+        <span class="muted" style="font-size:14px;font-weight:600">
+          <span th:text="${#lists.size(donations)}">0</span> açık bağış
+          <span id="yukleniyor" class="htmx-indicator" style="margin-left:8px">yükleniyor…</span>
+        </span>
+      </div>
+
+      <div id="grid" th:fragment="grid">
+        <div th:if="${#lists.isEmpty(donations)}" class="card card-pad" style="text-align:center; padding:56px 24px">
+          <div style="font-size:19px;font-weight:800;margin-bottom:8px">Sonuç bulunamadı</div>
+          <p class="muted" style="font-weight:500;margin:0">Filtreleri değiştirip tekrar deneyin.</p>
+        </div>
+
+        <div th:unless="${#lists.isEmpty(donations)}"
+             style="display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:18px;">
+          <a th:each="d : ${donations}" th:href="@{'/kitap/' + ${d.id}}"
+             class="card card-pad" style="color:inherit; display:block">
+            <div th:if="${!d.book.hasCover()}" class="cover"
+                 th:style="'height:190px;margin-bottom:12px;background:' + ${d.book.coverColor}">
+              <div class="ct" th:text="${d.book.title}">Kitap</div>
+              <div class="ca" th:text="${d.book.author}">Yazar</div>
+            </div>
+            <img th:if="${d.book.hasCover()}" th:src="${d.book.coverUrl}" alt=""
+                 style="height:190px;width:100%;object-fit:cover;border-radius:10px;margin-bottom:12px"/>
+
+            <div style="font-size:15px;font-weight:800" th:text="${d.book.title}">Kitap adı</div>
+            <div class="muted" style="font-size:12px;font-weight:500;margin-bottom:10px" th:text="${d.book.author}">Yazar</div>
+
+            <div class="row gap-8" style="flex-wrap:wrap; margin-bottom:12px">
+              <span class="badge badge-sage"
+                    th:text="${d.targetLevel.name() == 'HEPSI'} ? 'Herkese' : ${#strings.capitalize(#strings.toLowerCase(d.targetLevel.name()))}">Seviye</span>
+              <span th:if="${d.priorityActive}" class="badge badge-accent">Öğrenciye öncelikli</span>
+            </div>
+
+            <div class="row" style="justify-content:space-between">
+              <span class="muted" style="font-size:12px;font-weight:600"><span th:text="${d.remaining}">1</span> adet kaldı</span>
+              <span class="btn btn-primary btn-sm">İncele</span>
+            </div>
+          </a>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<th:block th:if="${currentUser == null}"><div th:replace="~{fragments :: footer}"></div></th:block>
+</body>
+</html>

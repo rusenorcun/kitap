@@ -5,7 +5,12 @@ import app.kitapla.repo.*;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 
 import java.util.List;
 
@@ -16,16 +21,19 @@ public class DataSeeder implements CommandLineRunner {
     private final BookRepository books;
     private final DonationRepository donations;
     private final PasswordEncoder encoder;
+    private final JdbcTemplate jdbc;
 
     @Value("${kitapla.admin.email}") private String adminEmail;
     @Value("${kitapla.admin.password}") private String adminPassword;
     @Value("${kitapla.admin.name}") private String adminName;
 
-    public DataSeeder(UserRepository users, BookRepository books, DonationRepository donations, PasswordEncoder encoder) {
+    public DataSeeder(UserRepository users, BookRepository books, DonationRepository donations,
+                      PasswordEncoder encoder, JdbcTemplate jdbc) {
         this.users = users;
         this.books = books;
         this.donations = donations;
         this.encoder = encoder;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -71,7 +79,10 @@ public class DataSeeder implements CommandLineRunner {
                 new Seed("1984", "George Orwell", TargetLevel.UNIVERSITE, 1),
                 new Seed("Beyaz Diş", "Jack London", TargetLevel.ORTAOKUL, 2),
                 new Seed("Hayvan Çiftliği", "George Orwell", TargetLevel.LISE, 1),
-                new Seed("Fizik 11", "MEB Yayınları", TargetLevel.LISE, 2)
+                new Seed("Fizik 11", "MEB Yayınları", TargetLevel.LISE, 2),
+                new Seed("Kürk Mantolu Madonna", "Sabahattin Ali", TargetLevel.HEPSI, 2),
+                new Seed("Yabancı", "Albert Camus", TargetLevel.HEPSI, 1),
+                new Seed("Dönüşüm", "Franz Kafka", TargetLevel.HEPSI, 3)
         );
         for (Seed s : seeds) {
             Book b = new Book();
@@ -88,5 +99,11 @@ public class DataSeeder implements CommandLineRunner {
             d.setSource(DonationSource.PURCHASE);
             donations.save(d);
         }
+
+        // Örnek verinin bir kısmında öncelik penceresi dolmuş olsun ki
+        // üye akışı da yerelde denenebilsin (createdAt updatable=false, bu yüzden SQL).
+        jdbc.update("UPDATE donations SET created_at = ? WHERE id IN "
+                        + "(SELECT id FROM donations ORDER BY id DESC LIMIT 3)",
+                Timestamp.from(Instant.now().minus(3, ChronoUnit.DAYS)));
     }
 }

@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Aldıklarım')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:900px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 20px">Aldığım kitaplar</h1>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <div th:if="${#lists.isEmpty(claims)}" class="card card-pad" style="text-align:center; padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz kitap almadın</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">Keşfet sayfasından sana uygun bağışlara göz at.</p>
+    <a class="btn btn-primary" th:href="@{/kesfet}">Bağışları keşfet</a>
+  </div>
+
+  <div class="stack gap-12" th:unless="${#lists.isEmpty(claims)}">
+    <div th:each="c : ${claims}" class="card card-pad row gap-16">
+      <div th:if="${!c.donation.book.hasCover()}" class="cover"
+           th:style="'width:48px;height:68px;flex-shrink:0;padding:0;background:' + ${c.donation.book.coverColor}"></div>
+      <img th:if="${c.donation.book.hasCover()}" th:src="${c.donation.book.coverUrl}" alt=""
+           style="width:48px;height:68px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800" th:text="${c.donation.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500">
+          <span th:text="${c.donation.book.author}">Yazar</span> ·
+          <span th:text="${c.donation.donor.name}">Bağışçı</span>
+        </div>
+      </div>
+      <span class="badge"
+            th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
+            th:text="${c.status.name() == 'MATCHED'} ? 'Eşleşti · kargo bekleniyor'
+                   : (${c.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
+    </div>
+  </div>
+</div>
+</body>
+</html>

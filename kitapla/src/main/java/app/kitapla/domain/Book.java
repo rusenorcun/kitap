@@ -34,4 +34,19 @@ public class Book {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    /** Kapak görseli yoksa, başlıktan türetilen sabit bir yer tutucu rengi. */
+    @Transient
+    public String getCoverColor() {
+        String[] palette = {"#7A2E2A", "#2F4A3C", "#23405C", "#7A2E5A", "#4A5240", "#8a5a1c", "#5A3A6B", "#2E5E5A"};
+        String key = title == null ? "" : title;
+        int h = 0;
+        for (int i = 0; i < key.length(); i++) h = 31 * h + key.charAt(i);
+        return palette[Math.floorMod(h, palette.length)];
+    }
+
+    @Transient
+    public boolean hasCover() {
+        return coverUrl != null && !coverUrl.isBlank();
+    }
 }

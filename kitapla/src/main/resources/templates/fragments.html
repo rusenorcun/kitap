@@ -29,6 +29,7 @@
 <div th:fragment="publicnav" class="nav">
   <a class="brand" th:href="@{/}"><svg th:replace="~{fragments :: logo(30)}"></svg><span>KİTAPLA</span></a>
   <div class="nav-links">
+    <a th:href="@{/kesfet}">Keşfet</a>
     <a th:href="@{/#nasil}">Nasıl çalışır</a>
     <a th:href="@{/sss}">SSS</a>
   </div>
@@ -53,7 +54,7 @@
   <div class="row gap-16">
     <a class="btn btn-primary btn-sm" th:href="@{/bagis/yeni}">Bağış yap</a>
     <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn btn-soft btn-sm" type="submit">Çıkış</button></form>
-    <div class="avatar" th:text="${#authentication?.principal?.user?.initials}">EY</div>
+    <a class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}">EY</a>
   </div>
 </div>
 
