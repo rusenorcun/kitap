@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — İçerik moderasyonu')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:900px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 6px">İçerik moderasyonu</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Yayındaki bağış, istek ve takas ilanları. Kaldırdığında sahibine bildirim gider.
+  </p>
+
+  <div th:replace="~{fragments :: adminnav('icerik')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <!-- Bağışlar -->
+  <h2 style="font-size:16px;font-weight:800;margin:8px 0 12px">
+    Açık bağışlar <span class="muted" th:text="'(' + ${#lists.size(bagislar)} + ')'">(0)</span>
+  </h2>
+  <div th:if="${#lists.isEmpty(bagislar)}" class="card card-pad muted"
+       style="font-weight:500;font-size:14px">Yayında açık bağış yok.</div>
+  <div class="stack gap-10">
+    <div th:each="d : ${bagislar}" class="card card-pad row gap-14" style="flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:15px;font-weight:800" th:text="${d.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px"
+             th:text="${d.donor.name} + ' · ' + ${d.quantity} + ' adet · ' + ${d.targetLevel}">Ayşe · 2 adet</div>
+      </div>
+      <form th:action="@{'/admin/icerik/bagis/' + ${d.id} + '/kaldir'}" method="post"
+            class="row gap-8" style="margin:0;flex:1;min-width:240px">
+        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- İstekler -->
+  <h2 style="font-size:16px;font-weight:800;margin:28px 0 12px">
+    Açık istekler <span class="muted" th:text="'(' + ${#lists.size(istekler)} + ')'">(0)</span>
+  </h2>
+  <div th:if="${#lists.isEmpty(istekler)}" class="card card-pad muted"
+       style="font-weight:500;font-size:14px">Karşılanmayı bekleyen istek yok.</div>
+  <div class="stack gap-10">
+    <div th:each="r : ${istekler}" class="card card-pad row gap-14" style="flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:15px;font-weight:800" th:text="${r.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px" th:text="${r.student.name}">Elif</div>
+      </div>
+      <form th:action="@{'/admin/icerik/istek/' + ${r.id} + '/kaldir'}" method="post"
+            class="row gap-8" style="margin:0;flex:1;min-width:240px">
+        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Takas ilanları -->
+  <h2 style="font-size:16px;font-weight:800;margin:28px 0 12px">
+    Takastaki kitaplar <span class="muted" th:text="'(' + ${#lists.size(takaslar)} + ')'">(0)</span>
+  </h2>
+  <div th:if="${#lists.isEmpty(takaslar)}" class="card card-pad muted"
+       style="font-weight:500;font-size:14px">Takasa açık kitap yok.</div>
+  <div class="stack gap-10">
+    <div th:each="s : ${takaslar}" class="card card-pad row gap-14" style="flex-wrap:wrap">
+      <div style="flex:1;min-width:200px">
+        <div style="font-size:15px;font-weight:800" th:text="${s.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px" th:text="${s.user.name}">Mert</div>
+      </div>
+      <form th:action="@{'/admin/icerik/takas/' + ${s.id} + '/kaldir'}" method="post"
+            class="row gap-8" style="margin:0;flex:1;min-width:240px">
+        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
+      </form>
+    </div>
+  </div>
+</div>
+</body>
+</html>

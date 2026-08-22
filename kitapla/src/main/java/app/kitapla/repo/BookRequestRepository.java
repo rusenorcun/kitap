@@ -57,6 +57,7 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
     List<BookRequest> findByStudentOrderByCreatedAtDesc(User student);
     List<BookRequest> findByFulfilledByOrderByFulfilledAtDesc(User fulfilledBy);
     long countByStudentAndStatusInAndFulfilledAtAfter(User student, List<RequestStatus> statuses, Instant after);
+    long countByStudent(User student);
     long countByStatus(RequestStatus status);
     long countByStudentAndStatus(User student, RequestStatus status);
 }

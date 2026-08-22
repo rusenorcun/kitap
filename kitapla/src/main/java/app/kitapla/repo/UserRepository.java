@@ -13,6 +13,9 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByDocumentNo(String documentNo);
     List<User> findByStudentStatus(StudentStatus status);
     long countByStudentStatus(StudentStatus status);
+    List<User> findByStudentStatusOrderByCreatedAtDesc(StudentStatus status);
+    List<User> findTop200ByOrderByCreatedAtDesc();
+    List<User> findTop200ByNameContainingIgnoreCaseOrEmailContainingIgnoreCaseOrderByCreatedAtDesc(String name, String email);
     long countByAdminTrue();
     long countByBlockedTrue();
 }

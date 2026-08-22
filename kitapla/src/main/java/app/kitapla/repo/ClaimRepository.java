@@ -47,4 +47,5 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     List<Claim> findByDonation(Donation donation);
     long countByStudentAndCreatedAtAfter(User student, Instant after);
     long countByStatus(ClaimStatus status);
+    long countByStudent(User student);
 }

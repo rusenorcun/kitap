@@ -48,6 +48,17 @@ public interface SwapBookRepository extends JpaRepository<SwapBook, Long> {
            """)
     Optional<SwapBook> findByIdWithDetails(@Param("id") Long id);
 
+    @Query("""
+           select s from SwapBook s
+           join fetch s.book
+           join fetch s.user
+           where s.status = :status
+           order by s.createdAt desc
+           """)
+    List<SwapBook> findByStatusWithDetails(@Param("status") SwapBookStatus status);
+
+    long countByStatus(SwapBookStatus status);
+    long countByUser(User user);
     List<SwapBook> findByStatusAndUserNotOrderByCreatedAtDesc(SwapBookStatus status, User notUser);
     List<SwapBook> findByUserOrderByCreatedAtDesc(User user);
     Optional<SwapBook> findByUserAndBook_Id(User user, Long bookId);

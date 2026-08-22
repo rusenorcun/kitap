@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Üyeler')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:1000px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 6px">Üyeler</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">Yetki ver, askıya al ya da kaydı olmayan üyeleri sil.</p>
+
+  <div th:replace="~{fragments :: adminnav('uyeler')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <form th:action="@{/admin/uyeler}" method="get" class="row gap-8" style="margin-bottom:18px">
+    <input class="input" type="search" name="q" th:value="${q}" placeholder="Ad ya da e-posta ara" style="flex:1"/>
+    <button class="btn btn-primary btn-sm" type="submit">Ara</button>
+    <a th:if="${q != null and !q.isEmpty()}" class="btn btn-soft btn-sm" th:href="@{/admin/uyeler}">Temizle</a>
+  </form>
+
+  <div th:if="${#lists.isEmpty(uyeler)}" class="card card-pad" style="text-align:center;padding:48px 24px">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Sonuç yok</div>
+    <p class="muted" style="font-weight:500;margin:0">Aramanla eşleşen üye bulunamadı.</p>
+  </div>
+
+  <div class="stack gap-10" th:unless="${#lists.isEmpty(uyeler)}">
+    <div th:each="u : ${uyeler}" class="card card-pad row gap-14"
+         th:style="${u.blocked} ? 'opacity:.72' : ''" style="flex-wrap:wrap">
+      <div class="avatar" style="flex-shrink:0" th:text="${u.initials}">AD</div>
+
+      <div style="flex:1;min-width:180px">
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <span style="font-size:15px;font-weight:800" th:text="${u.name}">Ayşe Demir</span>
+          <span th:if="${u.admin}" class="badge badge-accent">Yönetici</span>
+          <span th:if="${u.blocked}" class="badge badge-muted">Askıda</span>
+          <span th:if="${u.student}" class="badge badge-sage">Öğrenci</span>
+          <span th:if="${u.studentStatus.name() == 'PENDING'}" class="badge badge-accent">Belge incelemede</span>
+          <span th:if="${u.studentStatus.name() == 'REJECTED'}" class="badge badge-muted">Belge reddedildi</span>
+        </div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px" th:text="${u.email}">a@b.com</div>
+      </div>
+
+      <div class="row gap-8" style="flex-wrap:wrap">
+        <th:block th:if="${!u.blocked}">
+          <form th:action="@{'/admin/uyeler/' + ${u.id} + '/askiya-al'}" method="post" style="margin:0">
+            <button class="btn btn-soft btn-sm" type="submit">Askıya al</button>
+          </form>
+        </th:block>
+        <th:block th:if="${u.blocked}">
+          <form th:action="@{'/admin/uyeler/' + ${u.id} + '/aktif-et'}" method="post" style="margin:0">
+            <button class="btn btn-sage btn-sm" type="submit">Aktif et</button>
+          </form>
+        </th:block>
+
+        <th:block th:if="${!u.admin}">
+          <form th:action="@{'/admin/uyeler/' + ${u.id} + '/yetki-ver'}" method="post" style="margin:0">
+            <button class="btn btn-soft btn-sm" type="submit">Yönetici yap</button>
+          </form>
+        </th:block>
+        <th:block th:if="${u.admin}">
+          <form th:action="@{'/admin/uyeler/' + ${u.id} + '/yetki-al'}" method="post" style="margin:0">
+            <button class="btn btn-soft btn-sm" type="submit">Yetkiyi al</button>
+          </form>
+        </th:block>
+
+        <form th:action="@{'/admin/uyeler/' + ${u.id} + '/sil'}" method="post" style="margin:0"
+              onsubmit="return confirm('Bu üye kalıcı olarak silinsin mi?')">
+          <button class="btn btn-soft btn-sm" type="submit"
+                  style="color:var(--accent-strong)">Sil</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <p class="muted" style="font-size:13px;font-weight:500;margin-top:18px">
+    Bağış, istek ya da takas kaydı olan üyeler silinemez; geçmişin bozulmaması için askıya alınır.
+  </p>
+</div>
+</body>
+</html>

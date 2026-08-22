@@ -1,5 +1,7 @@
 package app.kitapla.config;
 
+import app.kitapla.repo.UserRepository;
+import app.kitapla.security.FreshPrincipalFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -7,6 +9,7 @@ import org.springframework.security.config.annotation.web.configurers.AbstractHt
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.intercept.AuthorizationFilter;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 
 @Configuration
@@ -18,8 +21,11 @@ public class SecurityConfig {
     }
 
     @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain filterChain(HttpSecurity http, UserRepository users) throws Exception {
         http
+            // Yetki kararı verilmeden önce kullanıcıyı tazele: yönetici işlemleri
+            // (onay, yetki, askı) yeniden giriş beklemeden geçerli olsun.
+            .addFilterBefore(new FreshPrincipalFilter(users), AuthorizationFilter.class)
             .authorizeHttpRequests(auth -> auth
                 // Herkese açık: tanıtım sayfaları, keşif ve kitap detayı, kimlik, statik dosyalar.
                 // Öğrenci belgeleri BİLEREK dışarıda: yalnızca /admin ucundan erişilir.

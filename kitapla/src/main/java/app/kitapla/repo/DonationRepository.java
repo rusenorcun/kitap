@@ -42,6 +42,8 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
            """)
     List<Donation> findByDonorWithDetails(@Param("donor") User donor);
 
+    long countByStatus(DonationStatus status);
+    long countByDonor(User donor);
     List<Donation> findByStatusOrderByCreatedAtDesc(DonationStatus status);
     List<Donation> findByDonorOrderByCreatedAtDesc(User donor);
 }

@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Öğrenci belgeleri')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:880px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 6px">Öğrenci belgeleri</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Belgeler yalnızca bu sayfadan görüntülenir; hiçbir zaman herkese açık servis edilmez.
+  </p>
+
+  <div th:replace="~{fragments :: adminnav('belgeler')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <div th:if="${#lists.isEmpty(bekleyenler)}" class="card card-pad" style="text-align:center;padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">İncelemede belge yok</div>
+    <p class="muted" style="font-weight:500;margin:0">Yeni başvurular geldiğinde burada listelenecek.</p>
+  </div>
+
+  <div class="stack gap-12" th:unless="${#lists.isEmpty(bekleyenler)}">
+    <div th:each="u : ${bekleyenler}" class="card card-pad">
+      <div class="row gap-14" style="align-items:flex-start">
+        <div class="avatar" style="flex-shrink:0" th:text="${u.initials}">EY</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:16px;font-weight:800" th:text="${u.name}">Elif Yılmaz</div>
+          <div class="muted" style="font-size:13px;font-weight:500" th:text="${u.email}">elif@ornek.com</div>
+          <div class="row gap-8" style="margin-top:8px;flex-wrap:wrap">
+            <span class="badge badge-sage" th:text="${u.schoolLevel}">LISE</span>
+            <span class="badge badge-muted" th:text="'Belge no: ' + ${u.documentNo}">Belge no: 123</span>
+          </div>
+          <div class="muted" style="font-size:13px;font-weight:500;margin-top:8px"
+               th:text="'Teslimat adresi: ' + (${u.address} ?: '—')">Teslimat adresi: İzmir</div>
+        </div>
+        <a class="btn btn-soft btn-sm" th:href="@{'/admin/belge/' + ${u.id}}" target="_blank"
+           th:if="${u.documentPath != null}">Belgeyi aç</a>
+      </div>
+
+      <div class="row gap-8" style="margin-top:14px;flex-wrap:wrap">
+        <form th:action="@{'/admin/belgeler/' + ${u.id} + '/onayla'}" method="post" style="margin:0">
+          <button class="btn btn-sage btn-sm" type="submit">Onayla</button>
+        </form>
+        <form th:action="@{'/admin/belgeler/' + ${u.id} + '/reddet'}" method="post"
+              class="row gap-8" style="margin:0;flex:1;min-width:220px">
+          <input class="input" type="text" name="reason" placeholder="Ret gerekçesi (isteğe bağlı)"
+                 style="flex:1;min-width:140px"/>
+          <button class="btn btn-soft btn-sm" type="submit">Reddet</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

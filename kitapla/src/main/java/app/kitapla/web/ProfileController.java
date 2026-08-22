@@ -2,7 +2,6 @@ package app.kitapla.web;
 
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.domain.User;
-import app.kitapla.repo.UserRepository;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.service.QuotaService;
 import app.kitapla.service.UserService;
@@ -24,25 +23,18 @@ public class ProfileController {
 
     private final UserService userService;
     private final QuotaService quotaService;
-    private final UserRepository users;
     private final Path documentDir;
 
-    public ProfileController(UserService userService, QuotaService quotaService, UserRepository users,
+    public ProfileController(UserService userService, QuotaService quotaService,
                              @Value("${kitapla.upload-dir}") String uploadDir) {
         this.userService = userService;
         this.quotaService = quotaService;
-        this.users = users;
         this.documentDir = Path.of(uploadDir, "documents");
-    }
-
-    /** Oturumdaki kullanıcı nesnesi güncellemelerden sonra bayat kalabilir; veritabanından tazeler. */
-    private User fresh(AppUserDetails principal) {
-        return users.findById(principal.getUser().getId()).orElse(principal.getUser());
     }
 
     @GetMapping
     public String profil(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-        User user = fresh(principal);
+        User user = principal.getUser();
         model.addAttribute("user", user);
         model.addAttribute("quota", quotaService.quotaFor(user));
         return "profil";
@@ -80,7 +72,7 @@ public class ProfileController {
 
     @GetMapping("/ogrenci")
     public String ogrenciForm(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-        model.addAttribute("user", fresh(principal));
+        model.addAttribute("user", principal.getUser());
         return "profil-ogrenci";
     }
 

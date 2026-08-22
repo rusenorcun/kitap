@@ -84,7 +84,7 @@ textarea.input{ min-height:84px; resize:vertical; }
 .muted{ color:var(--muted); }
 .stack{ display:flex; flex-direction:column; }
 .row{ display:flex; align-items:center; }
-.gap-8{ gap:8px; } .gap-12{ gap:12px; } .gap-16{ gap:16px; }
+.gap-8{ gap:8px; } .gap-10{ gap:10px; } .gap-12{ gap:12px; } .gap-14{ gap:14px; } .gap-16{ gap:16px; }
 .grid{ display:grid; }
 .section{ padding:64px 0; }
 .eyebrow{ font-size:13px; font-weight:800; letter-spacing:1.5px; text-transform:uppercase; color:var(--accent); }

@@ -51,6 +51,8 @@
     <a th:href="@{/aldiklarim}" th:classappend="${active=='aldiklarim'}?'active'">Aldıklarım</a>
     <a th:href="@{/takas}" th:classappend="${active=='takas'}?'active'">Takas</a>
     <a th:href="@{/panom}" th:classappend="${active=='panom'}?'active'">Panom</a>
+    <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}"
+       th:classappend="${active=='admin'}?'active'">Yönetim</a>
   </div>
   <div class="nav-spacer"></div>
   <div class="row gap-16">
@@ -65,6 +67,22 @@
     <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn btn-soft btn-sm" type="submit">Çıkış</button></form>
     <a class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}">EY</a>
   </div>
+</div>
+
+<!-- Yönetim alt navigasyonu -->
+<div th:fragment="adminnav(active)" class="row gap-8" style="flex-wrap:wrap;margin-bottom:22px">
+  <a th:href="@{/admin}" class="btn btn-sm"
+     th:classappend="${active=='pano'} ? 'btn-primary' : 'btn-soft'">Pano</a>
+  <a th:href="@{/admin/belgeler}" class="btn btn-sm"
+     th:classappend="${active=='belgeler'} ? 'btn-primary' : 'btn-soft'">
+    Öğrenci belgeleri
+    <span th:if="${bekleyenSayisi > 0}" th:text="${bekleyenSayisi}"
+          style="margin-left:6px;min-width:18px;height:18px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px">2</span>
+  </a>
+  <a th:href="@{/admin/uyeler}" class="btn btn-sm"
+     th:classappend="${active=='uyeler'} ? 'btn-primary' : 'btn-soft'">Üyeler</a>
+  <a th:href="@{/admin/icerik}" class="btn btn-sm"
+     th:classappend="${active=='icerik'} ? 'btn-primary' : 'btn-soft'">İçerik</a>
 </div>
 
 <!-- Footer -->

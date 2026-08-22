@@ -3,7 +3,6 @@ package app.kitapla.web;
 import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.repo.ClaimRepository;
-import app.kitapla.repo.UserRepository;
 import app.kitapla.service.DonationService;
 import app.kitapla.service.QuotaService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -21,20 +20,17 @@ public class AccountController {
     private final QuotaService quotaService;
     private final ClaimRepository claims;
     private final DonationService donationService;
-    private final UserRepository users;
 
     public AccountController(QuotaService quotaService, ClaimRepository claims,
-                             DonationService donationService, UserRepository users) {
+                             DonationService donationService) {
         this.quotaService = quotaService;
         this.claims = claims;
         this.donationService = donationService;
-        this.users = users;
     }
 
     @GetMapping("/panom")
     public String dashboard(@AuthenticationPrincipal AppUserDetails principal, Model model) {
-        // Oturumdaki nesne bayat olabilir (ör. admin onayı sonrası) — DB'den tazele
-        User user = users.findById(principal.getUser().getId()).orElse(principal.getUser());
+        User user = principal.getUser();   // FreshPrincipalFilter tarafından tazelenmiş
         model.addAttribute("user", user);
         model.addAttribute("quota", quotaService.quotaFor(user));
         return "panom";

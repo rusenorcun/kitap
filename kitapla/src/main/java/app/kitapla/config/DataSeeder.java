@@ -8,6 +8,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -26,6 +28,7 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${kitapla.admin.email}") private String adminEmail;
     @Value("${kitapla.admin.password}") private String adminPassword;
     @Value("${kitapla.admin.name}") private String adminName;
+    @Value("${kitapla.upload-dir}") private String uploadDir;
 
     public DataSeeder(UserRepository users, BookRepository books, DonationRepository donations,
                       PasswordEncoder encoder, JdbcTemplate jdbc) {
@@ -70,6 +73,18 @@ public class DataSeeder implements CommandLineRunner {
         student.setAddress("Kazımdirik Mah., Bornova / İzmir");
         users.save(student);
 
+        // Yönetim panelinde inceleyecek bir başvuru olsun diye bekleyen bir belge
+        User bekleyen = new User();
+        bekleyen.setName("Mert Kaya");
+        bekleyen.setEmail("mert@ornek.com");
+        bekleyen.setPasswordHash(encoder.encode("sifre123"));
+        bekleyen.setStudentStatus(StudentStatus.PENDING);
+        bekleyen.setSchoolLevel(SchoolLevel.UNIVERSITE);
+        bekleyen.setDocumentNo("UNI-5507");
+        bekleyen.setAddress("Tınaztepe Kampüsü, Buca / İzmir");
+        bekleyen.setDocumentPath(seedDocument());
+        users.save(bekleyen);
+
         record Seed(String title, String author, TargetLevel level, int qty) {}
         List<Seed> seeds = List.of(
                 new Seed("Suç ve Ceza", "Dostoyevski", TargetLevel.UNIVERSITE, 2),
@@ -105,5 +120,23 @@ public class DataSeeder implements CommandLineRunner {
         jdbc.update("UPDATE donations SET created_at = ? WHERE id IN "
                         + "(SELECT id FROM donations ORDER BY id DESC LIMIT 3)",
                 Timestamp.from(Instant.now().minus(3, ChronoUnit.DAYS)));
+    }
+
+    /**
+     * Bekleyen başvuru için örnek bir belge dosyası yazar; yönetim panelindeki
+     * "Belgeyi aç" bağlantısı yerelde de çalışsın diye.
+     */
+    private String seedDocument() {
+        try {
+            Path dir = Path.of(uploadDir, "documents");
+            Files.createDirectories(dir);
+            String fileName = "ornek-ogrenci-belgesi.txt";
+            Files.writeString(dir.resolve(fileName),
+                    "ÖRNEK ÖĞRENCİ BELGESİ\n\nAd Soyad: Mert Kaya\nBelge No: UNI-5507\n"
+                            + "Okul: Örnek Üniversitesi\n\n(Bu dosya yalnızca yerel deneme verisidir.)\n");
+            return fileName;
+        } catch (Exception ex) {
+            return null; // belge yazılamazsa başvuru belgesiz görünür, akış bozulmaz
+        }
     }
 }
