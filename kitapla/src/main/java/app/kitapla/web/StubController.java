@@ -16,7 +16,6 @@ public class StubController {
 
     @GetMapping("/isteklerim") public String istekler(Model m) { return stub(m, "istekler", "İsteklerim"); }
     @GetMapping("/takas")      public String takas(Model m)    { return stub(m, "takas", "Takas"); }
-    @GetMapping("/bagis/yeni") public String bagis(Model m)    { return stub(m, "", "Bağış Oluştur"); }
     @GetMapping("/bildirimler")public String bildirim(Model m) { return stub(m, "", "Bildirimler"); }
     @GetMapping("/profil")     public String profil(Model m)   { return stub(m, "", "Profil"); }
 }

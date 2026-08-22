@@ -16,23 +16,54 @@
     <a class="btn btn-primary" th:href="@{/kesfet}">Bağışları keşfet</a>
   </div>
 
-  <div class="stack gap-12" th:unless="${#lists.isEmpty(claims)}">
-    <div th:each="c : ${claims}" class="card card-pad row gap-16">
-      <div th:if="${!c.donation.book.hasCover()}" class="cover"
-           th:style="'width:48px;height:68px;flex-shrink:0;padding:0;background:' + ${c.donation.book.coverColor}"></div>
-      <img th:if="${c.donation.book.hasCover()}" th:src="${c.donation.book.coverUrl}" alt=""
-           style="width:48px;height:68px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
-      <div style="flex:1">
-        <div style="font-size:16px;font-weight:800" th:text="${c.donation.book.title}">Kitap</div>
-        <div class="muted" style="font-size:13px;font-weight:500">
-          <span th:text="${c.donation.book.author}">Yazar</span> ·
-          <span th:text="${c.donation.donor.name}">Bağışçı</span>
+  <div class="stack gap-14" th:unless="${#lists.isEmpty(claims)}">
+    <div th:each="c : ${claims}" class="card card-pad">
+      <div class="row gap-16">
+        <div th:if="${!c.donation.book.hasCover()}" class="cover"
+             th:style="'width:52px;height:74px;flex-shrink:0;padding:0;background:' + ${c.donation.book.coverColor}"></div>
+        <img th:if="${c.donation.book.hasCover()}" th:src="${c.donation.book.coverUrl}" alt=""
+             style="width:52px;height:74px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+        <div style="flex:1">
+          <div style="font-size:16px;font-weight:800" th:text="${c.donation.book.title}">Kitap</div>
+          <div class="muted" style="font-size:13px;font-weight:500">
+            <span th:text="${c.donation.book.author}">Yazar</span> ·
+            <span th:text="${c.donation.donor.name}">Bağışçı</span>
+          </div>
         </div>
+        <span class="badge"
+              th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
+              th:text="${c.status.name() == 'MATCHED'} ? 'Kargo bekleniyor'
+                     : (${c.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
       </div>
-      <span class="badge"
-            th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
-            th:text="${c.status.name() == 'MATCHED'} ? 'Eşleşti · kargo bekleniyor'
-                   : (${c.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
+
+      <!-- Teslimat adımları -->
+      <div class="row gap-8" style="margin:16px 4px 6px">
+        <span style="width:20px;height:20px;border-radius:50%;background:var(--sage);flex-shrink:0"></span>
+        <span style="flex:1;height:3px" th:style="'flex:1;height:3px;background:' + (${c.status.name() != 'MATCHED'} ? 'var(--sage)' : 'var(--line)')"></span>
+        <span style="width:20px;height:20px;border-radius:50%;flex-shrink:0"
+              th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${c.status.name() != 'MATCHED'} ? 'var(--sage)' : 'var(--line)')"></span>
+        <span style="flex:1;height:3px" th:style="'flex:1;height:3px;background:' + (${c.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+        <span style="width:20px;height:20px;border-radius:50%;flex-shrink:0"
+              th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${c.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+      </div>
+      <div class="row muted" style="justify-content:space-between;font-size:11px;font-weight:600;margin:0 0 14px">
+        <span>Eşleşti</span><span>Kargoda</span><span>Teslim</span>
+      </div>
+
+      <div class="row gap-8" style="justify-content:flex-end">
+        <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/iptal'}" method="post">
+          <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">İptal et</button>
+        </form>
+        <form th:if="${c.status.name() != 'DELIVERED'}" th:action="@{'/teslimat/' + ${c.id} + '/teslim-aldim'}" method="post">
+          <button class="btn btn-sage btn-sm" type="submit">Teslim aldım</button>
+        </form>
+        <form th:if="${c.status.name() == 'DELIVERED'}" th:action="@{'/teslimat/' + ${c.id} + '/tesekkur'}" method="post"
+              class="row gap-8">
+          <input class="input" name="message" placeholder="Teşekkür notun (isteğe bağlı)"
+                 style="padding:9px 12px;font-size:13px;width:260px"/>
+          <button class="btn btn-primary btn-sm" type="submit">Teşekkür et</button>
+        </form>
+      </div>
     </div>
   </div>
 </div>

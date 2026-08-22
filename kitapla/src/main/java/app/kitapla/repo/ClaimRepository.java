@@ -10,6 +10,7 @@ import org.springframework.data.repository.query.Param;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 public interface ClaimRepository extends JpaRepository<Claim, Long> {
     long countByDonation(Donation donation);
@@ -23,6 +24,24 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
            order by c.createdAt desc
            """)
     List<Claim> findByStudentWithDetails(@Param("student") User student);
+
+    @Query("""
+           select c from Claim c
+           join fetch c.donation d
+           join fetch d.book
+           join fetch d.donor
+           join fetch c.student
+           where c.id = :id
+           """)
+    Optional<Claim> findByIdWithDetails(@Param("id") Long id);
+
+    @Query("""
+           select c from Claim c
+           join fetch c.student
+           where c.donation = :donation
+           order by c.createdAt
+           """)
+    List<Claim> findByDonationWithStudent(@Param("donation") Donation donation);
 
     List<Claim> findByStudentOrderByCreatedAtDesc(User student);
     List<Claim> findByDonation(Donation donation);

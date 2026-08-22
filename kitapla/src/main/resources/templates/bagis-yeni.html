@@ -1,0 +1,127 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Bağış oluştur')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:1000px">
+  <h1 style="font-size:28px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Bağış oluştur</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 24px">Alışveriş linkini yapıştır, başlık ve kapak otomatik gelsin — ya da bilgileri elle gir.</p>
+
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <form th:action="@{/bagis/yeni}" method="post"
+        style="display:grid; grid-template-columns:1fr 320px; gap:30px; align-items:start;">
+
+    <div>
+      <!-- Link + HTMX önizleme -->
+      <div class="field">
+        <label class="label" for="purchaseLink">Alışveriş linki <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+        <div class="row gap-8">
+          <input class="input" id="purchaseLink" name="purchaseLink" type="url"
+                 placeholder="https://..." th:value="${form?.purchaseLink}" style="flex:1"/>
+          <button class="btn btn-sage" type="button"
+                  hx-post="/bagis/onizleme" hx-include="#purchaseLink"
+                  hx-target="#onizleme" hx-indicator="#og-yukleniyor">Getir</button>
+        </div>
+        <div id="og-yukleniyor" class="htmx-indicator muted" style="font-size:12px;margin-top:6px">linkten bilgiler alınıyor…</div>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div class="field">
+          <label class="label" for="title">Kitap adı</label>
+          <input class="input" id="title" name="title" th:value="${form?.title}" placeholder="Örn. Simyacı"/>
+        </div>
+        <div class="field">
+          <label class="label" for="author">Yazar</label>
+          <input class="input" id="author" name="author" th:value="${form?.author}" placeholder="Örn. Paulo Coelho"/>
+        </div>
+      </div>
+      <input type="hidden" id="coverUrl" name="coverUrl"/>
+
+      <div style="display:grid;grid-template-columns:140px 1fr;gap:16px">
+        <div class="field">
+          <label class="label" for="quantity">Adet</label>
+          <input class="input" id="quantity" name="quantity" type="number" min="1" max="50"
+                 th:value="${form != null ? form.quantity : 1}"/>
+        </div>
+        <div class="field">
+          <label class="label" for="targetLevel">Kime uygun</label>
+          <select class="input" id="targetLevel" name="targetLevel">
+            <option value="HEPSI" th:selected="${form == null or form.targetLevel == 'HEPSI'}">Herkese açık</option>
+            <option value="ORTAOKUL" th:selected="${form?.targetLevel == 'ORTAOKUL'}">Ortaokul</option>
+            <option value="LISE" th:selected="${form?.targetLevel == 'LISE'}">Lise</option>
+            <option value="UNIVERSITE" th:selected="${form?.targetLevel == 'UNIVERSITE'}">Üniversite</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="field">
+        <div class="label">Nasıl göndereceksin?</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <label class="card card-pad row gap-12" style="cursor:pointer;padding:14px">
+            <input type="radio" name="source" value="PURCHASE" style="accent-color:var(--accent)"
+                   th:checked="${form == null or form.source == null or form.source == 'PURCHASE'}"/>
+            <span style="font-size:14px;font-weight:800">Satın alıp göndereceğim</span>
+          </label>
+          <label class="card card-pad row gap-12" style="cursor:pointer;padding:14px">
+            <input type="radio" name="source" value="OWN" style="accent-color:var(--accent)"
+                   th:checked="${form?.source == 'OWN'}"/>
+            <span style="font-size:14px;font-weight:800">Elimdeki kopya</span>
+          </label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="label" for="description">Açıklama <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+        <textarea class="input" id="description" name="description"
+                  placeholder="Kitabın durumu, teslim tercihi…" th:text="${form?.description}"></textarea>
+      </div>
+    </div>
+
+    <!-- Önizleme sütunu -->
+    <aside style="position:sticky; top:88px">
+      <div class="label">Önizleme</div>
+      <div id="onizleme">
+        <div th:replace="~{bagis-yeni :: onizleme}"></div>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:14px">Bağışı yayınla</button>
+      <p class="muted" style="font-size:12px;font-weight:500;line-height:1.5;margin:10px 0 0">
+        Yayınlandıktan sonra ilk 48 saat yalnızca öğrenciler alabilir.</p>
+    </aside>
+  </form>
+</div>
+
+<!-- HTMX ile değişen önizleme parçası -->
+<div th:fragment="onizleme" class="card card-pad" style="text-align:center">
+  <div th:if="${meta == null}">
+    <div class="cover" style="height:170px;width:120px;margin:0 auto 12px;background:var(--line);box-shadow:none"></div>
+    <p class="muted" style="font-size:13px;font-weight:500;margin:0">Link getirince ya da başlığı yazınca burada görünecek.</p>
+  </div>
+
+  <div th:if="${meta != null and bulunamadi}">
+    <p class="muted" style="font-size:13px;font-weight:500;margin:0">
+      Bu linkten bilgi alınamadı. Kitap adını ve yazarını elle yazabilirsin.</p>
+  </div>
+
+  <div th:if="${meta != null and !bulunamadi}">
+    <img th:if="${meta.imageUrl}" th:src="${meta.imageUrl}" alt=""
+         style="height:180px;border-radius:10px;box-shadow:var(--shadow);margin-bottom:12px"/>
+    <div style="font-size:17px;font-weight:800" th:text="${meta.title}">Başlık</div>
+    <div class="muted" style="font-size:13px;font-weight:500" th:text="${meta.author} ?: 'Yazarı elle gir'">Yazar</div>
+    <div class="badge badge-sage" style="margin-top:12px">Linkten alındı</div>
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      (function () {
+        var t = /*[[${meta.title}]]*/ null, a = /*[[${meta.author}]]*/ null, c = /*[[${meta.imageUrl}]]*/ null;
+        var ti = document.getElementById('title'), ai = document.getElementById('author'), ci = document.getElementById('coverUrl');
+        if (ti && t && !ti.value) ti.value = t;
+        if (ai && a && !ai.value) ai.value = a;
+        if (ci && c) ci.value = c;
+      })();
+      /*]]>*/
+    </script>
+  </div>
+</div>
+</body>
+</html>

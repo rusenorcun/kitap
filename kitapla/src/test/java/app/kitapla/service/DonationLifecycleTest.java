@@ -1,0 +1,218 @@
+package app.kitapla.service;
+
+import app.kitapla.domain.*;
+import app.kitapla.repo.*;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+/** Bağış oluşturma, yönetimi ve teslimat akışı. */
+@SpringBootTest
+@ActiveProfiles("test")
+class DonationLifecycleTest {
+
+    @Autowired DonationService donationService;
+    @Autowired BookService bookService;
+    @Autowired UserRepository users;
+    @Autowired ClaimRepository claims;
+    @Autowired NotificationRepository notifications;
+    @Autowired JdbcTemplate jdbc;
+
+    private User user(String tag, boolean student, String address) {
+        User u = new User();
+        u.setName("Kişi " + tag);
+        u.setEmail(tag + "-" + UUID.randomUUID() + "@test.local");
+        u.setPasswordHash("x");
+        u.setAddress(address);
+        if (student) {
+            u.setStudentStatus(StudentStatus.APPROVED);
+            u.setSchoolLevel(SchoolLevel.LISE);
+        }
+        return users.save(u);
+    }
+
+    private Donation newDonation(User donor, int qty) {
+        Book b = bookService.findOrCreate("Kitap " + UUID.randomUUID(), "Yazar", null, null, null, donor.getId());
+        return donationService.create(donor, b, qty, TargetLevel.HEPSI, DonationSource.OWN, "Temiz durumda");
+    }
+
+    private void backdate(Donation d, long days) {
+        jdbc.update("UPDATE donations SET created_at = ? WHERE id = ?",
+                Timestamp.from(Instant.now().minus(days, ChronoUnit.DAYS)), d.getId());
+    }
+
+    @Test
+    void bagisOlusturulurVeAcikListedeGorunur() {
+        User donor = user("bagisci", false, "İzmir");
+        Donation d = newDonation(donor, 2);
+
+        assertThat(d.getId()).isNotNull();
+        assertThat(d.getStatus()).isEqualTo(DonationStatus.OPEN);
+        assertThat(d.isPriorityActive()).isTrue();
+        assertThat(donationService.myDonations(donor)).extracting(DonationView::getId).contains(d.getId());
+    }
+
+    @Test
+    void adressizKullaniciBagisYapamaz() {
+        User donor = user("adressiz", false, null);
+        Book b = bookService.findOrCreate("Adressiz Kitap", "Y", null, null, null, null);
+        assertThatThrownBy(() -> donationService.create(donor, b, 1, TargetLevel.HEPSI, DonationSource.OWN, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("adres");
+    }
+
+    @Test
+    void gecersizAdetReddedilir() {
+        User donor = user("bagisci", false, "İzmir");
+        Book b = bookService.findOrCreate("Adet Kitabı", "Y", null, null, null, null);
+        assertThatThrownBy(() -> donationService.create(donor, b, 0, TargetLevel.HEPSI, DonationSource.OWN, null))
+                .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void teslimatAkisiKargolaTeslimTesekkur() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        Donation d = newDonation(donor, 1);
+
+        Claim c = donationService.claim(d.getId(), ogrenci);
+        assertThat(c.getStatus()).isEqualTo(ClaimStatus.MATCHED);
+
+        donationService.ship(c.getId(), donor);
+        assertThat(claims.findById(c.getId()).orElseThrow().getStatus()).isEqualTo(ClaimStatus.SHIPPED);
+        assertThat(notifications.findTop50ByUserOrderByCreatedAtDesc(ogrenci))
+                .extracting(Notification::getType).contains("claim_shipped");
+
+        donationService.deliver(c.getId(), ogrenci);
+        Claim delivered = claims.findById(c.getId()).orElseThrow();
+        assertThat(delivered.getStatus()).isEqualTo(ClaimStatus.DELIVERED);
+        assertThat(delivered.getDeliveredAt()).isNotNull();
+
+        donationService.thank(c.getId(), ogrenci, "Çok teşekkürler!");
+        assertThat(notifications.findTop50ByUserOrderByCreatedAtDesc(donor))
+                .extracting(Notification::getType).contains("claim_delivered", "thank_you");
+    }
+
+    @Test
+    void teslimAlinmadanTesekkurEdilemez() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        Donation d = newDonation(donor, 1);
+        Claim c = donationService.claim(d.getId(), ogrenci);
+
+        assertThatThrownBy(() -> donationService.thank(c.getId(), ogrenci, "erken"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("teslim aldığın");
+    }
+
+    @Test
+    void baskasininTeslimatKaydinaMudahaleEdilemez() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        User yabanci = user("yabanci", true, "Bursa");
+        Donation d = newDonation(donor, 1);
+        Claim c = donationService.claim(d.getId(), ogrenci);
+
+        assertThatThrownBy(() -> donationService.ship(c.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> donationService.deliver(c.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void iptalAdediGeriAcarVeBagisiYenidenAcar() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        Donation d = newDonation(donor, 1);
+
+        Claim c = donationService.claim(d.getId(), ogrenci);
+        assertThat(donationService.view(d.getId()).orElseThrow().donation().getStatus()).isEqualTo(DonationStatus.CLOSED);
+
+        donationService.cancelClaim(c.getId(), ogrenci);
+
+        DonationView v = donationService.view(d.getId()).orElseThrow();
+        assertThat(v.getRemaining()).isEqualTo(1);
+        assertThat(v.donation().getStatus()).isEqualTo(DonationStatus.OPEN);
+        assertThat(notifications.findTop50ByUserOrderByCreatedAtDesc(donor))
+                .extracting(Notification::getType).contains("claim_cancelled");
+    }
+
+    @Test
+    void kargolandiktanSonraIptalEdilemez() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        Donation d = newDonation(donor, 1);
+        Claim c = donationService.claim(d.getId(), ogrenci);
+        donationService.ship(c.getId(), donor);
+
+        assertThatThrownBy(() -> donationService.cancelClaim(c.getId(), ogrenci))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("iptal edilemez");
+    }
+
+    @Test
+    void bagisKapatilipYenidenAcilabilir() {
+        User donor = user("bagisci", false, "İzmir");
+        Donation d = newDonation(donor, 2);
+
+        donationService.close(d.getId(), donor);
+        assertThat(donationService.view(d.getId()).orElseThrow().donation().getStatus()).isEqualTo(DonationStatus.CLOSED);
+
+        donationService.reopen(d.getId(), donor);
+        assertThat(donationService.view(d.getId()).orElseThrow().donation().getStatus()).isEqualTo(DonationStatus.OPEN);
+    }
+
+    @Test
+    void talepsizBagisSilinirTalepliSilinemez() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+
+        Donation bos = newDonation(donor, 1);
+        donationService.delete(bos.getId(), donor);
+        assertThat(donationService.view(bos.getId())).isEmpty();
+
+        Donation dolu = newDonation(donor, 1);
+        donationService.claim(dolu.getId(), ogrenci);
+        assertThatThrownBy(() -> donationService.delete(dolu.getId(), donor))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("silinemez");
+    }
+
+    @Test
+    void baskasininBagisiYonetilemez() {
+        User donor = user("bagisci", false, "İzmir");
+        User yabanci = user("yabanci", false, "Bursa");
+        Donation d = newDonation(donor, 1);
+
+        assertThatThrownBy(() -> donationService.close(d.getId(), yabanci))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sana ait değil");
+        assertThatThrownBy(() -> donationService.delete(d.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void iptalSonrasiKotaSerbestKalir() {
+        User donor = user("bagisci", false, "İzmir");
+        User uye = user("uye", false, "Ankara");   // üye: haftada 1
+
+        Donation d1 = newDonation(donor, 1);
+        backdate(d1, 3);
+        Claim c = donationService.claim(d1.getId(), uye);
+
+        Donation d2 = newDonation(donor, 1);
+        backdate(d2, 3);
+        assertThat(donationService.eligibility(donationService.view(d2.getId()).orElseThrow(), uye).code())
+                .isEqualTo("QUOTA_FULL");
+
+        donationService.cancelClaim(c.getId(), uye);
+        assertThat(donationService.eligibility(donationService.view(d2.getId()).orElseThrow(), uye).allowed()).isTrue();
+    }
+}
