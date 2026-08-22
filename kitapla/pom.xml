@@ -54,6 +54,13 @@
       <version>1.9.12</version>
     </dependency>
 
+    <!-- OpenGraph üst verisi (alışveriş linkinden başlık/kapak) -->
+    <dependency>
+      <groupId>org.jsoup</groupId>
+      <artifactId>jsoup</artifactId>
+      <version>1.18.1</version>
+    </dependency>
+
     <!-- Dev veritabanı -->
     <dependency>
       <groupId>com.h2database</groupId>

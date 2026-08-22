@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Bir şeyler ters gitti')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+<div class="container" style="padding:90px 32px; text-align:center;">
+  <h1 style="font-size:28px; font-weight:800; letter-spacing:-.6px; margin:0 0 8px">Bir şeyler ters gitti</h1>
+  <p class="muted" style="font-weight:500; margin:0 0 6px">İşlemi tamamlayamadık. Lütfen tekrar deneyin.</p>
+  <p class="muted" style="font-size:13px; margin:0 0 26px" th:if="${status}">Durum kodu: <span th:text="${status}">500</span></p>
+  <a class="btn btn-primary" th:href="@{/}">Ana sayfaya dön</a>
+</div>
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

@@ -21,8 +21,11 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/", "/sss", "/kesif/**", "/register", "/login",
-                        "/css/**", "/js/**", "/webjars/**", "/uploads/**", "/favicon.ico", "/h2/**").permitAll()
+                // Herkese açık: tanıtım sayfaları, keşif ve kitap detayı, kimlik, statik dosyalar.
+                // Öğrenci belgeleri BİLEREK dışarıda: yalnızca /admin ucundan erişilir.
+                .requestMatchers("/", "/sss", "/kesfet", "/kitap/**", "/register", "/login",
+                        "/css/**", "/js/**", "/webjars/**", "/uploads/covers/**",
+                        "/favicon.ico", "/error", "/h2/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
             )
