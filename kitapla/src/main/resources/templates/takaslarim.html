@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Takaslarım')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('takas')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:860px">
+  <div class="row" style="justify-content:space-between; margin-bottom:20px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Takaslarım</h1>
+    <a class="btn btn-soft btn-sm" th:href="@{/takas}">Takasa dön</a>
+  </div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+
+  <div th:if="${#lists.isEmpty(incoming) and #lists.isEmpty(outgoing)}" class="card card-pad"
+       style="text-align:center;padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz takas teklifin yok</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">Takastaki kitaplara göz at ve teklif ver.</p>
+    <a class="btn btn-primary" th:href="@{/takas}">Takasa göz at</a>
+  </div>
+
+  <th:block th:unless="${#lists.isEmpty(incoming)}">
+    <div class="label" style="margin:8px 0 12px">Gelen teklifler</div>
+    <div class="stack gap-14" style="margin-bottom:26px">
+      <th:block th:each="o : ${incoming}">
+        <div th:replace="~{takas-fragments :: offerCard(${o}, true, ${svc}, ${me})}"></div>
+      </th:block>
+    </div>
+  </th:block>
+
+  <th:block th:unless="${#lists.isEmpty(outgoing)}">
+    <div class="label" style="margin:8px 0 12px">Gönderdiğim teklifler</div>
+    <div class="stack gap-14">
+      <th:block th:each="o : ${outgoing}">
+        <div th:replace="~{takas-fragments :: offerCard(${o}, false, ${svc}, ${me})}"></div>
+      </th:block>
+    </div>
+  </th:block>
+</div>
+</body>
+</html>

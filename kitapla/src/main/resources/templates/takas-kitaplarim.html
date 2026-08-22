@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Takas kitaplarım')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('takas')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:800px">
+  <div class="row" style="justify-content:space-between; margin-bottom:6px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Takas kitaplarım</h1>
+    <a class="btn btn-soft btn-sm" th:href="@{/takas}">Takasa dön</a>
+  </div>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">Takasa açtıkların diğer üyelere görünür.</p>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <form th:action="@{/takas/kitaplarim}" method="post" class="card card-pad" style="margin-bottom:22px">
+    <div class="label" style="margin-bottom:10px">Kitap ekle</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <input class="input" name="title" placeholder="Kitap adı" required/>
+      <input class="input" name="author" placeholder="Yazar (isteğe bağlı)"/>
+    </div>
+    <input class="input" name="note" placeholder="Karşılığında ne istersin? Örn. distopya / klasik" style="margin-top:12px"/>
+    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px">Takasa aç</button>
+  </form>
+
+  <div th:if="${#lists.isEmpty(books)}" class="card card-pad" style="text-align:center;padding:48px 24px">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Henüz takasa kitap açmadın</div>
+    <p class="muted" style="font-weight:500;margin:0">Yukarıdaki formla ilk kitabını ekleyebilirsin.</p>
+  </div>
+
+  <div class="stack gap-12" th:unless="${#lists.isEmpty(books)}">
+    <div th:each="s : ${books}" class="card card-pad row gap-14">
+      <div th:if="${!s.book.hasCover()}" class="cover"
+           th:style="'width:46px;height:64px;flex-shrink:0;padding:0;background:' + ${s.book.coverColor}"></div>
+      <img th:if="${s.book.hasCover()}" th:src="${s.book.coverUrl}" alt=""
+           style="width:46px;height:64px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+      <div style="flex:1">
+        <div style="font-size:15px;font-weight:800" th:text="${s.book.title}">Kitap</div>
+        <div class="muted" style="font-size:12px;font-weight:500" th:text="${s.book.author}">Yazar</div>
+        <span class="badge" style="margin-top:7px"
+              th:classappend="${s.status.name() == 'OPEN'} ? 'badge-sage' : 'badge-muted'"
+              th:text="${s.status.name() == 'OPEN'} ? 'Takasta' : 'Kapalı'">Durum</span>
+      </div>
+      <div class="row gap-8">
+        <form th:action="@{'/takas/kitaplarim/' + ${s.id} + '/durum'}" method="post">
+          <input type="hidden" name="status" th:value="${s.status.name() == 'OPEN'} ? 'CLOSED' : 'OPEN'"/>
+          <button class="btn btn-soft btn-sm" type="submit"
+                  th:text="${s.status.name() == 'OPEN'} ? 'Gizle' : 'Aç'">Gizle</button>
+        </form>
+        <form th:action="@{'/takas/kitaplarim/' + ${s.id} + '/sil'}" method="post">
+          <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Kaldır</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Takas teklifi')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('takas')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:680px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 20px">Takas teklifi</h1>
+
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <!-- Alacağın kitap -->
+  <div class="card card-pad row gap-14" style="margin-bottom:18px">
+    <div th:if="${!target.book.hasCover()}" class="cover"
+         th:style="'width:56px;height:80px;flex-shrink:0;padding:0;background:' + ${target.book.coverColor}"></div>
+    <img th:if="${target.book.hasCover()}" th:src="${target.book.coverUrl}" alt=""
+         style="width:56px;height:80px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+    <div style="flex:1">
+      <div class="muted" style="font-size:11px;font-weight:700;text-transform:uppercase">Alacağın</div>
+      <div style="font-size:17px;font-weight:800" th:text="${target.book.title}">Kitap</div>
+      <div class="muted" style="font-size:13px;font-weight:500">
+        <span th:text="${target.book.author}">Yazar</span> · <span th:text="${target.user.name}">Sahibi</span>
+      </div>
+      <p th:if="${target.note}" class="muted" style="font-size:12px;font-weight:600;margin:8px 0 0"
+         th:text="'İster: ' + ${target.note}">İster</p>
+    </div>
+  </div>
+
+  <div th:if="${#lists.isEmpty(myBooks)}" class="card card-pad" style="text-align:center;padding:40px 24px">
+    <div style="font-size:17px;font-weight:800;margin-bottom:8px">Teklif verecek kitabın yok</div>
+    <p class="muted" style="font-weight:500;margin:0 0 18px">Önce kendi kitaplarından birini takasa açmalısın.</p>
+    <a class="btn btn-primary" th:href="@{/takas/kitaplarim}">Kitap ekle</a>
+  </div>
+
+  <form th:unless="${#lists.isEmpty(myBooks)}" th:action="@{'/takas/teklif/' + ${target.id}}" method="post" class="card card-pad">
+    <div class="label" style="margin-bottom:10px">Karşılığında vereceğin kitap</div>
+    <div class="stack gap-8" style="margin-bottom:16px">
+      <label th:each="b, it : ${myBooks}" class="row gap-12" style="cursor:pointer;border:1px solid var(--line);border-radius:12px;padding:11px">
+        <input type="radio" name="offeredId" th:value="${b.id}" th:checked="${it.index == 0}" required style="accent-color:var(--accent)"/>
+        <div th:if="${!b.book.hasCover()}" class="cover"
+             th:style="'width:34px;height:48px;flex-shrink:0;padding:0;background:' + ${b.book.coverColor}"></div>
+        <div style="flex:1">
+          <div style="font-size:14px;font-weight:700" th:text="${b.book.title}">Kitap</div>
+          <div class="muted" style="font-size:12px;font-weight:500" th:text="${b.book.author}">Yazar</div>
+        </div>
+      </label>
+    </div>
+
+    <div class="field">
+      <label class="label" for="message">Mesaj <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <textarea class="input" id="message" name="message" placeholder="Merhaba, bu takas ilgini çeker mi?"></textarea>
+    </div>
+
+    <button class="btn btn-primary btn-block" type="submit">Teklifi gönder</button>
+    <p class="muted" style="font-size:12px;font-weight:500;text-align:center;margin:10px 0 0">
+      Adresler yalnızca teklif kabul edilirse paylaşılır.</p>
+  </form>
+</div>
+</body>
+</html>
