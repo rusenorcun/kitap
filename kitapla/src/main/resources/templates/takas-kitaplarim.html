@@ -11,16 +11,16 @@
   </div>
   <p class="muted" style="font-weight:500;margin:0 0 22px">Takasa açtıkların diğer üyelere görünür.</p>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <form th:action="@{/takas/kitaplarim}" method="post" class="card card-pad" style="margin-bottom:22px">
     <div class="label" style="margin-bottom:10px">Kitap ekle</div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <input class="input" name="title" placeholder="Kitap adı" required/>
-      <input class="input" name="author" placeholder="Yazar (isteğe bağlı)"/>
+    <div class="duo-sm">
+      <input class="input" name="title" aria-label="Kitap adı" placeholder="Kitap adı" required/>
+      <input class="input" name="author" aria-label="Yazar" placeholder="Yazar (isteğe bağlı)"/>
     </div>
-    <input class="input" name="note" placeholder="Karşılığında ne istersin? Örn. distopya / klasik" style="margin-top:12px"/>
+    <input class="input" name="note" aria-label="Takas notu" placeholder="Karşılığında ne istersin? Örn. distopya / klasik" style="margin-top:12px"/>
     <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px">Takasa aç</button>
   </form>
 

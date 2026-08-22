@@ -8,10 +8,10 @@
   <h1 style="font-size:28px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Bağış oluştur</h1>
   <p class="muted" style="font-weight:500;margin:0 0 24px">Alışveriş linkini yapıştır, başlık ve kapak otomatik gelsin — ya da bilgileri elle gir.</p>
 
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <form th:action="@{/bagis/yeni}" method="post"
-        style="display:grid; grid-template-columns:1fr 320px; gap:30px; align-items:start;">
+        class="split-main">
 
     <div>
       <!-- Link + HTMX önizleme -->
@@ -27,7 +27,7 @@
         <div id="og-yukleniyor" class="htmx-indicator muted" style="font-size:12px;margin-top:6px">linkten bilgiler alınıyor…</div>
       </div>
 
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="duo">
         <div class="field">
           <label class="label" for="title">Kitap adı</label>
           <input class="input" id="title" name="title" th:value="${form?.title}" placeholder="Örn. Simyacı"/>
@@ -39,7 +39,7 @@
       </div>
       <input type="hidden" id="coverUrl" name="coverUrl"/>
 
-      <div style="display:grid;grid-template-columns:140px 1fr;gap:16px">
+      <div class="split-qty">
         <div class="field">
           <label class="label" for="quantity">Adet</label>
           <input class="input" id="quantity" name="quantity" type="number" min="1" max="50"
@@ -58,7 +58,7 @@
 
       <div class="field">
         <div class="label">Nasıl göndereceksin?</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="duo-sm">
           <label class="card card-pad row gap-12" style="cursor:pointer;padding:14px">
             <input type="radio" name="source" value="PURCHASE" style="accent-color:var(--accent)"
                    th:checked="${form == null or form.source == null or form.source == 'PURCHASE'}"/>

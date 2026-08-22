@@ -7,8 +7,8 @@
 <div class="container" style="padding-top:28px; padding-bottom:48px; max-width:760px">
   <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 20px">Hesap ayarları</h1>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <!-- Kimlik + durum -->
   <div class="card card-pad" style="margin-bottom:18px">
@@ -101,7 +101,7 @@
       <label class="label" for="currentPassword">Mevcut şifren</label>
       <input class="input" type="password" id="currentPassword" name="currentPassword" required/>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="duo">
       <div class="field">
         <label class="label" for="newPassword">Yeni şifre</label>
         <input class="input" type="password" id="newPassword" name="newPassword" required placeholder="en az 6 karakter"/>

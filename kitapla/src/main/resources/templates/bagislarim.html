@@ -10,8 +10,8 @@
     <a class="btn btn-primary" th:href="@{/bagis/yeni}">Yeni bağış</a>
   </div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <div th:if="${#lists.isEmpty(donations)}" class="card card-pad" style="text-align:center; padding:56px 24px">
     <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz bağış yapmadın</div>

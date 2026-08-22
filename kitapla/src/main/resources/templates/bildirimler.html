@@ -12,7 +12,7 @@
     </form>
   </div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
 
   <div id="liste" th:fragment="liste">
     <div th:if="${#lists.isEmpty(notifications)}" class="card card-pad" style="text-align:center;padding:56px 24px">

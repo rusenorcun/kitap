@@ -14,8 +14,8 @@
   </div>
   <p class="muted" style="font-weight:500;margin:0 0 22px">Elindeki kitabı ver, istediğini al. Kotadan bağımsız.</p>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <!-- Kendi kitabın yoksa uyar -->
   <div th:if="${#lists.isEmpty(myOpenBooks)}" class="card card-pad row gap-12"
@@ -27,11 +27,11 @@
     <a class="btn btn-sage btn-sm" th:href="@{/takas/kitaplarim}">Kitap ekle</a>
   </div>
 
-  <div style="display:grid; grid-template-columns:1fr 320px; gap:28px; align-items:start">
+  <div class="split-main">
     <!-- Takasa açık kitaplar -->
     <section>
       <form th:action="@{/takas}" method="get" class="row gap-8" style="margin-bottom:18px">
-        <input class="input" type="search" name="q" th:value="${q}" placeholder="Takastaki kitaplarda ara" style="max-width:300px"/>
+        <input class="input" type="search" name="q" aria-label="Takastaki kitaplarda ara" th:value="${q}" placeholder="Takastaki kitaplarda ara" style="max-width:300px"/>
         <button class="btn btn-soft btn-sm" type="submit">Ara</button>
       </form>
 

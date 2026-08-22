@@ -7,8 +7,8 @@
 <div class="container" style="padding-top:28px; padding-bottom:48px; max-width:900px">
   <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 20px">Aldığım kitaplar</h1>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <div th:if="${#lists.isEmpty(claims)}" class="card card-pad" style="text-align:center; padding:56px 24px">
     <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz kitap almadın</div>
@@ -59,7 +59,7 @@
         </form>
         <form th:if="${c.status.name() == 'DELIVERED'}" th:action="@{'/teslimat/' + ${c.id} + '/tesekkur'}" method="post"
               class="row gap-8">
-          <input class="input" name="message" placeholder="Teşekkür notun (isteğe bağlı)"
+          <input class="input" name="message" aria-label="Teşekkür notu" placeholder="Teşekkür notun (isteğe bağlı)"
                  style="padding:9px 12px;font-size:13px;width:260px"/>
           <button class="btn btn-primary btn-sm" type="submit">Teşekkür et</button>
         </form>

@@ -10,8 +10,8 @@
     <a class="btn btn-soft btn-sm" th:href="@{/takas}">Takasa dön</a>
   </div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
 
   <div th:if="${#lists.isEmpty(incoming) and #lists.isEmpty(outgoing)}" class="card card-pad"

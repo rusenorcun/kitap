@@ -1,6 +1,10 @@
-node_modules/
+# Derleme çıktıları
+target/
+
+# Yerel veritabanı ve yüklenen dosyalar
 data/
 uploads/
+
 *.log
 .env
 .DS_Store

@@ -13,8 +13,8 @@
 
   <div th:replace="~{fragments :: adminnav('pano')}"></div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <!-- Bekleyen iş varsa en üstte -->
   <div th:if="${stats.pendingDocuments() > 0}" class="card card-pad row gap-14"

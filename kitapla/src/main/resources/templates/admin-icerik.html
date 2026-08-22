@@ -12,8 +12,8 @@
 
   <div th:replace="~{fragments :: adminnav('icerik')}"></div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <!-- Bağışlar -->
   <h2 style="font-size:16px;font-weight:800;margin:8px 0 12px">
@@ -30,7 +30,7 @@
       </div>
       <form th:action="@{'/admin/icerik/bagis/' + ${d.id} + '/kaldir'}" method="post"
             class="row gap-8" style="margin:0;flex:1;min-width:240px">
-        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <input class="input" type="text" name="reason" aria-label="Kaldırma gerekçesi" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
         <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
       </form>
     </div>
@@ -50,7 +50,7 @@
       </div>
       <form th:action="@{'/admin/icerik/istek/' + ${r.id} + '/kaldir'}" method="post"
             class="row gap-8" style="margin:0;flex:1;min-width:240px">
-        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <input class="input" type="text" name="reason" aria-label="Kaldırma gerekçesi" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
         <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
       </form>
     </div>
@@ -70,7 +70,7 @@
       </div>
       <form th:action="@{'/admin/icerik/takas/' + ${s.id} + '/kaldir'}" method="post"
             class="row gap-8" style="margin:0;flex:1;min-width:240px">
-        <input class="input" type="text" name="reason" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
+        <input class="input" type="text" name="reason" aria-label="Kaldırma gerekçesi" placeholder="Gerekçe (isteğe bağlı)" style="flex:1"/>
         <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Kaldır</button>
       </form>
     </div>

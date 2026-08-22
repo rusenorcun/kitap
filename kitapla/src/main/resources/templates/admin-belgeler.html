@@ -12,8 +12,8 @@
 
   <div th:replace="~{fragments :: adminnav('belgeler')}"></div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <div th:if="${#lists.isEmpty(bekleyenler)}" class="card card-pad" style="text-align:center;padding:56px 24px">
     <div style="font-size:19px;font-weight:800;margin-bottom:8px">İncelemede belge yok</div>
@@ -44,7 +44,7 @@
         </form>
         <form th:action="@{'/admin/belgeler/' + ${u.id} + '/reddet'}" method="post"
               class="row gap-8" style="margin:0;flex:1;min-width:220px">
-          <input class="input" type="text" name="reason" placeholder="Ret gerekçesi (isteğe bağlı)"
+          <input class="input" type="text" name="reason" aria-label="Ret gerekçesi" placeholder="Ret gerekçesi (isteğe bağlı)"
                  style="flex:1;min-width:140px"/>
           <button class="btn btn-soft btn-sm" type="submit">Reddet</button>
         </form>

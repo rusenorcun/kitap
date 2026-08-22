@@ -2,7 +2,7 @@
 <html lang="tr" xmlns:th="http://www.thymeleaf.org">
 <head th:replace="~{fragments :: head('KİTAPLA — Giriş')}"></head>
 <body>
-<div style="min-height:100vh; display:grid; grid-template-columns:minmax(0,520px) 1fr;">
+<div class="split-auth" style="min-height:100vh">
   <!-- SOL marka -->
   <div style="background:var(--espresso); color:#F3EAD3; padding:48px; display:flex; flex-direction:column; position:relative; overflow:hidden;">
     <a class="brand" th:href="@{/}" style="color:#F3EAD3">
@@ -19,9 +19,12 @@
       <h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px">Tekrar hoş geldin</h1>
       <p class="muted" style="margin:0 0 24px;font-weight:500">Hesabına giriş yap.</p>
 
-      <div th:if="${param.error}" class="alert alert-error">E-posta veya şifre hatalı.</div>
-      <div th:if="${param.cikis}" class="alert alert-ok">Çıkış yapıldı.</div>
-      <div th:if="${param.kayit}" class="alert alert-ok">Kaydın oluştu, giriş yapabilirsin.</div>
+      <div th:if="${param.error}" class="alert alert-error" role="alert">E-posta veya şifre hatalı.</div>
+      <div th:if="${param.cikis}" class="alert alert-ok" role="status">Çıkış yapıldı.</div>
+      <div th:if="${param.kayit}" class="alert alert-ok" role="status">Kaydın oluştu, giriş yapabilirsin.</div>
+      <div th:if="${param.kilit}" class="alert alert-error" role="alert"
+           th:text="'Çok fazla hatalı deneme yapıldı. Güvenlik için ' + ${kilitDakika} + ' dakika sonra tekrar dene.'">
+        Çok fazla hatalı deneme yapıldı.</div>
 
       <form th:action="@{/login}" method="post">
         <div class="field">

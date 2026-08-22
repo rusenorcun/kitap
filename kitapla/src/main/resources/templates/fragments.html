@@ -58,14 +58,16 @@
   <div class="row gap-16">
     <a class="btn btn-primary btn-sm" th:href="@{/bagis/yeni}">Bağış yap</a>
     <a th:href="@{/bildirimler}" title="Bildirimler"
+       th:aria-label="${unreadCount > 0} ? 'Bildirimler, ' + ${unreadCount} + ' okunmamış' : 'Bildirimler'"
        style="position:relative;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--ink)">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
            stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-      <span th:if="${unreadCount > 0}" th:text="${unreadCount}"
+      <span th:if="${unreadCount > 0}" th:text="${unreadCount}" aria-hidden="true"
             style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px">3</span>
     </a>
     <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn btn-soft btn-sm" type="submit">Çıkış</button></form>
-    <a class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}">EY</a>
+    <a class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}"
+       th:title="${currentUser?.name}" aria-label="Profilim">EY</a>
   </div>
 </div>
 

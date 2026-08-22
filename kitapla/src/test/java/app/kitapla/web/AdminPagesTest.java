@@ -39,6 +39,7 @@ class AdminPagesTest {
     @Autowired DonationRepository donations;
     @Autowired PasswordEncoder encoder;
     @Value("${kitapla.upload-dir}") String uploadDir;
+    @Value("${kitapla.admin.email}") String adminEmail;
 
     private User mk(String tag, boolean isAdmin) {
         User u = new User();
@@ -81,6 +82,13 @@ class AdminPagesTest {
         u.setDocumentNo("PNL-" + UUID.randomUUID());
         u.setDocumentPath(fileName);
         return users.save(u);
+    }
+
+    @Test
+    void yoneticiAdiTurkceKarakterleriBozmadanOkunur() {
+        // .properties dosyaları ISO-8859-1 okunur; Türkçe harfler unicode kaçışıyla yazılmalı
+        User yonetici = users.findByEmail(adminEmail).orElseThrow();
+        assertThat(yonetici.getName()).isEqualTo("Test Yönetici");
     }
 
     // ---------- Erişim denetimi ----------

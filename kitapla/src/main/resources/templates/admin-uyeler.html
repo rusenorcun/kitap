@@ -10,11 +10,11 @@
 
   <div th:replace="~{fragments :: adminnav('uyeler')}"></div>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <form th:action="@{/admin/uyeler}" method="get" class="row gap-8" style="margin-bottom:18px">
-    <input class="input" type="search" name="q" th:value="${q}" placeholder="Ad ya da e-posta ara" style="flex:1"/>
+    <input class="input" type="search" name="q" aria-label="Üyelerde ara" th:value="${q}" placeholder="Ad ya da e-posta ara" style="flex:1"/>
     <button class="btn btn-primary btn-sm" type="submit">Ara</button>
     <a th:if="${q != null and !q.isEmpty()}" class="btn btn-soft btn-sm" th:href="@{/admin/uyeler}">Temizle</a>
   </form>

@@ -11,7 +11,7 @@
   <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Öğrenci ol</h1>
   <p class="muted" style="font-weight:500;margin:0 0 22px">Belgeni doğrula, bağışlarda önceliği kazan.</p>
 
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <div class="card card-pad" style="background:var(--espresso);color:#F3EAD3;border-color:transparent;margin-bottom:18px">
     <div class="row gap-8" style="margin-bottom:12px">

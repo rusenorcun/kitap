@@ -2,6 +2,8 @@ package app.kitapla.config;
 
 import app.kitapla.domain.*;
 import app.kitapla.repo.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -39,8 +41,15 @@ public class DataSeeder implements CommandLineRunner {
         this.jdbc = jdbc;
     }
 
+    private static final Logger log = LoggerFactory.getLogger(DataSeeder.class);
+
     @Override
     public void run(String... args) {
+        if ("admin123".equals(adminPassword)) {
+            log.warn("Yönetici hesabı varsayılan şifreyle çalışıyor ({}). Yerel deneme dışında "
+                    + "KITAPLA_ADMIN_PASSWORD ortam değişkenini ayarla.", adminEmail);
+        }
+
         // 1) Admin garanti
         users.findByEmail(adminEmail).ifPresentOrElse(u -> {
             if (!u.isAdmin()) { u.setAdmin(true); users.save(u); }

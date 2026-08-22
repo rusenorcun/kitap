@@ -8,14 +8,14 @@
   <h1 style="font-size:30px;font-weight:800;letter-spacing:-.7px;margin:0 0 6px">Aramıza katıl</h1>
   <p class="muted" style="margin:0 0 26px;font-weight:500">Herkes bağış yapabilir ve kitap alabilir. Öğrenciysen belgeni doğrulayıp öncelik kazanırsın.</p>
 
-  <div th:if="${error}" class="alert alert-error" th:text="${error}">Hata</div>
+  <div th:if="${error}" class="alert alert-error" th:text="${error}" role="alert">Hata</div>
 
   <form th:action="@{/register}" method="post" enctype="multipart/form-data" class="card card-pad" style="max-width:640px">
     <div class="field">
       <label class="label" for="name">Ad soyad</label>
       <input class="input" id="name" name="name" required th:value="${form?.name}"/>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="duo">
       <div class="field">
         <label class="label" for="email">E-posta</label>
         <input class="input" type="email" id="email" name="email" required th:value="${form?.email}"/>
@@ -40,7 +40,7 @@
     </label>
 
     <div id="ogr" style="display:none; border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="duo">
         <div class="field">
           <label class="label" for="schoolLevel">Okul seviyesi</label>
           <select class="input" id="schoolLevel" name="schoolLevel">

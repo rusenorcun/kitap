@@ -12,11 +12,11 @@
   </div>
   <p class="muted" style="font-weight:500;margin:0 0 22px">Birinin ihtiyacı olan kitabı sen karşılayabilirsin.</p>
 
-  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
-  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <form th:action="@{/istekler}" method="get" class="row gap-8" style="margin-bottom:20px">
-    <input class="input" type="search" name="q" th:value="${q}" placeholder="Kitap veya yazar ara" style="max-width:320px"/>
+    <input class="input" type="search" name="q" aria-label="İsteklerde ara" th:value="${q}" placeholder="Kitap veya yazar ara" style="max-width:320px"/>
     <button class="btn btn-soft btn-sm" type="submit">Ara</button>
   </form>
 
@@ -48,7 +48,7 @@
       <!-- Karşılama: kendi isteği değilse ve giriş yapılmışsa -->
       <th:block th:if="${currentUser != null and !r.student.id.equals(currentUser.id)}">
         <form th:action="@{'/istek/' + ${r.id} + '/karsila'}" method="post" class="stack gap-8" style="min-width:180px">
-          <select class="input" name="source" style="padding:9px 12px;font-size:13px">
+          <select class="input" name="source" aria-label="Kitabın kaynağı" style="padding:9px 12px;font-size:13px">
             <option value="PURCHASE">Satın alıp göndereceğim</option>
             <option value="OWN">Elimdeki kopya</option>
           </select>
