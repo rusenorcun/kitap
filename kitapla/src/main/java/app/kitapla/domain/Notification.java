@@ -30,4 +30,12 @@ public class Notification {
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    /** Şablonlarda gösterim için yerel saat biçimi (Thymeleaf Instant'ı doğrudan biçimleyemiyor). */
+    @Transient
+    public String getCreatedAtText() {
+        return java.time.format.DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm")
+                .withZone(java.time.ZoneId.systemDefault())
+                .format(createdAt);
+    }
 }

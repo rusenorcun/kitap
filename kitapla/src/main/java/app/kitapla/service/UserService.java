@@ -79,4 +79,70 @@ public class UserService {
         }
         return users.save(u);
     }
+
+    // ---------- Profil ----------
+
+    /** Ad, adres ve telefon günceller. Boş bırakılan alanlar değişmez. */
+    @Transactional
+    public User updateProfile(User user, String name, String address, String phone) {
+        User u = users.findById(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Kullanıcı bulunamadı."));
+
+        String n = clean(name, 120);
+        if (n == null) throw new IllegalStateException("Ad boş olamaz.");
+        u.setName(n);
+        u.setAddress(clean(address, 500));
+        u.setPhone(clean(phone, 40));
+        return users.save(u);
+    }
+
+    /** Mevcut şifre doğrulanarak yeni şifre atar. */
+    @Transactional
+    public void changePassword(User user, String currentPassword, String newPassword, String confirmPassword) {
+        User u = users.findById(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Kullanıcı bulunamadı."));
+
+        if (currentPassword == null || !encoder.matches(currentPassword, u.getPasswordHash()))
+            throw new IllegalStateException("Mevcut şifren hatalı.");
+        if (newPassword == null || newPassword.length() < 6)
+            throw new IllegalStateException("Yeni şifre en az 6 karakter olmalı.");
+        if (!newPassword.equals(confirmPassword))
+            throw new IllegalStateException("Yeni şifreler birbiriyle eşleşmiyor.");
+        if (encoder.matches(newPassword, u.getPasswordHash()))
+            throw new IllegalStateException("Yeni şifre eskisiyle aynı olamaz.");
+
+        u.setPasswordHash(encoder.encode(newPassword));
+        users.save(u);
+    }
+
+    /**
+     * Üyeyken öğrenci doğrulamasına başvurur; belge admin onayına gider.
+     * Onaylı öğrenci ya da incelemedeki başvuru varsa tekrar başvurulamaz.
+     */
+    @Transactional
+    public User applyForStudent(User user, SchoolLevel level, String documentNo, String documentPath) {
+        User u = users.findById(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Kullanıcı bulunamadı."));
+
+        if (u.getStudentStatus() == StudentStatus.APPROVED)
+            throw new IllegalStateException("Zaten onaylı bir öğrencisin.");
+        if (u.getStudentStatus() == StudentStatus.PENDING)
+            throw new IllegalStateException("Belgen zaten incelemede.");
+        if (level == null) throw new IllegalStateException("Okul seviyesi seçilmeli.");
+
+        String docNo = clean(documentNo, 100);
+        if (docNo == null) throw new IllegalStateException("Öğrenci belge numarası zorunlu.");
+        if (documentPath == null) throw new IllegalStateException("Öğrenci belgesi yüklenmeli.");
+        if (u.getAddress() == null || u.getAddress().isBlank())
+            throw new IllegalStateException("Önce profilinden teslimat adresi eklemelisin.");
+
+        if (users.existsByDocumentNo(docNo) && !docNo.equals(u.getDocumentNo()))
+            throw new IllegalStateException("Bu belge numarası başka bir kayıtta kullanılıyor.");
+
+        u.setStudentStatus(StudentStatus.PENDING);
+        u.setSchoolLevel(level);
+        u.setDocumentNo(docNo);
+        u.setDocumentPath(documentPath);
+        return users.save(u);
+    }
 }

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Öğrenci doğrulama')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:680px">
+  <div class="muted" style="font-size:13px;font-weight:600;margin-bottom:14px">
+    <a th:href="@{/profil}" style="color:inherit">Hesap ayarları</a> · Öğrenci doğrulama
+  </div>
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Öğrenci ol</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">Belgeni doğrula, bağışlarda önceliği kazan.</p>
+
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <div class="card card-pad" style="background:var(--espresso);color:#F3EAD3;border-color:transparent;margin-bottom:18px">
+    <div class="row gap-8" style="margin-bottom:12px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9A38C" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span style="font-size:14px;font-weight:700;color:#E9A38C">Onaylanınca</span>
+    </div>
+    <div style="font-size:14px;font-weight:600;padding:8px 0;border-bottom:1px solid #5a4741">48 saat bağış önceliği</div>
+    <div style="font-size:14px;font-weight:600;padding:8px 0">Haftada 3, ayda 10 kitap hakkı</div>
+  </div>
+
+  <form th:action="@{/profil/ogrenci}" method="post" enctype="multipart/form-data" class="card card-pad">
+    <div class="field">
+      <label class="label" for="schoolLevel">Okul seviyesi</label>
+      <select class="input" id="schoolLevel" name="schoolLevel" required>
+        <option value="">Seçin</option>
+        <option value="ORTAOKUL">Ortaokul</option>
+        <option value="LISE">Lise</option>
+        <option value="UNIVERSITE">Üniversite</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="label" for="documentNo">Öğrenci belge numarası</label>
+      <input class="input" id="documentNo" name="documentNo" required placeholder="Örn. LS-2841"/>
+    </div>
+    <div class="field">
+      <label class="label" for="document">Öğrenci belgesi</label>
+      <input class="input" type="file" id="document" name="document" accept="application/pdf,image/*" required/>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+        PDF veya görsel · e-Devlet belgesi ya da okul kartı. Belgeni yalnızca yöneticiler görür.</p>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Doğrulamaya gönder</button>
+  </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Profil')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:760px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 20px">Hesap ayarları</h1>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}">Hata</div>
+
+  <!-- Kimlik + durum -->
+  <div class="card card-pad" style="margin-bottom:18px">
+    <div class="row gap-16">
+      <div class="avatar" style="width:60px;height:60px;border-radius:18px;font-size:20px" th:text="${user.initials}">EY</div>
+      <div style="flex:1">
+        <div style="font-size:19px;font-weight:800" th:text="${user.name}">Ad</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${user.email}">E-posta</div>
+      </div>
+      <div class="row gap-8" style="flex-wrap:wrap;justify-content:flex-end">
+        <span class="badge badge-accent">Bağışçı</span>
+        <span th:if="${user.student}" class="badge badge-sage">Öğrenci · onaylı</span>
+        <span th:if="${user.studentStatus.name() == 'PENDING'}" class="badge badge-muted">Öğrenci · incelemede</span>
+        <span th:if="${user.studentStatus.name() == 'REJECTED'}" class="badge badge-muted">Öğrenci · reddedildi</span>
+        <span th:if="${user.admin}" class="badge badge-accent">Yönetici</span>
+      </div>
+    </div>
+
+    <div class="row gap-16" style="margin-top:18px;border-top:1px solid var(--line);padding-top:16px">
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700">Hesap türün</div>
+        <div style="font-size:15px;font-weight:800" th:text="${quota.tier == 'student'} ? 'Öğrenci' : 'Üye'">Üye</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700">Haftalık hak</div>
+        <div style="font-size:15px;font-weight:800">
+          <span th:text="${quota.weeklyRemaining}">1</span> / <span th:text="${quota.weeklyLimit}">3</span>
+        </div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700">30 günlük hak</div>
+        <div style="font-size:15px;font-weight:800">
+          <span th:text="${quota.monthlyRemaining}">9</span> / <span th:text="${quota.monthlyLimit}">10</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Öğrenci doğrulama durumu -->
+  <div th:if="${user.student}" class="card card-pad row gap-12"
+       style="background:var(--sage-soft);border-color:transparent;margin-bottom:18px">
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--sage-ink)" stroke-width="2.4"
+         stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6 9 17l-5-5"/></svg>
+    <div>
+      <div style="font-size:15px;font-weight:800;color:var(--sage-ink)">Öğrenci belgen onaylı</div>
+      <div class="muted" style="font-size:13px;font-weight:500">
+        <span th:text="${#strings.capitalize(#strings.toLowerCase(user.schoolLevel.name()))}">Lise</span>
+        · Bağışlarda 48 saat önceliğin var.
+      </div>
+    </div>
+  </div>
+  <div th:if="${user.studentStatus.name() == 'PENDING'}" class="card card-pad" style="margin-bottom:18px">
+    <b>Öğrenci belgen incelemede.</b>
+    <span class="muted">Yönetici onayladığında öncelik ve daha yüksek kota kazanacaksın.</span>
+  </div>
+  <div th:if="${user.studentStatus.name() == 'NONE' or user.studentStatus.name() == 'REJECTED'}"
+       class="card card-pad row gap-12" style="background:var(--sage-soft);border-color:transparent;margin-bottom:18px">
+    <div style="flex:1">
+      <b>Öğrenci misin?</b>
+      <span class="muted">Belgeni doğrula; bağışlarda 48 saat öncelik ve haftada 3 kitap hakkı kazan.</span>
+    </div>
+    <a class="btn btn-sage btn-sm" th:href="@{/profil/ogrenci}">Öğrenci ol</a>
+  </div>
+
+  <!-- Profil formu -->
+  <form th:action="@{/profil}" method="post" class="card card-pad" style="margin-bottom:18px">
+    <div class="label" style="margin-bottom:12px">Profil bilgileri</div>
+    <div class="field">
+      <label class="label" for="name">Ad soyad</label>
+      <input class="input" id="name" name="name" th:value="${user.name}" required/>
+    </div>
+    <div class="field">
+      <label class="label" for="address">Teslimat adresi</label>
+      <textarea class="input" id="address" name="address" th:text="${user.address}"
+                placeholder="Kitap almak, istek oluşturmak ve takas için gerekli"></textarea>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+        Adresin yalnızca eşleştiğin karşı tarafa gösterilir.</p>
+    </div>
+    <div class="field">
+      <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <input class="input" id="phone" name="phone" th:value="${user.phone}"/>
+    </div>
+    <button class="btn btn-primary" type="submit">Kaydet</button>
+  </form>
+
+  <!-- Şifre -->
+  <form th:action="@{/profil/sifre}" method="post" class="card card-pad">
+    <div class="label" style="margin-bottom:12px">Şifre değiştir</div>
+    <div class="field">
+      <label class="label" for="currentPassword">Mevcut şifren</label>
+      <input class="input" type="password" id="currentPassword" name="currentPassword" required/>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="field">
+        <label class="label" for="newPassword">Yeni şifre</label>
+        <input class="input" type="password" id="newPassword" name="newPassword" required placeholder="en az 6 karakter"/>
+      </div>
+      <div class="field">
+        <label class="label" for="confirmPassword">Yeni şifre (tekrar)</label>
+        <input class="input" type="password" id="confirmPassword" name="confirmPassword" required/>
+      </div>
+    </div>
+    <button class="btn btn-soft" type="submit">Şifreyi güncelle</button>
+  </form>
+</div>
+</body>
+</html>
