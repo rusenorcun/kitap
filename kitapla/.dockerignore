@@ -1,0 +1,8 @@
+target/
+data/
+uploads/
+.mvn/
+mvnw
+mvnw.cmd
+*.log
+.git

@@ -7,6 +7,17 @@ Spring Boot + Thymeleaf ile sunucu tarafında render edilen, tek parça çalış
 
 ## Hızlı başlangıç
 
+### Docker ile (en kolay)
+
+```bash
+docker compose up -d --build     # http://localhost:8080
+```
+
+Java kurmana gerek yok. Ayrıntılar ve yayına alma için:
+**[deploy/DOCKER.md](deploy/DOCKER.md)**.
+
+### Doğrudan (Docker olmadan)
+
 Tek gereksinim **JDK 21**. Maven kurmanıza gerek yok — depodaki sarmalayıcı (`mvnw`) gerekirse
 kendi Maven sürümünü indirir.
 
@@ -75,9 +86,15 @@ Her yönetim işlemi ilgili üyeye bildirim bırakır. Yönetici işlemleri **an
 
 ## Yayına alma
 
-Sunucuda Caddy arkasında HTTPS ile çalıştırmak için hazır yapılandırma
-`deploy/` dizininde: `Caddyfile`, systemd birimi, ortam değişkeni şablonu ve
-adım adım rehber — bkz. **[deploy/README.md](deploy/README.md)**.
+İki yol var:
+
+- **Docker ile** — `docker-compose.prod.yml`: uygulama ve Caddy birlikte ayağa
+  kalkar, tek komut. Bkz. **[deploy/DOCKER.md](deploy/DOCKER.md)**.
+- **Doğrudan sunucuya** — systemd + sistem Caddy'si. Bkz.
+  **[deploy/README.md](deploy/README.md)**.
+
+Her ikisi de `deploy/Caddyfile` dosyasını paylaşır; alan adı ve hedef ortam
+değişkeninden okunur.
 
 ```bash
 ./mvnw -DskipTests package

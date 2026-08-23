@@ -1,16 +1,25 @@
 # KİTAPLA — Caddy ters vekil yapılandırması
 #
-# Kurulum:
-#   1. Aşağıdaki kitapla.example.com yerine kendi alan adını yaz
-#   2. Alan adının A/AAAA kaydı bu sunucunun IP'sine baksın
-#   3. sudo cp Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+# Alan adı ve hedef ortam değişkeninden okunur; aynı dosya hem doğrudan
+# kurulumda hem Docker'da çalışır:
+#
+#   Doğrudan kurulum (systemd):
+#     /etc/caddy/caddy.env içine:  KITAPLA_DOMAIN=alanadin.com
+#     (hedef varsayılanı 127.0.0.1:8080'dir, değiştirmeye gerek yok)
+#
+#   Docker (docker-compose.prod.yml):
+#     .env içine:  KITAPLA_DOMAIN=alanadin.com
+#                  KITAPLA_UPSTREAM=kitapla:8080
+#
+# Alan adının A/AAAA kaydı bu sunucunun IP'sine bakmalıdır.
 #
 # Caddy sertifikayı Let's Encrypt'ten otomatik alır ve yeniler; HTTP'den
 # HTTPS'e yönlendirmeyi de kendisi yapar, ayrıca bir şey tanımlamaya gerek yok.
 
-kitapla.example.com {
-	# Uygulama yalnızca 127.0.0.1 dinler (application-prod.properties).
-	reverse_proxy 127.0.0.1:8080 {
+{$KITAPLA_DOMAIN:localhost} {
+	# Uygulama dışarıya kapalıdır: doğrudan kurulumda 127.0.0.1'i dinler,
+	# Docker'da ise portu ana makineye hiç yayınlanmaz.
+	reverse_proxy {$KITAPLA_UPSTREAM:127.0.0.1:8080} {
 		# Spring'in gerçek şemayı/istemciyi görebilmesi için:
 		# server.forward-headers-strategy=framework ile birlikte çalışır.
 		header_up X-Real-IP {remote_host}

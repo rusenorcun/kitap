@@ -73,6 +73,18 @@ class PublicPagesTest {
     }
 
     @Test
+    void saglikUcuGirisIstemedenCalisirVeBilgiSizdirmaz() throws Exception {
+        // Docker HEALTHCHECK bu ucu kullanır; kimlik doğrulaması istememeli
+        String govde = mvc.perform(get("/saglik"))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+
+        assertThat(govde).isEqualTo("iyi");
+        // Sürüm, yapılandırma ya da bağımlılık ayrıntısı sızmamalı
+        assertThat(govde.toLowerCase()).doesNotContain("spring", "version", "h2", "jdbc");
+    }
+
+    @Test
     void korunanSayfalarGirisIster() throws Exception {
         mvc.perform(get("/panom"))
                 .andExpect(status().is3xxRedirection())

@@ -1,0 +1,59 @@
+# KİTAPLA — yayın (Caddy + otomatik HTTPS)
+#
+#   1. .env dosyasını hazırla:   cp .env.ornek .env  &&  nano .env
+#   2. deploy/Caddyfile içindeki alan adını kendi alan adınla değiştir
+#   3. docker compose -f docker-compose.prod.yml up -d --build
+#
+# Caddy 80 ve 443'ü dinler, sertifikayı Let's Encrypt'ten kendisi alır.
+# Uygulamanın portu ana makineye YAYINLANMAZ; yalnızca Caddy erişebilir.
+
+services:
+  kitapla:
+    build: ./kitapla
+    container_name: kitapla
+    restart: unless-stopped
+
+    # ports YOK: uygulama dışarıya kapalı, sadece docker ağı üzerinden erişilir.
+    expose:
+      - "8080"
+
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Konteynerde 0.0.0.0 dinlenmeli; yalıtımı port yayınlamamak sağlıyor.
+      KITAPLA_BIND: "0.0.0.0"
+    env_file:
+      - .env
+
+    volumes:
+      - kitapla-veri:/uygulama/data
+      - kitapla-dosya:/uygulama/uploads
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: kitapla-caddy
+    restart: unless-stopped
+    depends_on:
+      kitapla:
+        condition: service_healthy
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+
+    environment:
+      # Caddyfile bu iki değişkeni okur ({$KITAPLA_DOMAIN} / {$KITAPLA_UPSTREAM}).
+      # Verilmezse varsayılana düşer ve kendi içindeki 127.0.0.1:8080'e bakar.
+      KITAPLA_DOMAIN: ${KITAPLA_DOMAIN:?KITAPLA_DOMAIN .env dosyasinda tanimli olmali}
+      KITAPLA_UPSTREAM: ${KITAPLA_UPSTREAM:-kitapla:8080}
+
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-veri:/data      # sertifikalar burada; silinirse yeniden alınır
+      - caddy-ayar:/config
+
+volumes:
+  kitapla-veri:
+  kitapla-dosya:
+  caddy-veri:
+  caddy-ayar:

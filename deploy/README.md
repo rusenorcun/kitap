@@ -1,6 +1,10 @@
-# Yayına alma
+# Yayına alma (doğrudan sunucuya)
 
 KİTAPLA'yı bir sunucuda, Caddy arkasında HTTPS ile çalıştırma adımları.
+
+> Docker kullanmayı tercih ediyorsan bu adımların yerine
+> **[DOCKER.md](DOCKER.md)** yeterlidir; orada uygulama ve Caddy tek komutla
+> birlikte ayağa kalkar.
 Bu dizindeki dosyalar bir kapsayıcıda gerçek Caddy ile denendi; aşağıdaki
 davranışlar doğrulanmıştır (bkz. *Doğrulananlar*).
 
@@ -62,15 +66,26 @@ Uygulama yalnızca `127.0.0.1:8080` dinler; dışarıdan doğrudan erişilemez.
 
 ## 5. Caddy'yi yapılandır
 
-`deploy/Caddyfile` içindeki `kitapla.example.com` yerine kendi alan adını yaz:
+Caddyfile alan adını ortam değişkeninden okur (aynı dosya Docker kurulumunda da
+kullanılır), bu yüzden dosyayı düzenlemene gerek yok — değişkeni tanımlaman yeterli:
 
 ```bash
 sudo cp deploy/Caddyfile /etc/caddy/Caddyfile
-sudo nano /etc/caddy/Caddyfile
 sudo mkdir -p /var/log/caddy && sudo chown caddy:caddy /var/log/caddy
-sudo caddy validate --config /etc/caddy/Caddyfile
-sudo systemctl reload caddy
+
+# Alan adını Caddy servisine tanıt
+echo 'KITAPLA_DOMAIN=alanadin.com' | sudo tee /etc/caddy/caddy.env
+sudo mkdir -p /etc/systemd/system/caddy.service.d
+printf '[Service]\nEnvironmentFile=/etc/caddy/caddy.env\n' \
+  | sudo tee /etc/systemd/system/caddy.service.d/kitapla.conf
+
+sudo systemctl daemon-reload
+sudo KITAPLA_DOMAIN=alanadin.com caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl restart caddy
 ```
+
+> `KITAPLA_UPSTREAM` tanımlanmazsa varsayılan `127.0.0.1:8080` kullanılır;
+> doğrudan kurulumda doğrusu budur (Docker'da `kitapla:8080` olur).
 
 Caddy sertifikayı Let's Encrypt'ten kendisi alır ve yeniler; HTTP → HTTPS
 yönlendirmesini de otomatik yapar. Ayrıca bir şey tanımlaman gerekmez.
