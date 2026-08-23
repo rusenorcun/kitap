@@ -1,0 +1,93 @@
+# Tek sunucu, tek Caddy — rorcun.com + kitap.rorcun.com
+#
+# Bu dosya Caddy KONTEYNER içinde çalışır (docker-compose.sunucu.yml).
+# Ana makinede ayrıca caddy.exe ÇALIŞMAMALIDIR: ikisi de 80/443 ister.
+#
+# Konteynerden ana makinedeki servislere erişim host.docker.internal ile olur;
+# 127.0.0.1 konteynerin KENDİSİ demektir, ana makine değil.
+
+# ---------------------------------------------------------------------------
+# rorcun.com — mevcut proje (FastAPI + MCP, ana makinede çalışmaya devam eder)
+# ---------------------------------------------------------------------------
+rorcun.com, www.rorcun.com {
+	encode gzip
+
+	# Bilinen tarama yolları doğrudan 404.
+	# DİKKAT: bu blok catch-all "handle"dan ÖNCE gelmelidir. Caddy yönergeleri
+	# kendi öntanımlı sırasına göre işler ve "handle", "respond"dan önce gelir;
+	# bu yüzden "respond @scanners 404" satırını handle'lardan sonra yazmak
+	# kuralı ölü koda çevirir (istekler arka uca gider, 404 hiç dönmez).
+	@scanners path /wp-admin* /wp-login* /.env* /.git* /phpmyadmin* /xmlrpc.php
+	handle @scanners {
+		respond 404
+	}
+
+	# MCP HTTP (Bearer token korumalı) — token doğrulaması uygulama katmanında.
+	# 8765 dışarı açılmaz; yalnızca Caddy üzerinden erişilir.
+	@mcp path /mcp /mcp/*
+	handle @mcp {
+		reverse_proxy host.docker.internal:8765
+	}
+
+	# FastAPI backend — geri kalan her şey
+	handle {
+		reverse_proxy host.docker.internal:9000
+	}
+
+	request_body {
+		max_size 50MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "DENY"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		-Server
+	}
+
+	# Backend kapalıyken ham 502 yerine bakım sayfası.
+	# Klasör compose'da salt okunur olarak bağlanır.
+	handle_errors 502 503 504 {
+		root * /bakim
+		rewrite * /bakım.html
+		file_server
+	}
+}
+
+# ---------------------------------------------------------------------------
+# kitap.rorcun.com — KİTAPLA (Docker konteyneri, aynı Docker ağında)
+# ---------------------------------------------------------------------------
+kitap.rorcun.com {
+	# Servis adıyla erişilir; portu ana makineye hiç yayınlanmaz.
+	reverse_proxy kitapla:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		# KİTAPLA'da DENY değil SAMEORIGIN: kendi sayfalarını çerçeveleyebilir
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+
+	# Öğrenci belgesi ve kapak yüklemesi için (uygulama sınırı 5MB)
+	request_body {
+		max_size 10MB
+	}
+
+	@scanners path /wp-admin* /wp-login* /.env* /.git* /phpmyadmin* /xmlrpc.php
+	respond @scanners 404
+
+	# Statik varlıklar önbelleklenebilir. ">" ertelenmiş kümeleme: uygulama her
+	# yanıta no-store eklediği için düz "header" ile iki çakışan Cache-Control
+	# kalıyor ve tarayıcı no-store'u seçiyor.
+	@statik path /css/* /js/* /webjars/* /uploads/covers/*
+	header @statik >Cache-Control "public, max-age=604800"
+}

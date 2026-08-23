@@ -1,0 +1,61 @@
+# Tek sunucu: Caddy + KİTAPLA tek yerden yönetilir
+#
+# Mevcut rorcun.com projesi (FastAPI :9000, MCP :8765, Ollama :11434) ANA
+# MAKİNEDE çalışmaya devam eder; Caddy ona host.docker.internal üzerinden ulaşır.
+# Böylece o projeye hiç dokunmadan Caddy ortaklaştırılır.
+#
+# ÖNCE ana makinedeki caddy.exe DURDURULMALIDIR (ikisi de 80/443 ister).
+#
+#   cp .env.ornek .env  &&  nano .env
+#   docker compose -f docker-compose.sunucu.yml up -d --build
+
+services:
+  kitapla:
+    build: ./kitapla
+    container_name: kitapla
+    restart: unless-stopped
+
+    # ports YOK: ana makineye yayınlanmaz, yalnızca Caddy erişir
+    expose:
+      - "8080"
+
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      KITAPLA_BIND: "0.0.0.0"
+    env_file:
+      - .env
+
+    volumes:
+      - kitapla-veri:/uygulama/data
+      - kitapla-dosya:/uygulama/uploads
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: unless-stopped
+    depends_on:
+      kitapla:
+        condition: service_healthy
+
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+
+    # Linux'ta host.docker.internal tanımlı değildir; Docker Desktop'ta zaten
+    # vardır ama bu satır her iki ortamda da çalışmasını sağlar.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    volumes:
+      - ./deploy/Caddyfile.sunucu:/etc/caddy/Caddyfile:ro
+      # Bakım sayfasının bulunduğu klasör (Windows yolu .env'den gelir)
+      - ${BAKIM_KLASORU:-./deploy/bakim}:/bakim:ro
+      - caddy-veri:/data      # sertifikalar; silinirse yeniden alınır
+      - caddy-ayar:/config
+
+volumes:
+  kitapla-veri:
+  kitapla-dosya:
+  caddy-veri:
+  caddy-ayar:
