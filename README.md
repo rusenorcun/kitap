@@ -73,6 +73,21 @@ Her yönetim işlemi ilgili üyeye bildirim bırakır. Yönetici işlemleri **an
 
 Öğrenci belgeleri hiçbir zaman herkese açık servis edilmez; yalnızca `/admin/belge/{id}` ucundan, yönetici oturumuyla görüntülenir.
 
+## Yayına alma
+
+Sunucuda Caddy arkasında HTTPS ile çalıştırmak için hazır yapılandırma
+`deploy/` dizininde: `Caddyfile`, systemd birimi, ortam değişkeni şablonu ve
+adım adım rehber — bkz. **[deploy/README.md](deploy/README.md)**.
+
+```bash
+./mvnw -DskipTests package
+java -jar target/kitapla-0.1.0.jar --spring.profiles.active=prod
+```
+
+`prod` profili uygulamayı yalnızca `127.0.0.1`'e bağlar, oturum çerezini
+`Secure` yapar, şablon önbelleğini açar, H2 konsolunu kapatır ve ters vekilin
+ilettiği `X-Forwarded-*` başlıklarını dikkate alır.
+
 ## Yapılandırma
 
 `kitapla/src/main/resources/application.properties` içinden ya da ortam değişkenleriyle:

@@ -1,6 +1,7 @@
 package app.kitapla.config;
 
 import app.kitapla.repo.UserRepository;
+import org.springframework.beans.factory.annotation.Value;
 import app.kitapla.security.FreshPrincipalFilter;
 import app.kitapla.security.LoginAttemptHandlers;
 import app.kitapla.security.LoginAttemptService;
@@ -24,6 +25,9 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
+    @Value("${spring.h2.console.enabled:false}")
+    private boolean h2ConsoleEnabled;
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http, UserRepository users,
                                            LoginAttemptService attempts) throws Exception {
@@ -33,16 +37,19 @@ public class SecurityConfig {
             .addFilterBefore(new FreshPrincipalFilter(users), AuthorizationFilter.class)
             // Kaba kuvvet denemeleri kimlik doğrulamaya ulaşmadan durdurulur
             .addFilterBefore(new LoginRateLimitFilter(attempts), UsernamePasswordAuthenticationFilter.class)
-            .authorizeHttpRequests(auth -> auth
+            .authorizeHttpRequests(auth -> {
+                // H2 konsolu yalnızca açıkken (geliştirme) erişilebilir; üretimde kural hiç eklenmez
+                if (h2ConsoleEnabled) auth.requestMatchers("/h2/**").permitAll();
+                auth
                 // Herkese açık: tanıtım sayfaları, keşif ve kitap detayı, kimlik, statik dosyalar.
                 // Öğrenci belgeleri BİLEREK dışarıda: yalnızca /admin ucundan erişilir.
                 .requestMatchers("/", "/sss", "/kurallar", "/gizlilik", "/iletisim",
                         "/kesfet/**", "/kesfet", "/kitap/**", "/istekler", "/register", "/login",
                         "/css/**", "/js/**", "/webjars/**", "/uploads/covers/**",
-                        "/favicon.ico", "/error", "/h2/**").permitAll()
+                        "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
-                .anyRequest().authenticated()
-            )
+                    .anyRequest().authenticated();
+            })
             .formLogin(form -> form
                 .loginPage("/login")
                 .loginProcessingUrl("/login")

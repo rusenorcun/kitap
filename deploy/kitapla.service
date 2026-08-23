@@ -1,0 +1,48 @@
+# KİTAPLA — systemd servis birimi
+#
+# Kurulum:
+#   sudo useradd --system --home /opt/kitapla --shell /usr/sbin/nologin kitapla
+#   sudo mkdir -p /opt/kitapla && sudo chown kitapla:kitapla /opt/kitapla
+#   sudo cp target/kitapla-0.1.0.jar /opt/kitapla/kitapla.jar
+#   sudo cp deploy/kitapla.env /etc/kitapla.env && sudo chmod 600 /etc/kitapla.env
+#   sudo cp deploy/kitapla.service /etc/systemd/system/
+#   sudo systemctl daemon-reload && sudo systemctl enable --now kitapla
+
+[Unit]
+Description=KITAPLA kitap bagis ve takas platformu
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=kitapla
+Group=kitapla
+WorkingDirectory=/opt/kitapla
+
+# Yönetici şifresi gibi sırlar dosyadan okunur, birim dosyasında durmaz
+EnvironmentFile=/etc/kitapla.env
+Environment="LANG=C.UTF-8"
+
+ExecStart=/usr/bin/java -jar /opt/kitapla/kitapla.jar --spring.profiles.active=prod
+
+Restart=on-failure
+RestartSec=5
+SuccessExitStatus=143
+TimeoutStopSec=30
+
+# --- Sıkılaştırma ---
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictSUIDSGID=true
+LockPersonality=true
+# Yalnızca kendi veri ve yükleme dizinine yazabilir
+ReadWritePaths=/opt/kitapla/data /opt/kitapla/uploads
+
+[Install]
+WantedBy=multi-user.target

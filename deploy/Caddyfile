@@ -1,0 +1,53 @@
+# KİTAPLA — Caddy ters vekil yapılandırması
+#
+# Kurulum:
+#   1. Aşağıdaki kitapla.example.com yerine kendi alan adını yaz
+#   2. Alan adının A/AAAA kaydı bu sunucunun IP'sine baksın
+#   3. sudo cp Caddyfile /etc/caddy/Caddyfile && sudo systemctl reload caddy
+#
+# Caddy sertifikayı Let's Encrypt'ten otomatik alır ve yeniler; HTTP'den
+# HTTPS'e yönlendirmeyi de kendisi yapar, ayrıca bir şey tanımlamaya gerek yok.
+
+kitapla.example.com {
+	# Uygulama yalnızca 127.0.0.1 dinler (application-prod.properties).
+	reverse_proxy 127.0.0.1:8080 {
+		# Spring'in gerçek şemayı/istemciyi görebilmesi için:
+		# server.forward-headers-strategy=framework ile birlikte çalışır.
+		header_up X-Real-IP {remote_host}
+	}
+
+	encode zstd gzip
+
+	header {
+		# Tarayıcıya bir yıl boyunca yalnızca HTTPS kullanmasını söyle
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		# MIME türü tahminini kapat
+		X-Content-Type-Options "nosniff"
+		# Siteyi başka bir sayfanın çerçevesine gömdürtme
+		X-Frame-Options "SAMEORIGIN"
+		# Dış sitelere tam URL sızdırma
+		Referrer-Policy "strict-origin-when-cross-origin"
+		# Kullanılmayan tarayıcı yeteneklerini kapat
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		# Sunucu imzasını gizle
+		-Server
+	}
+
+	# Statik varlıklar uzun süre önbelleklenebilir.
+	# ">" ertelenmiş kümeleme: Spring Security her yanıta "no-store" eklediği için
+	# normal "header" ile iki çakışan Cache-Control kalıyor ve tarayıcı no-store'u
+	# seçiyordu; ">" üstteki değeri yanıt üretildikten SONRA değiştirir.
+	@statik path /css/* /js/* /webjars/* /uploads/covers/*
+	header @statik >Cache-Control "public, max-age=604800"
+
+	# Yüklenen kapak görselleri dışında bir şeyin gömülmesini engelle
+	@belge path /admin/belge/*
+	header @belge Cache-Control "no-store"
+
+	log {
+		output file /var/log/caddy/kitapla.log {
+			roll_size 20mb
+			roll_keep 10
+		}
+	}
+}
