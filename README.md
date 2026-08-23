@@ -7,12 +7,23 @@ Spring Boot + Thymeleaf ile sunucu tarafında render edilen, tek parça çalış
 
 ## Hızlı başlangıç
 
+Tek gereksinim **JDK 21**. Maven kurmanıza gerek yok — depodaki sarmalayıcı (`mvnw`) gerekirse
+kendi Maven sürümünü indirir.
+
 ```bash
 cd kitapla
-mvn spring-boot:run          # http://localhost:8080
+./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
 ```
 
-İlk açılışta veritabanı, yönetici hesabı ve deneme verisi otomatik oluşur.
+Uygulama <http://localhost:8080> adresinde açılır. İlk açılışta veritabanı, yönetici hesabı ve
+deneme verisi otomatik oluşur.
+
+Tek dosyalık çalıştırılabilir sürüm isterseniz:
+
+```bash
+./mvnw -DskipTests package
+java -jar target/kitapla-0.1.0.jar
+```
 
 | Hesap | E-posta | Şifre | Rolü |
 | --- | --- | --- | --- |
@@ -22,7 +33,7 @@ mvn spring-boot:run          # http://localhost:8080
 | Başvuru sahibi | `mert@ornek.com` | `sifre123` | Belgesi incelemede |
 
 ```bash
-mvn test                     # 167 test
+./mvnw test                   # 169 test
 ```
 
 ## Hesap modeli
@@ -71,17 +82,18 @@ Her yönetim işlemi ilgili üyeye bildirim bırakır. Yönetici işlemleri **an
 | `KITAPLA_ADMIN_EMAIL` | Açılışta oluşturulacak yönetici | `admin@kitapla.app` |
 | `KITAPLA_ADMIN_PASSWORD` | Yönetici şifresi | `admin123` |
 | `KITAPLA_ADMIN_NAME` | Yönetici adı | `Yönetici` |
+| `KITAPLA_CONTACT_EMAIL` | İletişim sayfasında gösterilen adres | yönetici e-postası |
 | `SERVER_PORT` | Sunucu portu | `8080` |
 
 Varsayılan yönetici şifresi kullanıldığında açılışta uyarı loglanır. Yerel deneme dışında mutlaka değiştirin:
 
 ```bash
-KITAPLA_ADMIN_PASSWORD=guclu-parola mvn spring-boot:run
+KITAPLA_ADMIN_PASSWORD=guclu-parola ./mvnw spring-boot:run
 ```
 
 > Ortam değişkeniyle **Türkçe karakter** içeren bir değer verecekseniz (ör. yönetici adı)
 > kabuğun UTF-8 yerelinde olması gerekir; aksi halde JVM değeri ASCII olarak okur:
-> `LANG=C.UTF-8 KITAPLA_ADMIN_NAME="Baş Yönetici" mvn spring-boot:run`
+> `LANG=C.UTF-8 KITAPLA_ADMIN_NAME="Baş Yönetici" ./mvnw spring-boot:run`
 
 Diğer ayarlar: `kitapla.upload-dir` (yüklenen dosyalar, varsayılan `./uploads`),
 `kitapla.login.max-attempts`, `kitapla.login.window-minutes`.
@@ -115,6 +127,12 @@ kitapla/
     static/css/  tasarım sistemi
 ```
 
+## Sayfalar
+
+Herkese açık: ana sayfa, keşfet, kitap detayı, açık istekler, SSS, **topluluk kuralları**,
+**gizlilik** ve **iletişim**. Giriş sonrası: panom, bağış/istek/takas akışları, teslimat takibi,
+profil, öğrenci başvurusu ve bildirimler. Yöneticiye ayrıca `/admin` altındaki dört sayfa açılır.
+
 ## Tasarım
 
 Renk paleti: Saman Kağıdı `#F3EAD3`, Koyu Espresso `#3E2723`, Tarçın `#C65D47`, Soluk Adaçayı `#8FA89B`.
@@ -123,8 +141,8 @@ Karanlık tema `prefers-color-scheme` ile otomatik gelir. Logo üç kitap sırt�
 ## Testler
 
 ```bash
-cd kitapla && mvn test
+cd kitapla && ./mvnw test
 ```
 
-167 test; iş kuralları (kota, öncelik penceresi, takas durumları, moderasyon) servis testleriyle,
+169 test; iş kuralları (kota, öncelik penceresi, takas durumları, moderasyon) servis testleriyle,
 sayfa akışları ve erişim denetimi MockMvc testleriyle doğrulanır.

@@ -5,4 +5,6 @@ uploads/
 .DS_Store
 .idea/
 *.iml
-.mvn/
+
+# Maven wrapper (mvnw, mvnw.cmd ve .mvn/wrapper) BİLEREK depoda:
+# JDK dışında bir şey kurmadan çalıştırılabilsin.

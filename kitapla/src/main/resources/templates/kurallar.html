@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Topluluk kuralları')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="padding-top:56px; padding-bottom:20px; text-align:center;">
+  <div class="eyebrow" style="margin-bottom:10px">Topluluk</div>
+  <h1 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:0">Kurallar</h1>
+  <p class="muted" style="font-weight:500;font-size:17px;line-height:1.7;margin:14px 0 0">
+    Sınırlı sayıda kitap var; kurallar bu kitapların önce en çok ihtiyacı olana ulaşması için.
+  </p>
+</div>
+
+<div class="container-narrow" style="padding-bottom:56px; display:flex; flex-direction:column; gap:16px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Öğrenci önceliği</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Her yeni bağış <strong>ilk 48 saat</strong> yalnızca belgesi onaylanmış öğrencilere açıktır.
+      Süre dolduğunda tüm üyelere açılır. Bu süre bağışın oluşturulma anından itibaren işler.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Alma kotası</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0 0 12px">
+      Kimse elindekinden fazlasını almasın diye alma hakkı sınırlıdır:
+    </p>
+    <div class="duo">
+      <div class="card card-pad" style="background:var(--bg)">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">Öğrenci</div>
+        <div class="muted" style="font-size:14px;font-weight:600">7 günde 3 · 30 günde 10 kitap</div>
+      </div>
+      <div class="card card-pad" style="background:var(--bg)">
+        <div style="font-size:13px;font-weight:800;margin-bottom:4px">Üye</div>
+        <div class="muted" style="font-size:14px;font-weight:600">7 günde 1 · 30 günde 3 kitap</div>
+      </div>
+    </div>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:12px 0 0">
+      Bağıştan aldıkların ve karşılanan isteklerin aynı sayaca girer.
+      <strong>Bağış yapmanın ve takasın sınırı yoktur.</strong>
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Öğrenci doğrulaması</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Öğrenci olmak için okul seviyesi, belge numarası ve öğrenci belgesi yüklenir; belge yönetim onayına gider.
+      Aynı belge numarasıyla ikinci bir hesap açılamaz. Belgen reddedilirse gerekçesi bildirilir ve
+      yeni bir belgeyle tekrar başvurabilirsin. Başkasına ait belge yüklemek hesabın askıya alınmasıyla sonuçlanır.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Teslimat ve adres</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Kitaplar kargoyla gönderilir; bu yüzden kitap almak, istek oluşturmak ve takas için profilinde
+      teslimat adresi bulunmalıdır. Adresin herkese açık değildir — yalnızca <strong>eşleştiğin karşı tarafa</strong>
+      gösterilir. Kargoladıktan sonra durumu güncellemek ve teslim aldığında işaretlemek senin sorumluluğundadır.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Takas</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Kitabını takasa açar, başkasının kitabına kendi kitabınla teklif verirsin. Teklif kabul edilince
+      iki taraf da adresini görür ve karşılıklı kargolar. Kabul edilen bir teklif varken aynı kitaba gelen
+      diğer teklifler otomatik reddedilir. Takas, bağış kotasından bağımsızdır.
+    </p>
+  </div>
+
+  <div class="card card-pad" style="border-color:var(--accent)">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Yapılmaması gerekenler</h2>
+    <ul class="muted" style="font-size:15px;font-weight:500;line-height:1.9;margin:0;padding-left:20px">
+      <li>Kitapları satmak ya da ticari amaçla toplamak</li>
+      <li>Sahte öğrenci belgesi ya da başkasına ait belge yüklemek</li>
+      <li>Aldığı kitabı kargolamadan işlemi tamamlanmış göstermek</li>
+      <li>İlan açıklamalarında reklam, hakaret ya da kişisel bilgi paylaşmak</li>
+      <li>Kota sınırını aşmak için birden fazla hesap açmak</li>
+    </ul>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Moderasyon</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Yönetim, kurallara aykırı bağış, istek ve takas ilanlarını yayından kaldırabilir; gerektiğinde hesabı
+      askıya alabilir. Her işlemde sana <strong>gerekçesiyle birlikte bildirim</strong> gönderilir —
+      sessizce müdahale edilmez. Askıya alınan hesap giriş yapamaz.
+    </p>
+  </div>
+
+  <div style="text-align:center;padding-top:8px">
+    <a class="btn btn-soft" th:href="@{/sss}">Sık sorulan sorular</a>
+  </div>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Gizlilik')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="padding-top:56px; padding-bottom:20px; text-align:center;">
+  <div class="eyebrow" style="margin-bottom:10px">Gizlilik</div>
+  <h1 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:0">Verilerin</h1>
+  <p class="muted" style="font-weight:500;font-size:17px;line-height:1.7;margin:14px 0 0">
+    Kitabın kargolanabilmesi için gereken en az bilgiyi tutuyoruz. Ne topladığımız ve kimin gördüğü aşağıda.
+  </p>
+</div>
+
+<div class="container-narrow" style="padding-bottom:56px; display:flex; flex-direction:column; gap:16px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Ne topluyoruz</h2>
+    <ul class="muted" style="font-size:15px;font-weight:500;line-height:1.9;margin:0;padding-left:20px">
+      <li><strong>Ad ve e-posta</strong> — hesabın için zorunlu</li>
+      <li><strong>Şifre</strong> — düz metin olarak saklanmaz, yalnızca BCrypt özeti tutulur</li>
+      <li><strong>Teslimat adresi ve telefon</strong> — kitap alışverişi için; istersen boş bırakabilirsin
+        (bu durumda kitap alamaz, istek oluşturamaz ve takas yapamazsın)</li>
+      <li><strong>Öğrenci belgesi ve belge numarası</strong> — yalnızca öğrenci doğrulaması istersen</li>
+      <li><strong>Hareketlerin</strong> — bağışların, aldıkların, isteklerin, takasların ve bildirimlerin</li>
+    </ul>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:12px 0 0">
+      Çerez olarak yalnızca oturum çerezi kullanılır. Takip, analitik ya da reklam çerezi yoktur.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Kim ne görüyor</h2>
+    <ul class="muted" style="font-size:15px;font-weight:500;line-height:1.9;margin:0;padding-left:20px">
+      <li><strong>Adın</strong> — bağış, istek ve takas ilanlarında diğer üyelere görünür</li>
+      <li><strong>Adresin ve telefonun</strong> — yalnızca <strong>eşleştiğin karşı tarafa</strong> gösterilir.
+        Bağışta bağışçı alıcının adresini, istekte yalnızca isteği karşılayan kişi, takasta ise iki taraf da
+        <strong>teklif kabul edildikten sonra</strong> birbirinin adresini görür</li>
+      <li><strong>E-postan</strong> — diğer üyelere hiçbir yerde gösterilmez</li>
+      <li><strong>Öğrenci belgen</strong> — herkese açık olarak servis edilmez; yalnızca yönetici,
+        yönetim panelinden görüntüleyebilir</li>
+    </ul>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Ne kadar saklanıyor</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Öğrenci belgen <strong>reddedilirse dosya diskten silinir</strong>; kaydında yalnızca başvurunun
+      reddedildiği bilgisi kalır. Hesabını sildirmek istersen yöneticiye başvurabilirsin; geçmiş bağış ve
+      teslimat kayıtların varsa bütünlük için hesap silinmez, askıya alınır.
+    </p>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Üçüncü taraflar</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0">
+      Verilerin hiçbir üçüncü tarafa satılmaz veya aktarılmaz. Tek dış bağlantı, bir kitap için
+      alışveriş linki verdiğinde o sayfanın başlık ve kapak bilgisini okumak üzere yapılan istektir;
+      bu istekte kişisel bilgin gönderilmez.
+    </p>
+  </div>
+
+  <div class="card card-pad" style="background:var(--sage-soft);border-color:transparent">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Bu kurulum hakkında</h2>
+    <p style="font-size:15px;font-weight:500;line-height:1.7;margin:0;color:var(--sage-ink)">
+      KİTAPLA kendi sunucunda çalıştırılan açık bir projedir. Veriler, uygulamayı çalıştıran kişinin
+      sunucusunda tutulur ve sorumluluğu ona aittir. Verilerinle ilgili talepler için o kurulumun
+      yöneticisine ulaş.
+    </p>
+  </div>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

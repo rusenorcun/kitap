@@ -7,6 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -18,6 +19,9 @@ class PublicPagesTest {
 
     @Autowired
     MockMvc mvc;
+
+    @org.springframework.beans.factory.annotation.Value("${kitapla.contact.email}")
+    String contactEmail;
 
     @Test
     void anaSayfaAcilir() throws Exception {
@@ -39,6 +43,33 @@ class PublicPagesTest {
         mvc.perform(get("/sss"))
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Öğrenci önceliği")));
+    }
+
+    @Test
+    void bilgiSayfalariGirisIstemedenAcilir() throws Exception {
+        mvc.perform(get("/kurallar"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("48 saat")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Moderasyon")));
+
+        mvc.perform(get("/gizlilik"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("BCrypt")))
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("yalnızca yönetici")));
+
+        mvc.perform(get("/iletisim"))
+                .andExpect(status().isOk())
+                // İletişim adresi yapılandırmadan gelir, şablona gömülmez
+                .andExpect(content().string(org.hamcrest.Matchers.containsString(contactEmail)));
+    }
+
+    @Test
+    void altbilgiBaglantilariGercekSayfalaraGider() throws Exception {
+        String html = mvc.perform(get("/")).andReturn().getResponse().getContentAsString();
+        // Bu bağlantılar bir dönem tıklanamayan <span>'lardı
+        assertThat(html).contains("href=\"/kurallar\"")
+                        .contains("href=\"/gizlilik\"")
+                        .contains("href=\"/iletisim\"");
     }
 
     @Test

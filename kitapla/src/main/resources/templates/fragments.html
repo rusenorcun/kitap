@@ -90,7 +90,12 @@
 <!-- Footer -->
 <div th:fragment="footer" class="footer">
   <a class="brand" style="font-size:15px" th:href="@{/}"><svg th:replace="~{fragments :: logo(24)}"></svg><span>KİTAPLA</span></a>
-  <div class="links"><a th:href="@{/sss}">SSS</a><span>Kurallar</span><span>Gizlilik</span><span>İletişim</span></div>
+  <div class="links">
+    <a th:href="@{/sss}">SSS</a>
+    <a th:href="@{/kurallar}">Kurallar</a>
+    <a th:href="@{/gizlilik}">Gizlilik</a>
+    <a th:href="@{/iletisim}">İletişim</a>
+  </div>
   <span class="muted" style="font-size:13px">© 2026 KİTAPLA</span>
 </div>
 

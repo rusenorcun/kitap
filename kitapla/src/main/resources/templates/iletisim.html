@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — İletişim')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="padding-top:56px; padding-bottom:20px; text-align:center;">
+  <div class="eyebrow" style="margin-bottom:10px">İletişim</div>
+  <h1 style="font-size:40px;font-weight:800;letter-spacing:-1px;margin:0">Bize ulaş</h1>
+  <p class="muted" style="font-weight:500;font-size:17px;line-height:1.7;margin:14px 0 0">
+    Sorun bildirmek, bir ilanı şikâyet etmek ya da hesabınla ilgili bir talepte bulunmak için.
+  </p>
+</div>
+
+<div class="container-narrow" style="padding-bottom:56px; display:flex; flex-direction:column; gap:16px;">
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Bu kurulumun yöneticisi</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0 0 12px">
+      KİTAPLA kendi sunucunda çalıştırılan bir projedir. Bu kurulumla ilgili her konuda
+      yöneticisine yazabilirsin:
+    </p>
+    <a class="btn btn-primary" th:href="'mailto:' + ${iletisimEposta}" th:text="${iletisimEposta}">
+      admin@kitapla.app</a>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Ne için yazmalısın</h2>
+    <ul class="muted" style="font-size:15px;font-weight:500;line-height:1.9;margin:0;padding-left:20px">
+      <li>Kurallara aykırı bir ilan gördüysen (bağış, istek ya da takas)</li>
+      <li>Öğrenci belgen beklediğinden uzun süredir incelemedeyse</li>
+      <li>Hesabın askıya alındıysa ve itiraz etmek istiyorsan</li>
+      <li>Şifreni unuttuysan — bu sürümde e-postayla şifre sıfırlama yoktur,
+        şifreni yalnızca yönetici yenileyebilir</li>
+      <li>Hesabının ve verilerinin silinmesini istiyorsan</li>
+    </ul>
+  </div>
+
+  <div class="card card-pad">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 10px">Önce şuraya bak</h2>
+    <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0 0 14px">
+      Öncelik, kota, takas ve adres paylaşımıyla ilgili soruların cevabı büyük ihtimalle burada:
+    </p>
+    <div class="row gap-8" style="flex-wrap:wrap">
+      <a class="btn btn-soft btn-sm" th:href="@{/sss}">Sık sorulan sorular</a>
+      <a class="btn btn-soft btn-sm" th:href="@{/kurallar}">Topluluk kuralları</a>
+      <a class="btn btn-soft btn-sm" th:href="@{/gizlilik}">Gizlilik</a>
+    </div>
+  </div>
+
+  <div class="card card-pad" style="background:var(--sage-soft);border-color:transparent">
+    <h2 style="font-size:19px;font-weight:800;margin:0 0 8px">Bir hesabın var mı?</h2>
+    <p style="font-size:15px;font-weight:500;line-height:1.7;margin:0;color:var(--sage-ink)">
+      Bağış, teslimat ve takas hareketlerinle ilgili tüm bilgilendirmeler
+      <a th:href="@{/bildirimler}" style="font-weight:700">bildirimlerine</a> düşer;
+      ayrıca yazışmana gerek kalmaz.
+    </p>
+  </div>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>
