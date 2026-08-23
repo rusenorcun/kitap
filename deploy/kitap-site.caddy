@@ -1,0 +1,39 @@
+# KİTAPLA — mevcut Caddyfile'a EKLENECEK site bloğu
+#
+# Bu bloğu Caddyfile'ının SONUNA ekle. Mevcut site bloklarına dokunma;
+# Caddy her alan adını ayrı yönetir, rorcun.com etkilenmez.
+#
+#   sudo nano /etc/caddy/Caddyfile      → bu içeriği en alta yapıştır
+#   sudo caddy validate --config /etc/caddy/Caddyfile
+#   sudo systemctl reload caddy         → reload, restart değil: kesinti olmaz
+
+kitap.rorcun.com {
+	# KİTAPLA konteyneri yalnızca loopback'te dinliyor
+	reverse_proxy 127.0.0.1:8080 {
+		header_up X-Real-IP {remote_host}
+	}
+
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "SAMEORIGIN"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+
+	# Statik varlıklar önbelleklenebilir. ">" ertelenmiş kümeleme: uygulama her
+	# yanıta no-store eklediği için normal "header" ile iki çakışan
+	# Cache-Control kalıyor ve tarayıcı no-store'u seçiyor.
+	@statik path /css/* /js/* /webjars/* /uploads/covers/*
+	header @statik >Cache-Control "public, max-age=604800"
+
+	log {
+		output file /var/log/caddy/kitap.log {
+			roll_size 20mb
+			roll_keep 10
+		}
+	}
+}

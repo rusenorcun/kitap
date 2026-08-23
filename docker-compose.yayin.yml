@@ -1,0 +1,38 @@
+# KİTAPLA — sunucuda ZATEN Caddy çalışıyorken yayına alma
+#
+# Bu dosyayı, sunucuda kendi Caddy kurulumun varsa kullan (docker-compose.prod.yml
+# yerine). Burada Caddy konteyneri YOKTUR: mevcut Caddy'n tek web sunucusu olarak
+# kalır, bu konteyner yalnızca 127.0.0.1'de dinler ve Caddy ona vekillik eder.
+#
+#   cp .env.ornek .env  &&  nano .env
+#   docker compose -f docker-compose.yayin.yml up -d --build
+#
+# Ardından deploy/kitap-site.caddy içeriğini mevcut Caddyfile'ına ekle.
+
+services:
+  kitapla:
+    build: ./kitapla
+    container_name: kitapla
+    restart: unless-stopped
+
+    ports:
+      # SADECE ana makinenin loopback'ine bağlanır: konteyner dışarıya kapalı,
+      # ona yalnızca aynı makinedeki Caddy erişebilir.
+      # Başındaki 127.0.0.1 SİLİNMEMELİ; silinirse uygulama doğrudan
+      # internete açılır ve HTTPS'i atlayan istekler mümkün olur.
+      - "127.0.0.1:8080:8080"
+
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # Konteyner içinde 0.0.0.0 dinlenmeli; yalıtımı yukarıdaki 127.0.0.1 sağlar.
+      KITAPLA_BIND: "0.0.0.0"
+    env_file:
+      - .env
+
+    volumes:
+      - kitapla-veri:/uygulama/data
+      - kitapla-dosya:/uygulama/uploads
+
+volumes:
+  kitapla-veri:
+  kitapla-dosya:

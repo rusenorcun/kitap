@@ -95,7 +95,35 @@ Gerçek posta denemek istersen `docker-compose.yml` içindeki
 docker compose down -v          # -v: BİRİMLERİ DE SİLER, tüm veri gider
 ```
 
-## Yayına alma (alan adı + HTTPS)
+## Sunucunda ZATEN Caddy varsa
+
+Sunucuda başka bir site için çalışan bir Caddy kurulumun varsa
+`docker-compose.prod.yml` **kullanılmaz** — o dosya kendi Caddy konteynerini
+başlatıp 80/443 portlarını almaya çalışır ve mevcut sitenle çakışır.
+
+Bunun yerine:
+
+```bash
+cp .env.ornek .env
+nano .env                                    # alan adı, parola, SMTP
+docker compose -f docker-compose.yayin.yml up -d --build
+```
+
+Bu kurulumda konteyner yalnızca `127.0.0.1:8080` dinler. Ardından
+`deploy/kitap-site.caddy` içeriğini mevcut Caddyfile'ının sonuna ekle:
+
+```bash
+sudo nano /etc/caddy/Caddyfile               # bloğu en alta yapıştır
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy                  # reload: mevcut sitede kesinti olmaz
+```
+
+Caddy her alan adını ayrı yönetir; mevcut siten etkilenmez. Bu kurulum
+(mevcut site + eklenen blok) uçtan uca denendi: eski site çalışmaya devam
+etti, yeni alan adı HTTPS ile açıldı, uygulama dışarıdan doğrudan
+erişilemez kaldı.
+
+## Yayına alma (sunucuda Caddy YOKSA)
 
 Sunucuda, alan adının DNS A kaydı sunucunun IP'sine baktıktan sonra:
 
