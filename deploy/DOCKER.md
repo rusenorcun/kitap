@@ -19,6 +19,42 @@ Sunucuya Java kurmana gerek kalmaz, "bende çalışıyordu" sorunu ortadan kalka
 
 Gereken tek şey Docker Desktop (Windows/Mac) ya da Docker Engine (Linux).
 
+### Windows'ta adım adım
+
+1. **Docker Desktop'ı aç** ve sol altta "Engine running" yazısını gör.
+   Docker Desktop kapalıyken komutlar "cannot connect to the Docker daemon" hatası verir.
+
+2. **Proje klasörünü aç.** Dosya Gezgini'nde projenin klasörüne gir
+   (`docker-compose.yml` dosyasının göründüğü klasör), adres çubuğuna
+   `powershell` yazıp Enter'a bas. O klasörde PowerShell açılır.
+
+3. **Başlat:**
+
+   ```powershell
+   docker compose up -d --build
+   ```
+
+   İlk çalıştırmada Java indirilir ve proje derlenir; **3-6 dakika sürebilir**
+   ve internet bağlantısı gerekir. Sonraki başlatmalar saniyeler alır.
+
+4. **Hazır olmasını bekle:**
+
+   ```powershell
+   docker compose ps
+   ```
+
+   `STATUS` sütununda `healthy` yazana kadar bekle (ilk açılışta ~1 dakika).
+   `starting` görüyorsan henüz açılıyor demektir.
+
+5. **Tarayıcıda aç:** <http://localhost:8080>
+
+Durdurmak için `docker compose down`. Verilerin silinmez.
+
+> PowerShell'de komutlar aynıdır. Bu belgedeki `$PWD` geçen tek komut
+> (yedekleme) PowerShell'de `${PWD}` olarak yazılmalıdır.
+
+### Kısaca (Linux/Mac)
+
 ```bash
 docker compose up -d --build
 ```
@@ -113,3 +149,12 @@ Genelde `.env` içinde eksik bir değişkendir.
 
 **Sağlık kontrolü "starting" takılı kaldı** — ilk açılış 60 saniyeye kadar sürebilir;
 `docker compose ps` çıktısında `healthy` olmasını bekle.
+
+**Windows: "cannot connect to the Docker daemon"** — Docker Desktop çalışmıyor.
+Aç ve "Engine running" yazısını bekle.
+
+**Windows: "docker: command not found"** — Docker Desktop kurulumundan sonra
+PowerShell penceresini kapatıp yeniden aç; PATH yenilenmiş olur.
+
+**Windows: derleme çok uzun sürüyor / takılıyor** — Docker Desktop → Settings →
+Resources bölümünden en az 4 GB bellek ayrıldığından emin ol.

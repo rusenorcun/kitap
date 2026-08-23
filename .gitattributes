@@ -1,0 +1,18 @@
+# Varsayılan: metin dosyalarını git normalize etsin
+* text=auto
+
+# Konteynere bağlanan ya da Linux tarafında okunan dosyalar HER ZAMAN LF olmalı.
+# Windows'ta CRLF ile checkout edilirlerse satır sonundaki \r değerin parçası
+# sayılabilir ve sessizce yanlış davranışa yol açar.
+Dockerfile      text eol=lf
+*.sh            text eol=lf
+mvnw            text eol=lf
+Caddyfile       text eol=lf
+*.env           text eol=lf
+.env.ornek      text eol=lf
+docker-compose*.yml text eol=lf
+*.properties    text eol=lf
+
+# Windows toplu iş dosyası CRLF kalmalı
+*.cmd           text eol=crlf
+*.bat           text eol=crlf
