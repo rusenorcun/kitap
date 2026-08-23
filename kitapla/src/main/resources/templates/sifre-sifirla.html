@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Yeni şifre')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="max-width:440px;padding-top:56px;padding-bottom:64px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px">Yeni şifre belirle</h1>
+
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <!--/* Bağlantı geçersiz ya da süresi dolmuşsa form hiç gösterilmez */-->
+  <th:block th:unless="${gecerli}">
+    <div class="card card-pad" style="text-align:center;padding:40px 24px;margin-top:18px">
+      <div style="font-size:18px;font-weight:800;margin-bottom:8px">Bağlantı geçersiz</div>
+      <p class="muted" style="font-weight:500;margin:0 0 20px">
+        Bu bağlantının süresi dolmuş ya da daha önce kullanılmış olabilir.
+      </p>
+      <a class="btn btn-primary" th:href="@{/sifremi-unuttum}">Yeni bağlantı iste</a>
+    </div>
+  </th:block>
+
+  <th:block th:if="${gecerli}">
+    <p class="muted" style="margin:0 0 24px;font-weight:500">En az 6 karakterli yeni bir şifre seç.</p>
+    <form th:action="@{/sifre-sifirla}" method="post">
+      <input type="hidden" name="token" th:value="${token}"/>
+      <div class="field">
+        <label class="label" for="newPassword">Yeni şifre</label>
+        <input class="input" type="password" id="newPassword" name="newPassword" required
+               minlength="6" autofocus placeholder="••••••••"/>
+      </div>
+      <div class="field">
+        <label class="label" for="confirmPassword">Yeni şifre (tekrar)</label>
+        <input class="input" type="password" id="confirmPassword" name="confirmPassword" required
+               minlength="6" placeholder="••••••••"/>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Şifreyi güncelle</button>
+    </form>
+  </th:block>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

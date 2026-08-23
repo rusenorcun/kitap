@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Şifremi unuttum')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="max-width:440px;padding-top:56px;padding-bottom:64px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px">Şifremi unuttum</h1>
+  <p class="muted" style="margin:0 0 24px;font-weight:500">
+    Hesabının e-posta adresini yaz; sana yeni şifre belirleme bağlantısı gönderelim.
+  </p>
+
+  <div th:if="${basari}" class="alert alert-ok" role="status" th:text="${basari}">Gönderildi</div>
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <form th:action="@{/sifremi-unuttum}" method="post">
+    <div class="field">
+      <label class="label" for="email">E-posta</label>
+      <input class="input" type="email" id="email" name="email" required autofocus
+             placeholder="elif@ornek.com"/>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Sıfırlama bağlantısı gönder</button>
+  </form>
+
+  <p class="muted" style="text-align:center;margin-top:22px;font-weight:500">
+    Hatırladın mı? <a th:href="@{/login}" style="font-weight:700">Giriş yap</a>
+  </p>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

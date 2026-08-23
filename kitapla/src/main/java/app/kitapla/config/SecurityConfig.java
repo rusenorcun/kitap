@@ -45,6 +45,7 @@ public class SecurityConfig {
                 // Öğrenci belgeleri BİLEREK dışarıda: yalnızca /admin ucundan erişilir.
                 .requestMatchers("/", "/sss", "/kurallar", "/gizlilik", "/iletisim",
                         "/kesfet/**", "/kesfet", "/kitap/**", "/istekler", "/register", "/login",
+                        "/sifremi-unuttum", "/sifre-sifirla",
                         "/css/**", "/js/**", "/webjars/**", "/uploads/covers/**",
                         "/favicon.ico", "/error").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")

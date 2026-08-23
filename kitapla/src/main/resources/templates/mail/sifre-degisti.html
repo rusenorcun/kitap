@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<body th:replace="~{mail/duzen :: govde('Şifren değiştirildi', ~{::icerik})}">
+<div th:fragment="icerik" th:remove="tag">
+  <p style="margin:0 0 14px;">Merhaba <span th:text="${ad}">Ayşe</span>,</p>
+  <p style="margin:0 0 18px;">Hesabının şifresi az önce değiştirildi. Artık yeni şifrenle giriş yapabilirsin.</p>
+  <p style="margin:0;color:#8C7B6B;font-size:13px;">
+    Bu değişikliği sen yapmadıysan hemen yöneticiyle iletişime geç.
+  </p>
+</div>
+</body>
+</html>

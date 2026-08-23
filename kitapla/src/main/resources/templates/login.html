@@ -22,6 +22,7 @@
       <div th:if="${param.error}" class="alert alert-error" role="alert">E-posta veya şifre hatalı.</div>
       <div th:if="${param.cikis}" class="alert alert-ok" role="status">Çıkış yapıldı.</div>
       <div th:if="${param.kayit}" class="alert alert-ok" role="status">Kaydın oluştu, giriş yapabilirsin.</div>
+      <div th:if="${basari}" class="alert alert-ok" role="status" th:text="${basari}">Tamam</div>
       <div th:if="${param.kilit}" class="alert alert-error" role="alert"
            th:text="'Çok fazla hatalı deneme yapıldı. Güvenlik için ' + ${kilitDakika} + ' dakika sonra tekrar dene.'">
         Çok fazla hatalı deneme yapıldı.</div>
@@ -36,6 +37,9 @@
           <input class="input" type="password" id="password" name="password" required placeholder="••••••••"/>
         </div>
         <button class="btn btn-primary btn-block" type="submit" style="margin-top:8px">Giriş yap</button>
+        <p style="text-align:center;margin:14px 0 0">
+          <a th:href="@{/sifremi-unuttum}" class="muted" style="font-size:14px;font-weight:600">Şifremi unuttum</a>
+        </p>
       </form>
 
       <p class="muted" style="text-align:center;margin-top:22px;font-weight:500">Hesabın yok mu?
