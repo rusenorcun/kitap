@@ -95,7 +95,47 @@ Gerçek posta denemek istersen `docker-compose.yml` içindeki
 docker compose down -v          # -v: BİRİMLERİ DE SİLER, tüm veri gider
 ```
 
-## Sunucunda ZATEN Caddy varsa
+## Aynı sunucuda birden fazla site (ortak Caddy)
+
+Aynı makinede başka projelerin de varsa Caddy'yi ortaklaştırıp her şeyi tek
+yerden yönetebilirsin: `docker-compose.sunucu.yml` + `deploy/Caddyfile.sunucu`.
+
+- Caddy konteynerde çalışır ve 80/443'ü o dinler
+- KİTAPLA aynı Docker ağında, portu ana makineye hiç yayınlanmaz
+- **Ana makinede çalışan diğer projeler oldukları yerde kalır**; Caddy onlara
+  `host.docker.internal` üzerinden ulaşır. O projelere dokunmak gerekmez.
+
+Önce ana makinedeki Caddy durdurulmalıdır (ikisi de 80/443 ister).
+
+```bash
+cp .env.ornek .env  &&  nano .env
+docker compose -f docker-compose.sunucu.yml up -d --build
+```
+
+> Konteynerin içinden `127.0.0.1` konteynerin **kendisi** demektir, ana makine
+> değil. Ana makinedeki servislere `host.docker.internal` ile erişilir.
+
+### Caddy'de sık yapılan bir hata
+
+Yönergeler yazdığın sırayla değil, Caddy'nin öntanımlı sırasına göre işlenir.
+`handle` bloğu `respond`'dan önce gelir; bu yüzden
+
+```
+handle { reverse_proxy ... }      # her şeyi yakalar
+@scanners path /wp-admin* ...
+respond @scanners 404             # buraya HİÇ ulaşılmaz
+```
+
+yazarsan tarama engeli sessizce çalışmaz. Doğrusu, kuralı catch-all'dan önce
+bir `handle` bloğuna koymaktır:
+
+```
+@scanners path /wp-admin* ...
+handle @scanners { respond 404 }  # önce bu
+handle { reverse_proxy ... }      # sonra catch-all
+```
+
+## Sunucunda ZATEN Caddy varsa (ona dokunmadan)
 
 Sunucuda başka bir site için çalışan bir Caddy kurulumun varsa
 `docker-compose.prod.yml` **kullanılmaz** — o dosya kendi Caddy konteynerini
