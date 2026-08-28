@@ -42,8 +42,8 @@
       <p th:if="${o.message != null and o.status.name() == 'PENDING'}" class="muted"
          style="font-size:13px;font-weight:500;line-height:1.5;margin:0 0 12px" th:text="${o.message}">Mesaj</p>
 
-      <!-- Kabul edildiyse adres paylaşımı -->
-      <div th:if="${svc.addressVisible(o)}"
+      <!-- Kabul edildiyse adres paylaşımı (yalnızca kargo modunda) -->
+      <div th:if="${features.address and svc.addressVisible(o)}"
            style="background:var(--sage-soft);border-radius:12px;padding:12px;margin-bottom:12px">
         <div class="row gap-8" style="margin-bottom:6px">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="var(--sage-ink)" stroke-width="2"
@@ -56,6 +56,14 @@
           <span th:if="${svc.counterpart(o, me).phone}"> · <span th:text="${svc.counterpart(o, me).phone}">Tel</span></span>
         </div>
       </div>
+
+      <!-- Kampüs içi takas buluşması -->
+      <th:block th:if="${features.handover and o.status.name() == 'ACCEPTED'}">
+        <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
+        <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${o.id}, ${o.meeting}, ${noktalar})}"></div>
+      </th:block>
+      <div th:if="${features.handover and o.status.name() == 'COMPLETED'}"
+           th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
 
       <!-- Aksiyonlar -->
       <div class="row gap-8" style="justify-content:flex-end">
@@ -72,9 +80,13 @@
         </th:block>
 
         <th:block th:if="${o.status.name() == 'ACCEPTED'}">
-          <span th:if="${svc.hasShipped(o, me)}" class="badge badge-sage">Kargoya verdin · karşı taraf bekleniyor</span>
-          <form th:unless="${svc.hasShipped(o, me)}" th:action="@{'/takas/teklif/' + ${o.id} + '/kargola'}" method="post">
-            <button class="btn btn-primary btn-sm" type="submit">Kargoya verdim</button>
+          <span th:if="${svc.hasShipped(o, me)}" class="badge badge-sage"
+                th:text="${features.shipping} ? 'Kargoya verdin · karşı taraf bekleniyor'
+                                              : 'Teslimi onayladın · karşı taraf bekleniyor'">Onayladın</span>
+          <form th:if="${!svc.hasShipped(o, me) and (features.shipping or o.meeting.arranged)}"
+                th:action="@{'/takas/teklif/' + ${o.id} + '/kargola'}" method="post">
+            <button class="btn btn-primary btn-sm" type="submit"
+                    th:text="${features.shipping} ? 'Kargoya verdim' : 'Kitabı teslim ettim'">Teslim ettim</button>
           </form>
         </th:block>
       </div>

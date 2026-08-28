@@ -19,6 +19,7 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            join fetch r.book
            join fetch r.student
            left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
            where r.status = :status
            order by r.createdAt desc
            """)
@@ -29,6 +30,7 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            join fetch r.book
            join fetch r.student
            left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
            where r.student = :student
            order by r.createdAt desc
            """)
@@ -39,6 +41,7 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            join fetch r.book
            join fetch r.student
            left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
            where r.fulfilledBy = :user
            order by r.fulfilledAt desc
            """)
@@ -49,6 +52,7 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            join fetch r.book
            join fetch r.student
            left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
            where r.id = :id
            """)
     Optional<BookRequest> findByIdWithDetails(@Param("id") Long id);

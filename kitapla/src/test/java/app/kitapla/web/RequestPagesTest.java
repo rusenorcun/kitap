@@ -96,7 +96,7 @@ class RequestPagesTest {
     }
 
     @Test
-    void karsilayanAdresiGorurVeKargolayabilir() throws Exception {
+    void kampusTeslimindeIsteyenAdresiGosterilmez() throws Exception {
         User isteyen = mk("adresli", "Ankara Çankaya 99");
         User karsilayan = mk("karsilayan", "İzmir");
         BookRequest r = requestService.create(isteyen,
@@ -106,10 +106,11 @@ class RequestPagesTest {
                         .param("source", "PURCHASE"))
                 .andExpect(redirectedUrl("/karsiladiklarim"));
 
-        // Karşılayan adresi görür
+        // Yüz yüze teslimde adres paylaşılmaz (adres akışı: KargoModuSayfaTest)
         mvc.perform(get("/karsiladiklarim").with(user(as(karsilayan))))
-                .andExpect(content().string(containsString("Ankara Çankaya 99")))
-                .andExpect(content().string(containsString("Kargoya verdim")));
+                .andExpect(content().string(not(containsString("Ankara Çankaya 99"))))
+                .andExpect(content().string(not(containsString("Kargoya verdim"))))
+                .andExpect(content().string(containsString("Buluşma ayarla")));
 
         // Üçüncü bir kişi görmez
         User yabanci = mk("yabanci", "Bursa");
@@ -125,9 +126,19 @@ class RequestPagesTest {
                 bookService.findOrCreate("Teslim Testi " + UUID.randomUUID(), "Y", null, null, null, null), null);
         requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
 
+        // Yüz yüze teslimde önce buluşma ayarlanır
+        mvc.perform(get("/isteklerim").with(user(as(isteyen))))
+                .andExpect(content().string(containsString("Buluşma ayarla")));
+
+        mvc.perform(post("/bulusma/istek/" + r.getId()).with(user(as(isteyen))).with(csrf())
+                        .param("note", "Yemekhane önü")
+                        .param("at", java.time.LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
         mvc.perform(get("/isteklerim").with(user(as(isteyen))))
                 .andExpect(content().string(containsString("Teslim aldım")))
-                .andExpect(content().string(containsString("Karşılandı · kargo bekleniyor")));
+                .andExpect(content().string(containsString("Yemekhane önü")));
     }
 
     @Test

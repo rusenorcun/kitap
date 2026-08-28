@@ -5,6 +5,7 @@ import app.kitapla.domain.SwapBookStatus;
 import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.service.BookService;
+import app.kitapla.service.PickupPointService;
 import app.kitapla.service.SwapService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -18,10 +19,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 public class SwapController {
 
     private final SwapService swapService;
+    private final PickupPointService points;
     private final BookService bookService;
 
-    public SwapController(SwapService swapService, BookService bookService) {
+    public SwapController(SwapService swapService, BookService bookService, PickupPointService points) {
         this.swapService = swapService;
+        this.points = points;
         this.bookService = bookService;
     }
 
@@ -114,6 +117,7 @@ public class SwapController {
         model.addAttribute("outgoing", swapService.outgoing(me));
         model.addAttribute("svc", swapService);
         model.addAttribute("me", me);
+        model.addAttribute("noktalar", points.active());
         return "takaslarim";
     }
 

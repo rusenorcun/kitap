@@ -37,6 +37,9 @@
             <span class="badge badge-muted"><span th:text="${d.claimed}">0</span>/<span th:text="${d.quantity}">1</span> alındı</span>
             <span th:if="${d.priorityActive}" class="badge badge-accent">Öncelik: <span th:text="${d.priorityLeft}">1g</span></span>
             <span th:if="${d.donation.status.name() == 'CLOSED'}" class="badge badge-muted">Kapalı</span>
+            <!-- Bağışçının önerdiği teslim noktası (kampüs içi teslim) -->
+            <span th:if="${features.handover and d.donation.preferredPlaceText != null}"
+                  class="badge badge-sage" th:text="${d.donation.preferredPlaceText}">Nokta</span>
           </div>
         </div>
 
@@ -60,22 +63,31 @@
            style="margin-top:16px; border-top:1px solid var(--line); padding-top:14px">
         <div class="label" style="margin-bottom:10px">Bu bağışı alanlar</div>
         <div class="stack gap-12">
-          <div th:each="c : ${list}" class="row gap-12" style="align-items:flex-start; background:var(--surface2); border-radius:12px; padding:12px">
+          <div th:each="c : ${list}" class="row gap-12" style="align-items:flex-start; flex-wrap:wrap; background:var(--surface2); border-radius:12px; padding:12px">
             <div class="avatar" style="width:34px;height:34px;font-size:11px" th:text="${c.student.initials}">EY</div>
             <div style="flex:1">
               <div style="font-size:14px;font-weight:800" th:text="${c.student.name}">Alıcı</div>
-              <div class="muted" style="font-size:12px;font-weight:500;line-height:1.5">
+              <div class="muted" style="font-size:12px;font-weight:500;line-height:1.5"
+                   th:if="${features.address}">
                 <span th:text="${c.student.address}">Adres</span>
                 <span th:if="${c.student.phone}"> · <span th:text="${c.student.phone}">Telefon</span></span>
               </div>
             </div>
             <span class="badge"
                   th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
-                  th:text="${c.status.name() == 'MATCHED'} ? 'Kargo bekleniyor'
-                         : (${c.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
-            <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/kargola'}" method="post">
+                  th:text="${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
+                         : (${c.status.name() == 'SHIPPED'} ? 'Kargoda'
+                         : (${c.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
+                         : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor')))">Durum</span>
+            <form th:if="${features.shipping and c.status.name() == 'MATCHED'}"
+                  th:action="@{'/teslimat/' + ${c.id} + '/kargola'}" method="post">
               <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
             </form>
+            <div th:if="${features.handover}" style="flex-basis:100%">
+              <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
+              <div th:if="${c.status.name() != 'DELIVERED'}"
+                   th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar})}"></div>
+            </div>
           </div>
         </div>
       </div>

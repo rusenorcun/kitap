@@ -32,8 +32,10 @@
         </div>
         <span class="badge"
               th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
-              th:text="${c.status.name() == 'MATCHED'} ? 'Kargo bekleniyor'
-                     : (${c.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
+              th:text="${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
+                     : (${c.status.name() == 'SHIPPED'} ? 'Kargoda'
+                     : (${c.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
+                     : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor')))">Durum</span>
       </div>
 
       <!-- Teslimat adımları -->
@@ -47,14 +49,26 @@
               th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${c.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
       </div>
       <div class="row muted" style="justify-content:space-between;font-size:11px;font-weight:600;margin:0 0 14px">
-        <span>Eşleşti</span><span>Kargoda</span><span>Teslim</span>
+        <span>Eşleşti</span>
+        <span th:text="${features.shipping} ? 'Kargoda' : 'Buluşma'">Buluşma</span>
+        <span>Teslim</span>
       </div>
 
-      <div class="row gap-8" style="justify-content:flex-end">
+      <!-- Kampüs içi yüz yüze teslim: buluşma bilgisi ve ayarlama -->
+      <th:block th:if="${features.handover and c.status.name() != 'DELIVERED'}">
+        <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
+        <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar})}"></div>
+      </th:block>
+      <div th:if="${features.handover and c.status.name() == 'DELIVERED'}"
+           th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
+
+      <div class="row gap-8" style="justify-content:flex-end;margin-top:14px">
         <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/iptal'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">İptal et</button>
         </form>
-        <form th:if="${c.status.name() != 'DELIVERED'}" th:action="@{'/teslimat/' + ${c.id} + '/teslim-aldim'}" method="post">
+        <form th:if="${c.status.name() != 'DELIVERED'
+                       and (features.shipping or c.status.name() == 'ARRANGED')}"
+              th:action="@{'/teslimat/' + ${c.id} + '/teslim-aldim'}" method="post">
           <button class="btn btn-sage btn-sm" type="submit">Teslim aldım</button>
         </form>
         <form th:if="${c.status.name() == 'DELIVERED'}" th:action="@{'/teslimat/' + ${c.id} + '/tesekkur'}" method="post"

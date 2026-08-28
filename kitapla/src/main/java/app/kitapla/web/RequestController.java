@@ -6,6 +6,7 @@ import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.security.CurrentUser;
 import app.kitapla.service.BookService;
+import app.kitapla.service.PickupPointService;
 import app.kitapla.service.RequestService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -21,10 +22,12 @@ import java.util.Map;
 public class RequestController {
 
     private final RequestService requestService;
+    private final PickupPointService points;
     private final BookService bookService;
 
-    public RequestController(RequestService requestService, BookService bookService) {
+    public RequestController(RequestService requestService, BookService bookService, PickupPointService points) {
         this.requestService = requestService;
+        this.points = points;
         this.bookService = bookService;
     }
 
@@ -70,6 +73,7 @@ public class RequestController {
     @GetMapping("/isteklerim")
     public String isteklerim(@AuthenticationPrincipal AppUserDetails principal, Model model) {
         model.addAttribute("requests", requestService.myRequests(principal.getUser()));
+        model.addAttribute("noktalar", points.active());
         return "isteklerim";
     }
 
@@ -77,6 +81,7 @@ public class RequestController {
     @GetMapping("/karsiladiklarim")
     public String karsiladiklarim(@AuthenticationPrincipal AppUserDetails principal, Model model) {
         model.addAttribute("requests", requestService.fulfilledByMe(principal.getUser()));
+        model.addAttribute("noktalar", points.active());
         return "karsiladiklarim";
     }
 

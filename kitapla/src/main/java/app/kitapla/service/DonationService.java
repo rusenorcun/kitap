@@ -20,14 +20,19 @@ import java.util.Optional;
 public class DonationService {
 
     private final Features features;
+    private final MeetingService meetings;
+    private final PickupPointService points;
     private final DonationRepository donations;
     private final ClaimRepository claims;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
-    public DonationService(Features features, DonationRepository donations, ClaimRepository claims,
+    public DonationService(Features features, MeetingService meetings, PickupPointService points,
+                           DonationRepository donations, ClaimRepository claims,
                            QuotaService quotaService, NotificationService notifications) {
         this.features = features;
+        this.meetings = meetings;
+        this.points = points;
         this.donations = donations;
         this.claims = claims;
         this.quotaService = quotaService;
@@ -150,6 +155,14 @@ public class DonationService {
     @Transactional
     public Donation create(User donor, Book book, int quantity, TargetLevel level,
                            DonationSource source, String description) {
+        return create(donor, book, quantity, level, source, description, null, null);
+    }
+
+    /** Kampüs teslimi için bağışçının önerdiği noktayla birlikte. */
+    @Transactional
+    public Donation create(User donor, Book book, int quantity, TargetLevel level,
+                           DonationSource source, String description,
+                           Long preferredPointId, String preferredPointNote) {
         if (book == null) throw new IllegalStateException("Kitap seçilmedi.");
         if (quantity < 1) throw new IllegalStateException("Adet en az 1 olmalı.");
         if (quantity > 50) throw new IllegalStateException("Tek seferde en fazla 50 adet bağışlayabilirsin.");
@@ -163,6 +176,16 @@ public class DonationService {
         d.setTargetLevel(level == null ? TargetLevel.HEPSI : level);
         d.setSource(source == null ? DonationSource.PURCHASE : source);
         d.setDescription(description);
+
+        // Kampüs içi teslimde bağışçı bir nokta önerir; taraflar sonra değiştirebilir
+        if (preferredPointId != null) {
+            d.setPreferredPoint(points.findSelectable(preferredPointId).orElseThrow(
+                    () -> new IllegalStateException("Seçtiğin teslim noktası kullanılmıyor.")));
+        }
+        String not = preferredPointNote == null ? null : preferredPointNote.trim();
+        d.setPreferredPointNote(not == null || not.isEmpty() ? null
+                : (not.length() > 300 ? not.substring(0, 300) : not));
+
         return donations.save(d);
     }
 
@@ -222,12 +245,43 @@ public class DonationService {
                 "\"" + c.getDonation().getBook().getTitle() + "\" kitabın kargoya verildi.");
     }
 
+    /**
+     * Buluşmayı ayarlar ya da günceller. Kampüs içi teslimde taraflardan
+     * <b>ikisi de</b> yapabilir: bağışçı bir yer önerir, alıcı mesajlaşma
+     * sonrasında değiştirebilir.
+     */
+    @Transactional
+    public Claim arrange(Long claimId, User user, MeetingRequest request) {
+        Claim c = claims.findByIdWithDetails(claimId)
+                .orElseThrow(() -> new IllegalStateException("Kayıt bulunamadı."));
+
+        boolean bagisci = c.getDonation().getDonor().getId().equals(user.getId());
+        boolean alici = c.getStudent().getId().equals(user.getId());
+        if (!bagisci && !alici)
+            throw new IllegalStateException("Bu kayıt sana ait değil.");
+        if (c.getStatus() == ClaimStatus.DELIVERED)
+            throw new IllegalStateException("Bu kitap zaten teslim edildi.");
+
+        meetings.apply(c.getMeeting(), request);
+        c.setStatus(ClaimStatus.ARRANGED);
+        claims.save(c);
+
+        User digeri = bagisci ? c.getStudent() : c.getDonation().getDonor();
+        notifications.notify(digeri, "meeting_arranged",
+                "\"" + c.getDonation().getBook().getTitle() + "\" için buluşma ayarlandı: "
+                        + meetings.summary(c.getMeeting()));
+        return c;
+    }
+
     /** Alıcı teslim aldı. */
     @Transactional
     public void deliver(Long claimId, User receiver) {
         Claim c = claimOfReceiver(claimId, receiver);
         if (c.getStatus() == ClaimStatus.DELIVERED)
             throw new IllegalStateException("Bu kitabı zaten teslim aldın.");
+        // Yüz yüze teslimde önce buluşma ayarlanmış olmalı; kargo modunda gerekmez
+        if (features.isHandover() && !features.isShipping() && c.getStatus() == ClaimStatus.MATCHED)
+            throw new IllegalStateException("Önce buluşma ayarlayın, sonra teslimi onaylayın.");
         c.setStatus(ClaimStatus.DELIVERED);
         c.setDeliveredAt(Instant.now());
         claims.save(c);

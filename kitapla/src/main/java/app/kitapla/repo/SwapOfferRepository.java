@@ -19,6 +19,7 @@ public interface SwapOfferRepository extends JpaRepository<SwapOffer, Long> {
            join fetch o.toUser
            join fetch o.offeredSwapBook osb join fetch osb.book
            join fetch o.targetSwapBook tsb join fetch tsb.book
+           left join fetch o.meeting.point
            """;
 
     @Query(DETAILS + " where o.toUser = :user order by o.createdAt desc")

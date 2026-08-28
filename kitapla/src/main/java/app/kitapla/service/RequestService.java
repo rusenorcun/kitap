@@ -21,13 +21,16 @@ public class RequestService {
     public static final int MAX_OPEN_REQUESTS = 5;
 
     private final Features features;
+    private final MeetingService meetings;
     private final BookRequestRepository requests;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
-    public RequestService(Features features, BookRequestRepository requests, QuotaService quotaService,
+    public RequestService(Features features, MeetingService meetings,
+                          BookRequestRepository requests, QuotaService quotaService,
                           NotificationService notifications) {
         this.features = features;
+        this.meetings = meetings;
         this.requests = requests;
         this.quotaService = quotaService;
         this.notifications = notifications;
@@ -129,12 +132,45 @@ public class RequestService {
                 "\"" + r.getBook().getTitle() + "\" kitabın kargoya verildi.");
     }
 
+    /**
+     * Buluşmayı ayarlar ya da günceller. İsteği açan da karşılayan da yapabilir.
+     */
+    @Transactional
+    public BookRequest arrange(Long requestId, User user, MeetingRequest request) {
+        BookRequest r = requests.findByIdWithDetails(requestId)
+                .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
+
+        boolean isteyen = r.getStudent().getId().equals(user.getId());
+        boolean karsilayan = r.getFulfilledBy() != null
+                && r.getFulfilledBy().getId().equals(user.getId());
+        if (!isteyen && !karsilayan)
+            throw new IllegalStateException("Bu istek sana ait değil.");
+        if (r.getStatus() == RequestStatus.OPEN)
+            throw new IllegalStateException("Bu isteği henüz kimse karşılamadı.");
+        if (r.getStatus() == RequestStatus.DELIVERED)
+            throw new IllegalStateException("Bu kitap zaten teslim edildi.");
+
+        meetings.apply(r.getMeeting(), request);
+        r.setStatus(RequestStatus.ARRANGED);
+        requests.save(r);
+
+        User digeri = isteyen ? r.getFulfilledBy() : r.getStudent();
+        notifications.notify(digeri, "meeting_arranged",
+                "\"" + r.getBook().getTitle() + "\" için buluşma ayarlandı: "
+                        + meetings.summary(r.getMeeting()));
+        return r;
+    }
+
     /** İsteği açan teslim aldı. */
     @Transactional
     public void deliver(Long requestId, User requester) {
         BookRequest r = ownRequest(requestId, requester);
-        if (r.getStatus() != RequestStatus.FULFILLED && r.getStatus() != RequestStatus.SHIPPED)
+        if (r.getStatus() != RequestStatus.FULFILLED && r.getStatus() != RequestStatus.SHIPPED
+                && r.getStatus() != RequestStatus.ARRANGED)
             throw new IllegalStateException("Bu istek teslim aşamasında değil.");
+        // Yüz yüze teslimde önce buluşma ayarlanmış olmalı
+        if (features.isHandover() && !features.isShipping() && r.getStatus() == RequestStatus.FULFILLED)
+            throw new IllegalStateException("Önce buluşma ayarlayın, sonra teslimi onaylayın.");
         r.setStatus(RequestStatus.DELIVERED);
         r.setDeliveredAt(Instant.now());
         requests.save(r);

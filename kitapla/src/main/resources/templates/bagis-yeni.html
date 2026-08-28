@@ -56,7 +56,10 @@
         </div>
       </div>
 
-      <div class="field">
+      <!--/* "Satın alıp göndereceğim" seçeneği kampüs teslimine geçilirken kapatıldı;
+             kitapla.features.purchase=true ile geri gelir. Kapalıyken kaynak
+             sunucuda OWN varsayılır. */-->
+      <div class="field" th:if="${features.purchase}">
         <div class="label">Nasıl göndereceksin?</div>
         <div class="duo-sm">
           <label class="card card-pad row gap-12" style="cursor:pointer;padding:14px">
@@ -72,10 +75,25 @@
         </div>
       </div>
 
+      <!-- Kampüs içi teslim: bağışçının önerdiği nokta -->
+      <div class="field" th:if="${features.handover}">
+        <label class="label" for="pointId">Nerede teslim edersin?</label>
+        <select class="input" id="pointId" name="pointId">
+          <option value="">— Teslim noktası seç —</option>
+          <option th:each="n : ${noktalar}" th:value="${n.id}" th:text="${n.fullName}">Nokta</option>
+        </select>
+        <input class="input" type="text" name="pointNote" maxlength="300" style="margin-top:10px"
+               aria-label="Başka bir yer ya da ek tarif"
+               placeholder="Listede yoksa yaz: örn. Fen Fakültesi kantini"/>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:8px 0 0">
+          Bu bir öneri; alıcıyla mesajlaşıp birlikte değiştirebilirsiniz.
+        </p>
+      </div>
+
       <div class="field">
         <label class="label" for="description">Açıklama <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
         <textarea class="input" id="description" name="description"
-                  placeholder="Kitabın durumu, teslim tercihi…" th:text="${form?.description}"></textarea>
+                  placeholder="Kitabın durumu, buluşma tercihi…" th:text="${form?.description}"></textarea>
       </div>
     </div>
 

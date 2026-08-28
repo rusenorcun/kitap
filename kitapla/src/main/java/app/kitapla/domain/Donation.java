@@ -44,6 +44,22 @@ public class Donation {
     @Column(nullable = false)
     private DonationStatus status = DonationStatus.OPEN;
 
+    /** Bağışçının önerdiği teslim noktası; taraflar mesajlaşarak değiştirebilir. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    private PickupPoint preferredPoint;
+
+    /** Listede olmayan bir yer önerildiyse. */
+    @Column(length = 300)
+    private String preferredPointNote;
+
+    @Transient
+    public String getPreferredPlaceText() {
+        if (preferredPoint != null && preferredPointNote != null && !preferredPointNote.isBlank())
+            return preferredPoint.getFullName() + " · " + preferredPointNote;
+        if (preferredPoint != null) return preferredPoint.getFullName();
+        return preferredPointNote;
+    }
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 

@@ -35,10 +35,23 @@ public class SwapOffer {
     @Column(nullable = false)
     private OfferStatus status = OfferStatus.PENDING;
 
+    @Embedded
+    private Meeting meeting = new Meeting();
+
+    /** Kargo modunda "kargoladı", yüz yüze teslimde "teslimi onayladı". */
     private Instant fromShippedAt;
     private Instant toShippedAt;
     private Instant decidedAt;
 
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
+
+    /**
+     * JPA, tüm sütunları null olan gömülü nesneyi null olarak yükler; bu yüzden
+     * getter boş bir Meeting üretir. Aksi halde eski kayıtlarda NPE oluşur.
+     */
+    public Meeting getMeeting() {
+        if (meeting == null) meeting = new Meeting();
+        return meeting;
+    }
 }

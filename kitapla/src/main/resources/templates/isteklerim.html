@@ -40,28 +40,38 @@
               th:classappend="${r.status.name() == 'OPEN'} ? 'badge-muted' : (${r.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent')"
               th:text="${r.status.name() == 'OPEN'} ? 'Açık · bağışçı bekleniyor'
                      : (${r.status.name() == 'FULFILLED'} ? 'Karşılandı · kargo bekleniyor'
-                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi'))">Durum</span>
+                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda'
+                     : (${r.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı' : 'Teslim edildi')))">Durum</span>
       </div>
 
       <!-- Teslimat adımları (karşılandıysa) -->
       <th:block th:if="${r.status.name() != 'OPEN'}">
         <div class="row gap-8" style="margin:16px 4px 6px">
           <span style="width:20px;height:20px;border-radius:50%;background:var(--sage);flex-shrink:0"></span>
-          <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
-          <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+          <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+          <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
           <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
           <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
         </div>
         <div class="row muted" style="justify-content:space-between;font-size:11px;font-weight:600;margin:0 0 14px">
-          <span>Karşılandı</span><span>Kargoda</span><span>Teslim</span>
+          <span>Karşılandı</span>
+          <span th:text="${features.shipping} ? 'Kargoda' : 'Buluşma'">Buluşma</span>
+          <span>Teslim</span>
         </div>
+      </th:block>
+
+      <th:block th:if="${features.handover and r.status.name() != 'OPEN'}">
+        <div th:replace="~{bulusma-fragments :: bulusmaKarti(${r.meeting})}"></div>
+        <div th:if="${r.status.name() != 'DELIVERED'}"
+             th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/istek/' + ${r.id}, ${r.meeting}, ${noktalar})}"></div>
       </th:block>
 
       <div class="row gap-8" style="justify-content:flex-end;margin-top:12px">
         <form th:if="${r.status.name() == 'OPEN'}" th:action="@{'/istek/' + ${r.id} + '/sil'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Kaldır</button>
         </form>
-        <form th:if="${r.status.name() == 'FULFILLED' or r.status.name() == 'SHIPPED'}"
+        <form th:if="${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED'
+                       or (features.shipping and r.status.name() == 'FULFILLED')}"
               th:action="@{'/istek/' + ${r.id} + '/teslim-aldim'}" method="post">
           <button class="btn btn-sage btn-sm" type="submit">Teslim aldım</button>
         </form>

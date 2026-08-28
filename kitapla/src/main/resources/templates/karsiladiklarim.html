@@ -35,14 +35,20 @@
         </div>
         <span class="badge"
               th:classappend="${r.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
-              th:text="${r.status.name() == 'FULFILLED'} ? 'Kargo bekleniyor'
-                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda' : 'Teslim edildi')">Durum</span>
+              th:text="${r.status.name() == 'DELIVERED'} ? 'Teslim edildi'
+                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda'
+                     : (${r.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
+                     : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor')))">Durum</span>
       </div>
 
-      <!-- Teslimat adresi: yalnızca karşılayana gösterilir -->
+      <!-- Teslimat adresi: yalnızca karşılayana ve yalnızca kargo modunda gösterilir.
+           Kampüs içi yüz yüze teslimde adres paylaşılmaz. -->
       <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
-        <div class="label" style="margin-bottom:8px">Teslimat bilgileri</div>
-        <div class="row gap-12" style="align-items:flex-start;background:var(--surface2);border-radius:12px;padding:12px">
+        <div class="label" style="margin-bottom:8px"
+             th:text="${features.address} ? 'Teslimat bilgileri' : 'Buluşma'">Buluşma</div>
+        <!-- Adres yalnızca kargo modunda -->
+        <div class="row gap-12" th:if="${features.address}"
+             style="align-items:flex-start;background:var(--surface2);border-radius:12px;padding:12px">
           <div class="avatar" style="width:34px;height:34px;font-size:11px" th:text="${r.student.initials}">EY</div>
           <div style="flex:1">
             <div style="font-size:14px;font-weight:800" th:text="${r.student.name}">Alıcı</div>
@@ -51,10 +57,18 @@
               <span th:if="${r.student.phone}"> · <span th:text="${r.student.phone}">Telefon</span></span>
             </div>
           </div>
-          <form th:if="${r.status.name() == 'FULFILLED'}" th:action="@{'/istek/' + ${r.id} + '/kargola'}" method="post">
+          <form th:if="${features.shipping and r.status.name() == 'FULFILLED'}"
+                th:action="@{'/istek/' + ${r.id} + '/kargola'}" method="post">
             <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
           </form>
         </div>
+
+        <!-- Kampüs içi buluşma -->
+        <th:block th:if="${features.handover}">
+          <div th:replace="~{bulusma-fragments :: bulusmaKarti(${r.meeting})}"></div>
+          <div th:if="${r.status.name() != 'DELIVERED'}"
+               th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/istek/' + ${r.id}, ${r.meeting}, ${noktalar})}"></div>
+        </th:block>
       </div>
     </div>
   </div>

@@ -21,13 +21,16 @@ public class SwapService {
     private static final List<OfferStatus> LIVE = List.of(OfferStatus.PENDING, OfferStatus.ACCEPTED);
 
     private final Features features;
+    private final MeetingService meetings;
     private final SwapBookRepository swapBooks;
     private final SwapOfferRepository offers;
     private final NotificationService notifications;
 
-    public SwapService(Features features, SwapBookRepository swapBooks, SwapOfferRepository offers,
+    public SwapService(Features features, MeetingService meetings,
+                       SwapBookRepository swapBooks, SwapOfferRepository offers,
                        NotificationService notifications) {
         this.features = features;
+        this.meetings = meetings;
         this.swapBooks = swapBooks;
         this.offers = offers;
         this.notifications = notifications;
@@ -217,28 +220,57 @@ public class SwapService {
         return o;
     }
 
-    /** Kargoya verdim. İki taraf da verince takas tamamlanır. */
+    /**
+     * Takas buluşmasını ayarlar ya da günceller. Taraflardan ikisi de yapabilir.
+     * Takasta tek bir buluşmada karşılıklı teslim yapılır.
+     */
+    @Transactional
+    public SwapOffer arrange(Long offerId, User me, MeetingRequest request) {
+        SwapOffer o = offers.findByIdWithDetails(offerId)
+                .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
+        if (o.getStatus() != OfferStatus.ACCEPTED)
+            throw new IllegalStateException("Yalnızca kabul edilmiş takasta buluşma ayarlanabilir.");
+        if (!o.getFromUser().getId().equals(me.getId()) && !o.getToUser().getId().equals(me.getId()))
+            throw new IllegalStateException("Bu takas sana ait değil.");
+
+        meetings.apply(o.getMeeting(), request);
+        offers.save(o);
+
+        User other = counterpart(o, me);
+        notifications.notify(other, "meeting_arranged",
+                "Takas buluşması ayarlandı: " + meetings.summary(o.getMeeting()));
+        return o;
+    }
+
+    /**
+     * Yüz yüze teslimde kendi kitabını verdiğini onaylar; kargo modunda
+     * kargoya verdiğini bildirir. İki taraf da onaylayınca takas tamamlanır.
+     */
     @Transactional
     public void ship(Long offerId, User me) {
         SwapOffer o = offers.findByIdWithDetails(offerId)
                 .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
         if (o.getStatus() != OfferStatus.ACCEPTED)
             throw new IllegalStateException("Yalnızca kabul edilmiş takas kargolanabilir.");
+        if (features.isHandover() && !features.isShipping() && !o.getMeeting().isArranged())
+            throw new IllegalStateException("Önce buluşma ayarlayın, sonra teslimi onaylayın.");
 
         boolean isFrom = o.getFromUser().getId().equals(me.getId());
         boolean isTo = o.getToUser().getId().equals(me.getId());
         if (!isFrom && !isTo) throw new IllegalStateException("Bu takas sana ait değil.");
 
         if (isFrom) {
-            if (o.getFromShippedAt() != null) throw new IllegalStateException("Zaten kargoya verdin.");
+            if (o.getFromShippedAt() != null) throw new IllegalStateException(zatenMesaji());
             o.setFromShippedAt(Instant.now());
         } else {
-            if (o.getToShippedAt() != null) throw new IllegalStateException("Zaten kargoya verdin.");
+            if (o.getToShippedAt() != null) throw new IllegalStateException(zatenMesaji());
             o.setToShippedAt(Instant.now());
         }
 
         User other = isFrom ? o.getToUser() : o.getFromUser();
-        notifications.notify(other, "swap_shipped", me.getName() + " takas kitabını kargoya verdi.");
+        notifications.notify(other, "swap_shipped", features.isShipping()
+                ? me.getName() + " takas kitabını kargoya verdi."
+                : me.getName() + " kitabı teslim ettiğini onayladı.");
 
         if (o.getFromShippedAt() != null && o.getToShippedAt() != null) {
             o.setStatus(OfferStatus.COMPLETED);
@@ -250,6 +282,10 @@ public class SwapService {
     }
 
     /** Adresler yalnızca kabul edilmiş/tamamlanmış takasta paylaşılır. */
+    private String zatenMesaji() {
+        return features.isShipping() ? "Zaten kargoya verdin." : "Teslimi zaten onayladın.";
+    }
+
     public boolean addressVisible(SwapOffer o) {
         return o.getStatus() == OfferStatus.ACCEPTED || o.getStatus() == OfferStatus.COMPLETED;
     }

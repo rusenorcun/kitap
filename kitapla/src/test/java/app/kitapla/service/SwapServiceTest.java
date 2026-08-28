@@ -168,12 +168,19 @@ class SwapServiceTest {
                 .extracting(Notification::getType).contains("swap_rejected");
     }
 
+    /** Yüz yüze teslimde önce buluşma ayarlanmalı. */
+    private void bulusmaAyarla(SwapOffer o, User kim) {
+        swapService.arrange(o.getId(), kim, new app.kitapla.service.MeetingRequest(
+                null, "Kütüphane girişi", java.time.Instant.now().plusSeconds(3600)));
+    }
+
     @Test
     void ciftKargoTakasiTamamlar() {
         User ali = user("ali", "İzmir");
         User veli = user("veli", "Ankara");
         SwapOffer o = swapService.offer(openBook(ali, "Ali").getId(), openBook(veli, "Veli").getId(), veli, null);
         swapService.accept(o.getId(), ali);
+        bulusmaAyarla(o, ali);
 
         swapService.ship(o.getId(), ali);
         assertThat(offers.findById(o.getId()).orElseThrow().getStatus()).isEqualTo(OfferStatus.ACCEPTED);
@@ -193,11 +200,13 @@ class SwapServiceTest {
         User veli = user("veli", "Ankara");
         SwapOffer o = swapService.offer(openBook(ali, "Ali").getId(), openBook(veli, "Veli").getId(), veli, null);
         swapService.accept(o.getId(), ali);
+        bulusmaAyarla(o, ali);
         swapService.ship(o.getId(), ali);
 
+        // Yüz yüze modda mesaj "Teslimi zaten onayladın" olur (kargo modunda "Zaten kargoya verdin")
         assertThatThrownBy(() -> swapService.ship(o.getId(), ali))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("Zaten kargoya verdin");
+                .hasMessageContaining("zaten onayladın");
     }
 
     @Test

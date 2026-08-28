@@ -1,5 +1,6 @@
 package app.kitapla.web;
 
+import app.kitapla.config.Features;
 import app.kitapla.domain.User;
 import app.kitapla.repo.NotificationRepository;
 import app.kitapla.security.CurrentUser;
@@ -15,9 +16,17 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 public class GlobalModelAdvice {
 
     private final NotificationRepository notifications;
+    private final Features features;
 
-    public GlobalModelAdvice(NotificationRepository notifications) {
+    public GlobalModelAdvice(NotificationRepository notifications, Features features) {
         this.notifications = notifications;
+        this.features = features;
+    }
+
+    /** Şablonlar açık/kapalı özelliklere göre farklı metin ve düğme gösterir. */
+    @ModelAttribute("features")
+    public Features features() {
+        return features;
     }
 
     @ModelAttribute("currentUser")

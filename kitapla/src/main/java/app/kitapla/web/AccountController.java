@@ -4,6 +4,7 @@ import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.repo.ClaimRepository;
 import app.kitapla.service.DonationService;
+import app.kitapla.service.PickupPointService;
 import app.kitapla.service.QuotaService;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
@@ -20,12 +21,14 @@ public class AccountController {
     private final QuotaService quotaService;
     private final ClaimRepository claims;
     private final DonationService donationService;
+    private final PickupPointService points;
 
     public AccountController(QuotaService quotaService, ClaimRepository claims,
-                             DonationService donationService) {
+                             DonationService donationService, PickupPointService points) {
         this.quotaService = quotaService;
         this.claims = claims;
         this.donationService = donationService;
+        this.points = points;
     }
 
     @GetMapping("/panom")
@@ -41,6 +44,7 @@ public class AccountController {
     public String aldiklarim(@AuthenticationPrincipal AppUserDetails principal, Model model) {
         User user = principal.getUser();
         model.addAttribute("claims", claims.findByStudentWithDetails(user));
+        model.addAttribute("noktalar", points.active());
         return "aldiklarim";
     }
 

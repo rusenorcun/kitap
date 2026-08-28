@@ -5,6 +5,7 @@ import app.kitapla.repo.ClaimRepository;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.service.BookMetadata;
 import app.kitapla.service.BookService;
+import app.kitapla.service.PickupPointService;
 import app.kitapla.service.DonationService;
 import app.kitapla.service.DonationView;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,15 +25,22 @@ public class DonationController {
     private final BookService bookService;
     private final DonationService donationService;
     private final ClaimRepository claims;
+    private final PickupPointService points;
+    private final app.kitapla.config.Features features;
 
-    public DonationController(BookService bookService, DonationService donationService, ClaimRepository claims) {
+    public DonationController(BookService bookService, DonationService donationService,
+                              ClaimRepository claims, PickupPointService points,
+                              app.kitapla.config.Features features) {
         this.bookService = bookService;
         this.donationService = donationService;
         this.claims = claims;
+        this.points = points;
+        this.features = features;
     }
 
     @GetMapping("/bagis/yeni")
-    public String yeniForm() {
+    public String yeniForm(Model model) {
+        model.addAttribute("noktalar", points.active());
         return "bagis-yeni";
     }
 
@@ -55,20 +63,25 @@ public class DonationController {
                           @RequestParam(defaultValue = "1") int quantity,
                           @RequestParam(required = false) String targetLevel,
                           @RequestParam(required = false) String source,
+                          @RequestParam(required = false) Long pointId,
+                          @RequestParam(required = false) String pointNote,
                           RedirectAttributes ra, Model model) {
         User donor = principal.getUser();
         try {
             Book book = bookService.findOrCreate(title, author, purchaseLink, coverUrl, null, donor.getId());
             TargetLevel level = (targetLevel == null || targetLevel.isBlank())
                     ? TargetLevel.HEPSI : TargetLevel.valueOf(targetLevel);
+            // Satın alma kapalıyken kaynak sorulmaz; elindeki kopya varsayılır
             DonationSource src = (source == null || source.isBlank())
-                    ? DonationSource.PURCHASE : DonationSource.valueOf(source);
-            donationService.create(donor, book, quantity, level, src, description);
+                    ? (features.isPurchase() ? DonationSource.PURCHASE : DonationSource.OWN)
+                    : DonationSource.valueOf(source);
+            donationService.create(donor, book, quantity, level, src, description, pointId, pointNote);
             ra.addFlashAttribute("basari", "Bağışın yayınlandı. İlk 48 saat öğrencilere öncelikli gösterilecek.");
             return "redirect:/bagislarim";
         } catch (IllegalArgumentException | IllegalStateException ex) {
             model.addAttribute("hata", ex.getMessage());
             model.addAttribute("form", formEcho(title, author, purchaseLink, description, quantity, targetLevel, source));
+            model.addAttribute("noktalar", points.active());
             return "bagis-yeni";
         }
     }
@@ -97,6 +110,7 @@ public class DonationController {
         }
         model.addAttribute("donations", list);
         model.addAttribute("claimers", claimers);
+        model.addAttribute("noktalar", points.active());
         return "bagislarim";
     }
 

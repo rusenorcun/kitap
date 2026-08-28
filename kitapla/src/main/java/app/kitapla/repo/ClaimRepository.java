@@ -20,6 +20,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
            join fetch c.donation d
            join fetch d.book
            join fetch d.donor
+           left join fetch c.meeting.point
            where c.student = :student
            order by c.createdAt desc
            """)
@@ -31,6 +32,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
            join fetch d.book
            join fetch d.donor
            join fetch c.student
+           left join fetch c.meeting.point
            where c.id = :id
            """)
     Optional<Claim> findByIdWithDetails(@Param("id") Long id);
@@ -38,6 +40,7 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
     @Query("""
            select c from Claim c
            join fetch c.student
+           left join fetch c.meeting.point
            where c.donation = :donation
            order by c.createdAt
            """)

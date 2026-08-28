@@ -124,7 +124,7 @@ class SwapPagesTest {
     }
 
     @Test
-    void ADRES_kabulden_once_GORUNMEZ_kabulden_sonra_gorunur() throws Exception {
+    void kampusTakasindaAdresHicGorunmez() throws Exception {
         User ali = mk("adresli-ali", "İzmir Gizli Cadde 5");
         User veli = mk("adresli-veli", "Ankara Saklı Sokak 9");
         SwapBook hedef = open(ali, "Hedef");
@@ -141,24 +141,33 @@ class SwapPagesTest {
         mvc.perform(post("/takas/teklif/" + o.getId() + "/kabul").with(user(as(ali))).with(csrf()))
                 .andExpect(redirectedUrl("/takas/takaslarim"));
 
-        // Kabulden SONRA: karşılıklı adresler görünür
+        // Kabulden SONRA da adres paylaşılmaz; onun yerine buluşma ayarlanır.
+        // Kargo modundaki karşılıklı adres paylaşımı: KargoModuSayfaTest
         mvc.perform(get("/takas/takaslarim").with(user(as(veli))))
-                .andExpect(content().string(containsString("Gizli Cadde 5")))
-                .andExpect(content().string(containsString("Kargoya verdim")));
+                .andExpect(content().string(not(containsString("Gizli Cadde 5"))))
+                .andExpect(content().string(not(containsString("Kargoya verdim"))))
+                .andExpect(content().string(containsString("Buluşma ayarla")));
         mvc.perform(get("/takas/takaslarim").with(user(as(ali))))
-                .andExpect(content().string(containsString("Saklı Sokak 9")));
+                .andExpect(content().string(not(containsString("Saklı Sokak 9"))));
     }
 
     @Test
-    void ciftKargoSonrasiTamamlandiGorunur() throws Exception {
+    void ciftTeslimSonrasiTamamlandiGorunur() throws Exception {
         User ali = mk("ali", "İzmir");
         User veli = mk("veli", "Ankara");
         SwapOffer o = swapService.offer(open(ali, "A").getId(), open(veli, "V").getId(), veli, null);
         swapService.accept(o.getId(), ali);
 
+        // Yüz yüze takasta önce buluşma ayarlanır
+        mvc.perform(post("/bulusma/takas/" + o.getId()).with(user(as(ali))).with(csrf())
+                        .param("note", "Yemekhane önü")
+                        .param("at", java.time.LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
         mvc.perform(post("/takas/teklif/" + o.getId() + "/kargola").with(user(as(ali))).with(csrf()));
         mvc.perform(get("/takas/takaslarim").with(user(as(ali))))
-                .andExpect(content().string(containsString("Kargoya verdin")));
+                .andExpect(content().string(containsString("Teslimi onayladın")));
 
         mvc.perform(post("/takas/teklif/" + o.getId() + "/kargola").with(user(as(veli))).with(csrf()));
         assertThat(offers.findById(o.getId()).orElseThrow().getStatus()).isEqualTo(OfferStatus.COMPLETED);

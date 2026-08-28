@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!--/* Ayarlanmış buluşmanın gösterimi */-->
+<div th:fragment="bulusmaKarti(meeting)" th:if="${meeting != null and meeting.arranged}"
+     class="card card-pad row gap-12" style="background:var(--sage-soft);border-color:transparent;margin-top:12px">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+       stroke-linecap="round" stroke-linejoin="round" style="color:var(--sage-ink);flex-shrink:0">
+    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+  </svg>
+  <div style="flex:1;min-width:0">
+    <div style="font-size:14px;font-weight:800;color:var(--sage-ink)" th:text="${meeting.placeText}">Yer</div>
+    <div style="font-size:13px;font-weight:600;color:var(--sage-ink);opacity:.85"
+         th:text="${meeting.atText}">Zaman</div>
+  </div>
+</div>
+
+<!--/* Buluşma ayarlama / güncelleme formu.
+       action  : gönderilecek uç
+       meeting : mevcut buluşma (null olabilir)
+       noktalar: seçilebilir teslim noktaları */-->
+<div th:fragment="bulusmaFormu(action, meeting, noktalar)" style="margin-top:12px">
+  <details class="card card-pad" th:open="${meeting == null or !meeting.arranged}">
+    <summary style="font-size:14px;font-weight:800;cursor:pointer;list-style:none"
+             th:text="${meeting != null and meeting.arranged} ? 'Buluşmayı değiştir' : 'Buluşma ayarla'">
+      Buluşma ayarla</summary>
+
+    <form th:action="${action}" method="post" style="margin-top:14px">
+      <div class="field" style="margin-bottom:12px">
+        <label class="label" th:for="'nokta-' + ${action}">Teslim noktası</label>
+        <select class="input" name="pointId" th:id="'nokta-' + ${action}">
+          <option value="">— Listeden seç —</option>
+          <option th:each="n : ${noktalar}" th:value="${n.id}" th:text="${n.fullName}"
+                  th:selected="${meeting != null and meeting.point != null and meeting.point.id == n.id}">Nokta</option>
+        </select>
+      </div>
+
+      <div class="field" style="margin-bottom:12px">
+        <label class="label" th:for="'not-' + ${action}">
+          Başka bir yer ya da ek tarif <span class="muted">(isteğe bağlı)</span></label>
+        <input class="input" type="text" name="note" th:id="'not-' + ${action}" maxlength="300"
+               th:value="${meeting != null} ? ${meeting.note} : ''"
+               placeholder="Örn. kütüphane girişinde, mavi çantalı"/>
+      </div>
+
+      <div class="field" style="margin-bottom:14px">
+        <label class="label" th:for="'zaman-' + ${action}">Buluşma zamanı</label>
+        <input class="input" type="datetime-local" name="at" th:id="'zaman-' + ${action}" required/>
+      </div>
+
+      <button class="btn btn-primary btn-sm" type="submit">Kaydet ve karşı tarafa bildir</button>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:10px 0 0">
+        Listeden nokta seç ya da yeri kendin yaz. Karşı taraf değiştirmek isterse o da güncelleyebilir.
+      </p>
+    </form>
+  </details>
+</div>
+
+</body>
+</html>

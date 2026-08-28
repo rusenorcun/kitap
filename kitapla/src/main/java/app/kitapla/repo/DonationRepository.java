@@ -20,6 +20,7 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
            select d from Donation d
            join fetch d.book
            join fetch d.donor
+           left join fetch d.preferredPoint
            where d.status = :status
            order by d.createdAt desc
            """)
@@ -29,6 +30,7 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
            select d from Donation d
            join fetch d.book
            join fetch d.donor
+           left join fetch d.preferredPoint
            where d.id = :id
            """)
     Optional<Donation> findByIdWithDetails(@Param("id") Long id);
@@ -37,6 +39,7 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
            select d from Donation d
            join fetch d.book
            join fetch d.donor
+           left join fetch d.preferredPoint
            where d.donor = :donor
            order by d.createdAt desc
            """)

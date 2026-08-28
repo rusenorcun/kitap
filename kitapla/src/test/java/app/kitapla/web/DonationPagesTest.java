@@ -12,6 +12,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.time.LocalDateTime;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +33,8 @@ class DonationPagesTest {
     @Autowired MockMvc mvc;
     @Autowired UserRepository users;
     @Autowired DonationRepository donations;
+    @Autowired app.kitapla.repo.ClaimRepository claims;
+    @Autowired app.kitapla.service.PickupPointService points;
     @Autowired PasswordEncoder encoder;
 
     private User makeUser(String tag, String address) {
@@ -107,7 +110,7 @@ class DonationPagesTest {
     }
 
     @Test
-    void bagisciAlicininAdresiniGorurVeKargolayabilir() throws Exception {
+    void kampusTeslimindeAliciAdresiGosterilmez() throws Exception {
         User donor = makeUser("kargo-bagisci", "İzmir");
         User alici = makeUser("kargo-alici", "Ankara Çankaya 42");
 
@@ -124,10 +127,54 @@ class DonationPagesTest {
         mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()))
                 .andExpect(redirectedUrl("/aldiklarim"));
 
-        // Bağışçı adresi görür
+        // Yüz yüze teslimde adres paylaşılmaz, kargo düğmesi de çıkmaz;
+        // onun yerine buluşma ayarlama görünür (adres akışı: KargoModuSayfaTest)
         mvc.perform(get("/bagislarim").with(user(as(donor))))
-                .andExpect(content().string(containsString("Ankara Çankaya 42")))
-                .andExpect(content().string(containsString("Kargoya verdim")));
+                .andExpect(content().string(not(containsString("Ankara Çankaya 42"))))
+                .andExpect(content().string(not(containsString("Kargoya verdim"))))
+                .andExpect(content().string(containsString("Buluşma ayarla")));
+    }
+
+    @Test
+    void listedenSecilenNoktaSayfalardaGorunur() throws Exception {
+        // open-in-view kapalı: seçilen nokta sorguda birlikte çekilmezse
+        // sayfa LazyInitializationException ile 500 döner
+        var nokta = points.create("Test Kampüs " + UUID.randomUUID(), "Kütüphane girişi", null);
+
+        User donor = makeUser("nokta-bagisci", "İzmir");
+        User alici = makeUser("nokta-alici", "Ankara");
+        alici.setStudentStatus(StudentStatus.APPROVED);
+        alici.setSchoolLevel(SchoolLevel.LISE);
+        alici = users.save(alici);
+
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Noktalı Kitap " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI")
+                .param("pointId", String.valueOf(nokta.getId())));
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+
+        // Bağışçının önerdiği nokta ilanında görünür
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi")));
+
+        mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()));
+        Long claimId = claims.findByStudentWithDetails(alici).get(0).getId();
+
+        mvc.perform(post("/bulusma/bagis/" + claimId).with(user(as(alici))).with(csrf())
+                        .param("pointId", String.valueOf(nokta.getId()))
+                        .param("note", "kırmızı çantalı")
+                        .param("at", LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Her iki taraf da nokta + notu birlikte görür
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi · kırmızı çantalı")));
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi · kırmızı çantalı")));
     }
 
     @Test
@@ -145,9 +192,22 @@ class DonationPagesTest {
 
         mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()));
 
-        // aldıklarım sayfası "Teslim aldım" gösterir
+        // Yüz yüze teslimde önce buluşma ayarlanır; o zamana kadar "Teslim aldım" çıkmaz
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(content().string(containsString("Buluşma ayarla")))
+                .andExpect(content().string(containsString("İptal et")))
+                .andExpect(content().string(not(containsString("Teslim aldım"))));
+
+        Long claimId = claims.findByStudentWithDetails(alici).get(0).getId();
+        mvc.perform(post("/bulusma/bagis/" + claimId).with(user(as(alici))).with(csrf())
+                        .param("note", "Kütüphane girişi")
+                        .param("at", LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Buluşma ayarlandıktan sonra teslim onayı görünür
         mvc.perform(get("/aldiklarim").with(user(as(alici))))
                 .andExpect(content().string(containsString("Teslim aldım")))
-                .andExpect(content().string(containsString("İptal et")));
+                .andExpect(content().string(containsString("Kütüphane girişi")));
     }
 }
