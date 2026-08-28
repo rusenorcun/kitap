@@ -53,11 +53,10 @@ class RequestServiceTest {
     }
 
     @Test
-    void adressizKullaniciIstekOlusturamaz() {
+    void kampusTeslimindeAdressizIstekOlusturulabilir() {
+        // Yüz yüze teslimde adres gerekmez; kargo modunda yeniden istenir (KargoModuTest)
         User adressiz = user("adressiz", true, null);
-        assertThatThrownBy(() -> requestService.create(adressiz, book(), null))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("adres");
+        assertThat(requestService.create(adressiz, book(), null)).isNotNull();
     }
 
     @Test

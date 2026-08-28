@@ -1,5 +1,6 @@
 package app.kitapla.service;
 
+import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.SwapBookRepository;
 import app.kitapla.repo.SwapOfferRepository;
@@ -19,11 +20,14 @@ public class SwapService {
 
     private static final List<OfferStatus> LIVE = List.of(OfferStatus.PENDING, OfferStatus.ACCEPTED);
 
+    private final Features features;
     private final SwapBookRepository swapBooks;
     private final SwapOfferRepository offers;
     private final NotificationService notifications;
 
-    public SwapService(SwapBookRepository swapBooks, SwapOfferRepository offers, NotificationService notifications) {
+    public SwapService(Features features, SwapBookRepository swapBooks, SwapOfferRepository offers,
+                       NotificationService notifications) {
+        this.features = features;
         this.swapBooks = swapBooks;
         this.offers = offers;
         this.notifications = notifications;
@@ -35,7 +39,7 @@ public class SwapService {
     @Transactional
     public SwapBook open(User user, Book book, String note) {
         if (book == null) throw new IllegalStateException("Kitap seçilmedi.");
-        if (user.getAddress() == null || user.getAddress().isBlank())
+        if (features.isAddress() && (user.getAddress() == null || user.getAddress().isBlank()))
             throw new IllegalStateException("Takas için profilinden teslimat adresi eklemelisin.");
         if (swapBooks.findByUserAndBook_Id(user, book.getId()).isPresent())
             throw new IllegalStateException("Bu kitabı zaten takasa açtın.");
@@ -113,7 +117,7 @@ public class SwapService {
             throw new IllegalStateException("Bu kitap artık takasa açık değil.");
         if (target.getUser().getId().equals(me.getId()))
             throw new IllegalStateException("Kendi kitabına teklif veremezsin.");
-        if (me.getAddress() == null || me.getAddress().isBlank())
+        if (features.isAddress() && (me.getAddress() == null || me.getAddress().isBlank()))
             throw new IllegalStateException("Takas için profilinden teslimat adresi eklemelisin.");
 
         SwapBook offered = swapBooks.findByIdWithDetails(offeredBookId)

@@ -1,5 +1,6 @@
 package app.kitapla.service;
 
+import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.BookRequestRepository;
 import org.springframework.stereotype.Service;
@@ -19,12 +20,14 @@ public class RequestService {
     /** Aynı anda açık tutulabilecek istek sayısı (suistimali önler). */
     public static final int MAX_OPEN_REQUESTS = 5;
 
+    private final Features features;
     private final BookRequestRepository requests;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
-    public RequestService(BookRequestRepository requests, QuotaService quotaService,
+    public RequestService(Features features, BookRequestRepository requests, QuotaService quotaService,
                           NotificationService notifications) {
+        this.features = features;
         this.requests = requests;
         this.quotaService = quotaService;
         this.notifications = notifications;
@@ -66,7 +69,7 @@ public class RequestService {
     @Transactional
     public BookRequest create(User user, Book book, String description) {
         if (book == null) throw new IllegalStateException("Kitap seçilmedi.");
-        if (user.getAddress() == null || user.getAddress().isBlank())
+        if (features.isAddress() && (user.getAddress() == null || user.getAddress().isBlank()))
             throw new IllegalStateException("İstek oluşturmadan önce profilinden teslimat adresi eklemelisin.");
 
         long open = requests.countByStudentAndStatus(user, RequestStatus.OPEN);

@@ -24,6 +24,7 @@ public class DataSeeder implements CommandLineRunner {
     private final UserRepository users;
     private final BookRepository books;
     private final DonationRepository donations;
+    private final PickupPointRepository pickupPoints;
     private final PasswordEncoder encoder;
     private final JdbcTemplate jdbc;
 
@@ -33,7 +34,8 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${kitapla.upload-dir}") private String uploadDir;
 
     public DataSeeder(UserRepository users, BookRepository books, DonationRepository donations,
-                      PasswordEncoder encoder, JdbcTemplate jdbc) {
+                      PickupPointRepository pickupPoints, PasswordEncoder encoder, JdbcTemplate jdbc) {
+        this.pickupPoints = pickupPoints;
         this.users = users;
         this.books = books;
         this.donations = donations;
@@ -62,7 +64,25 @@ public class DataSeeder implements CommandLineRunner {
             users.save(a);
         });
 
-        // 2) Örnek veri (yalnızca boşsa)
+        // 2) Teslim noktaları (yalnızca hiç yoksa) — kampüs içi yüz yüze teslim için
+        if (pickupPoints.count() == 0) {
+            record Nokta(String kampus, String ad, String tarif) {}
+            List.of(
+                    new Nokta("Merkez Kampüs", "Merkez Kütüphane girişi", "Turnikelerin solundaki banklar"),
+                    new Nokta("Merkez Kampüs", "Öğrenci Merkezi kantini", "Kantin girişindeki masa"),
+                    new Nokta("Merkez Kampüs", "Mühendislik Fakültesi lobisi", "Asansörlerin karşısı"),
+                    new Nokta("Tınaztepe Kampüsü", "Yemekhane önü", "Ana giriş kapısı"),
+                    new Nokta("Tınaztepe Kampüsü", "Spor salonu girişi", null)
+            ).forEach(n -> {
+                PickupPoint p = new PickupPoint();
+                p.setCampus(n.kampus());
+                p.setName(n.ad());
+                p.setDescription(n.tarif());
+                pickupPoints.save(p);
+            });
+        }
+
+        // 3) Örnek veri (yalnızca boşsa)
         if (books.count() > 0) return;
 
         User donor = new User();

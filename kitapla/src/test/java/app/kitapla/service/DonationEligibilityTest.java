@@ -96,14 +96,14 @@ class DonationEligibilityTest {
     }
 
     @Test
-    void adressizKullaniciAlamaz() {
+    void kampusTeslimindeAdresIstenmez() {
+        // Kampüs içi yüz yüze teslimde adres gerekmez (kitapla.features.address=false)
         User donor = user("donor", false, "Adres", null);
         User adressiz = user("adressiz", true, null, SchoolLevel.LISE);
         Donation d = donation(donor, TargetLevel.HEPSI, 1);
 
         ClaimEligibility e = check(d, adressiz);
-        assertThat(e.allowed()).isFalse();
-        assertThat(e.code()).isEqualTo("ADDRESS_REQUIRED");
+        assertThat(e.allowed()).as("adres olmadan da alabilmeli").isTrue();
     }
 
     @Test

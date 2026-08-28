@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Teslim noktaları')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:900px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 6px">Teslim noktaları</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Kitaplar kampüs içinde yüz yüze teslim ediliyor. Üyeler buluşma yeri olarak
+    buradaki noktalardan birini seçer; listede olmayan bir yer için serbest metin de girebilirler.
+  </p>
+
+  <div th:replace="~{fragments :: adminnav('noktalar')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" role="status" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <!-- Yeni nokta -->
+  <div class="card card-pad" style="margin-bottom:22px">
+    <h2 style="font-size:17px;font-weight:800;margin:0 0 14px">Yeni nokta ekle</h2>
+    <form th:action="@{/admin/noktalar}" method="post">
+      <div class="duo">
+        <div class="field" style="margin-bottom:12px">
+          <label class="label" for="campus">Kampüs</label>
+          <input class="input" id="campus" name="campus" required placeholder="Tınaztepe Kampüsü"/>
+        </div>
+        <div class="field" style="margin-bottom:12px">
+          <label class="label" for="name">Nokta adı</label>
+          <input class="input" id="name" name="name" required placeholder="Merkez Kütüphane girişi"/>
+        </div>
+      </div>
+      <div class="field">
+        <label class="label" for="description">Tarif <span class="muted">(isteğe bağlı)</span></label>
+        <input class="input" id="description" name="description"
+               placeholder="Turnikelerin solundaki banklar"/>
+      </div>
+      <button class="btn btn-primary btn-sm" type="submit">Ekle</button>
+    </form>
+  </div>
+
+  <div th:if="${#lists.isEmpty(noktalar)}" class="card card-pad" style="text-align:center;padding:48px 24px">
+    <div style="font-size:18px;font-weight:800;margin-bottom:8px">Henüz teslim noktası yok</div>
+    <p class="muted" style="font-weight:500;margin:0">
+      En az bir nokta ekle ki üyeler buluşma yeri seçebilsin.
+    </p>
+  </div>
+
+  <div class="stack gap-10" th:unless="${#lists.isEmpty(noktalar)}">
+    <div th:each="n : ${noktalar}" class="card card-pad"
+         th:style="${n.active} ? '' : 'opacity:.65'">
+      <form th:action="@{'/admin/noktalar/' + ${n.id} + '/guncelle'}" method="post">
+        <div class="duo" style="margin-bottom:10px">
+          <input class="input" name="campus" th:value="${n.campus}" required aria-label="Kampüs"/>
+          <input class="input" name="name" th:value="${n.name}" required aria-label="Nokta adı"/>
+        </div>
+        <input class="input" name="description" th:value="${n.description}"
+               placeholder="Tarif (isteğe bağlı)" aria-label="Tarif" style="margin-bottom:12px"/>
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <span th:if="${n.active}" class="badge badge-sage">Aktif</span>
+          <span th:unless="${n.active}" class="badge badge-muted">Pasif</span>
+          <div class="nav-spacer"></div>
+          <button class="btn btn-soft btn-sm" type="submit">Kaydet</button>
+        </div>
+      </form>
+      <div class="row gap-8" style="margin-top:10px">
+        <th:block th:if="${n.active}">
+          <form th:action="@{'/admin/noktalar/' + ${n.id} + '/pasiflestir'}" method="post" style="margin:0">
+            <button class="btn btn-soft btn-sm" type="submit">Pasifleştir</button>
+          </form>
+        </th:block>
+        <th:block th:unless="${n.active}">
+          <form th:action="@{'/admin/noktalar/' + ${n.id} + '/aktiflestir'}" method="post" style="margin:0">
+            <button class="btn btn-sage btn-sm" type="submit">Aktifleştir</button>
+          </form>
+        </th:block>
+      </div>
+    </div>
+  </div>
+
+  <p class="muted" style="font-size:13px;font-weight:500;margin-top:18px">
+    Noktalar silinmez, pasifleştirilir: geçmiş buluşma kayıtları bu noktalara bağlı olduğu için
+    kayıtların bütünlüğü korunur. Pasif noktalar yeni seçimlerde görünmez.
+  </p>
+</div>
+</body>
+</html>

@@ -3,6 +3,7 @@ package app.kitapla.web;
 import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.service.AdminService;
+import app.kitapla.service.PickupPointService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -26,9 +27,11 @@ import java.nio.file.Path;
 public class AdminController {
 
     private final AdminService admin;
+    private final PickupPointService points;
 
-    public AdminController(AdminService admin) {
+    public AdminController(AdminService admin, PickupPointService points) {
         this.admin = admin;
+        this.points = points;
     }
 
     /** Alt navigasyondaki bekleyen belge rozeti her yönetim sayfasında görünür. */
@@ -155,6 +158,56 @@ public class AdminController {
             ra.addFlashAttribute("hata", ex.getMessage());
         }
         return "redirect:/admin/uyeler";
+    }
+
+    // ---------- Teslim noktaları ----------
+
+    @GetMapping("/noktalar")
+    public String noktalar(Model model) {
+        model.addAttribute("noktalar", points.all());
+        return "admin-noktalar";
+    }
+
+    @PostMapping("/noktalar")
+    public String noktaEkle(@RequestParam(required = false) String campus,
+                            @RequestParam(required = false) String name,
+                            @RequestParam(required = false) String description,
+                            RedirectAttributes ra) {
+        return noktaIslemi(ra, () -> {
+            var p = points.create(campus, name, description);
+            return p.getFullName() + " eklendi.";
+        });
+    }
+
+    @PostMapping("/noktalar/{id}/guncelle")
+    public String noktaGuncelle(@PathVariable Long id,
+                                @RequestParam(required = false) String campus,
+                                @RequestParam(required = false) String name,
+                                @RequestParam(required = false) String description,
+                                RedirectAttributes ra) {
+        return noktaIslemi(ra, () -> {
+            var p = points.update(id, campus, name, description);
+            return p.getFullName() + " güncellendi.";
+        });
+    }
+
+    @PostMapping("/noktalar/{id}/pasiflestir")
+    public String noktaPasif(@PathVariable Long id, RedirectAttributes ra) {
+        return noktaIslemi(ra, () -> points.setActive(id, false).getFullName() + " pasifleştirildi.");
+    }
+
+    @PostMapping("/noktalar/{id}/aktiflestir")
+    public String noktaAktif(@PathVariable Long id, RedirectAttributes ra) {
+        return noktaIslemi(ra, () -> points.setActive(id, true).getFullName() + " yeniden aktif.");
+    }
+
+    private String noktaIslemi(RedirectAttributes ra, java.util.function.Supplier<String> action) {
+        try {
+            ra.addFlashAttribute("basari", action.get());
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+        }
+        return "redirect:/admin/noktalar";
     }
 
     // ---------- İçerik moderasyonu ----------

@@ -127,13 +127,14 @@ class AccountPagesTest {
     }
 
     @Test
-    void adressizOgrenciBasvurusuHataVerir() throws Exception {
-        User u = mk("adressiz", null);
+    void basarisizOgrenciBasvurusuBelgeBirakmaz() throws Exception {
+        // Adres artık zorunlu değil; hatayı okul seviyesini boş bırakarak tetikliyoruz
+        User u = mk("eksik-seviye", "İzmir");
         var belge = new MockMultipartFile("document", "b.pdf", "application/pdf", "x".getBytes());
         long oncekiBelgeSayisi = belgeSayisi();
 
         mvc.perform(multipart("/profil/ogrenci").file(belge).with(user(as(u))).with(csrf())
-                        .param("schoolLevel", "LISE").param("documentNo", "LS-Z"))
+                        .param("documentNo", "LS-Z"))
                 .andExpect(redirectedUrl("/profil/ogrenci"))
                 .andExpect(flash().attributeExists("hata"));
 

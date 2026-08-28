@@ -1,5 +1,6 @@
 package app.kitapla.service;
 
+import app.kitapla.config.Features;
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.domain.StudentStatus;
 import app.kitapla.domain.User;
@@ -15,10 +16,12 @@ public class UserService {
 
     private static final Pattern EMAIL = Pattern.compile("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$");
 
+    private final Features features;
     private final UserRepository users;
     private final PasswordEncoder encoder;
 
-    public UserService(UserRepository users, PasswordEncoder encoder) {
+    public UserService(Features features, UserRepository users, PasswordEncoder encoder) {
+        this.features = features;
         this.users = users;
         this.encoder = encoder;
     }
@@ -60,7 +63,9 @@ public class UserService {
             if (level == null) throw new IllegalArgumentException("Okul seviyesi seçilmelidir.");
             if (documentNo == null) throw new IllegalArgumentException("Öğrenci belge numarası zorunludur.");
             if (documentPath == null) throw new IllegalArgumentException("Öğrenci belgesi yüklenmelidir.");
-            if (address == null) throw new IllegalArgumentException("Öğrenci doğrulaması için teslimat adresi zorunludur.");
+            // Adres yalnızca kargo akışında gerekir (kampüs içi teslimde istenmez)
+            if (features.isAddress() && address == null)
+                throw new IllegalArgumentException("Öğrenci doğrulaması için teslimat adresi zorunludur.");
             if (users.existsByDocumentNo(documentNo))
                 throw new IllegalArgumentException("Bu belge numarası ile zaten bir kayıt var.");
         }
@@ -133,7 +138,7 @@ public class UserService {
         String docNo = clean(documentNo, 100);
         if (docNo == null) throw new IllegalStateException("Öğrenci belge numarası zorunlu.");
         if (documentPath == null) throw new IllegalStateException("Öğrenci belgesi yüklenmeli.");
-        if (u.getAddress() == null || u.getAddress().isBlank())
+        if (features.isAddress() && (u.getAddress() == null || u.getAddress().isBlank()))
             throw new IllegalStateException("Önce profilinden teslimat adresi eklemelisin.");
 
         if (users.existsByDocumentNo(docNo) && !docNo.equals(u.getDocumentNo()))

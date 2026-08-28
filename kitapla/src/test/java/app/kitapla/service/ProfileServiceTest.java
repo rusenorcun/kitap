@@ -96,11 +96,12 @@ class ProfileServiceTest {
     }
 
     @Test
-    void adressizBasvuruReddedilir() {
+    void kampusTeslimindeAdressizOgrenciBasvurusuYapilabilir() {
+        // Yüz yüze teslimde adres gerekmez; kargo modunda yeniden istenir (KargoModuTest)
         User u = mk("adressiz", null);
-        assertThatThrownBy(() -> userService.applyForStudent(u, SchoolLevel.LISE, "LS-1", "belge.pdf"))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("adres");
+        User sonuc = userService.applyForStudent(u, SchoolLevel.LISE,
+                "LS-" + java.util.UUID.randomUUID(), "belge.pdf");
+        assertThat(sonuc.getStudentStatus()).isEqualTo(StudentStatus.PENDING);
     }
 
     @Test

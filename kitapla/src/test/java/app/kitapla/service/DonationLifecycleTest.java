@@ -63,12 +63,12 @@ class DonationLifecycleTest {
     }
 
     @Test
-    void adressizKullaniciBagisYapamaz() {
+    void kampusTeslimindeAdressizBagisYapilabilir() {
+        // Yüz yüze teslimde adres gerekmez; kargo modunda yeniden istenir (KargoModuTest)
         User donor = user("adressiz", false, null);
         Book b = bookService.findOrCreate("Adressiz Kitap", "Y", null, null, null, null);
-        assertThatThrownBy(() -> donationService.create(donor, b, 1, TargetLevel.HEPSI, DonationSource.OWN, null))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("adres");
+        assertThat(donationService.create(donor, b, 1, TargetLevel.HEPSI, DonationSource.OWN, null))
+                .isNotNull();
     }
 
     @Test

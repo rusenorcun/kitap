@@ -38,6 +38,7 @@ class AdminPagesTest {
     @Autowired BookRepository books;
     @Autowired DonationRepository donations;
     @Autowired PasswordEncoder encoder;
+    @Autowired app.kitapla.service.PickupPointService points;
     @Value("${kitapla.upload-dir}") String uploadDir;
     @Value("${kitapla.admin.email}") String adminEmail;
 
@@ -295,6 +296,45 @@ class AdminPagesTest {
         // Onaydan sonra aynı bayat oturumla, yeniden giriş yapmadan alabilmeli
         mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(bayatOturum)).with(csrf()))
                 .andExpect(flash().attributeExists("basari"));
+    }
+
+    // ---------- Teslim noktaları ----------
+
+    @Test
+    void teslimNoktasiEklenirVePasiflestirilir() throws Exception {
+        User yonetici = mk("noktaci", true);
+        String ad = "Nokta " + UUID.randomUUID();
+
+        mvc.perform(post("/admin/noktalar").with(user(as(yonetici))).with(csrf())
+                        .param("campus", "Test Kampüsü")
+                        .param("name", ad)
+                        .param("description", "Girişteki banklar"))
+                .andExpect(redirectedUrl("/admin/noktalar"))
+                .andExpect(flash().attributeExists("basari"));
+
+        mvc.perform(get("/admin/noktalar").with(user(as(yonetici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(ad)))
+                .andExpect(content().string(containsString("Girişteki banklar")));
+
+        var nokta = points.active().stream()
+                .filter(p -> p.getName().equals(ad)).findFirst().orElseThrow();
+
+        mvc.perform(post("/admin/noktalar/" + nokta.getId() + "/pasiflestir")
+                        .with(user(as(yonetici))).with(csrf()))
+                .andExpect(flash().attributeExists("basari"));
+
+        assertThat(points.findSelectable(nokta.getId())).isEmpty();
+    }
+
+    @Test
+    void siradanUyeTeslimNoktasiYonetemez() throws Exception {
+        User uye = mk("noktasiz", false);
+        mvc.perform(get("/admin/noktalar").with(user(as(uye))))
+                .andExpect(status().isForbidden());
+        mvc.perform(post("/admin/noktalar").with(user(as(uye))).with(csrf())
+                        .param("campus", "X").param("name", "Y"))
+                .andExpect(status().isForbidden());
     }
 
     // ---------- İçerik ----------

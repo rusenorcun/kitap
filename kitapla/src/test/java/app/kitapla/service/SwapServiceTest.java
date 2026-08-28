@@ -57,11 +57,11 @@ class SwapServiceTest {
     }
 
     @Test
-    void adressizKullaniciTakasaAcamaz() {
+    void kampusTeslimindeAdressizTakasaAcilabilir() {
+        // Yüz yüze teslimde adres gerekmez; kargo akışı açılırsa yeniden istenir
+        // (bkz. KargoModuTest)
         User adressiz = user("adressiz", null);
-        assertThatThrownBy(() -> swapService.open(adressiz, book("X"), null))
-                .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("adres");
+        assertThat(swapService.open(adressiz, book("X"), null)).isNotNull();
     }
 
     @Test

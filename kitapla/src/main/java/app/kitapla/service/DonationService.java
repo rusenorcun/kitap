@@ -1,5 +1,6 @@
 package app.kitapla.service;
 
+import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.ClaimRepository;
 import app.kitapla.repo.DonationRepository;
@@ -18,13 +19,15 @@ import java.util.Optional;
 @Service
 public class DonationService {
 
+    private final Features features;
     private final DonationRepository donations;
     private final ClaimRepository claims;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
-    public DonationService(DonationRepository donations, ClaimRepository claims,
+    public DonationService(Features features, DonationRepository donations, ClaimRepository claims,
                            QuotaService quotaService, NotificationService notifications) {
+        this.features = features;
         this.donations = donations;
         this.claims = claims;
         this.quotaService = quotaService;
@@ -85,7 +88,8 @@ public class DonationService {
         if (d.getDonor().getId().equals(user.getId()))
             return ClaimEligibility.deny("OWN_DONATION", "Kendi bağışından kitap alamazsın.");
 
-        if (user.getAddress() == null || user.getAddress().isBlank())
+        // Adres yalnızca kargo akışında gerekir; kampüs içi yüz yüze teslimde istenmez
+        if (features.isAddress() && (user.getAddress() == null || user.getAddress().isBlank()))
             return ClaimEligibility.deny("ADDRESS_REQUIRED", "Önce profilinden teslimat adresi eklemelisin.");
 
         if (d.getTargetLevel() != TargetLevel.HEPSI && d.getTargetLevel() != asTarget(user.getSchoolLevel()))
@@ -149,7 +153,7 @@ public class DonationService {
         if (book == null) throw new IllegalStateException("Kitap seçilmedi.");
         if (quantity < 1) throw new IllegalStateException("Adet en az 1 olmalı.");
         if (quantity > 50) throw new IllegalStateException("Tek seferde en fazla 50 adet bağışlayabilirsin.");
-        if (donor.getAddress() == null || donor.getAddress().isBlank())
+        if (features.isAddress() && (donor.getAddress() == null || donor.getAddress().isBlank()))
             throw new IllegalStateException("Bağış yapmadan önce profilinden iletişim/teslimat adresi eklemelisin.");
 
         Donation d = new Donation();
