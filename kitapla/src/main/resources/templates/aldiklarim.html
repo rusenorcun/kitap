@@ -63,6 +63,8 @@
            th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
 
       <div class="row gap-8" style="justify-content:flex-end;margin-top:14px">
+        <a th:if="${features.handover}"
+           th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
         <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/iptal'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">İptal et</button>
         </form>

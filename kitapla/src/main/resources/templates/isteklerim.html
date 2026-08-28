@@ -67,6 +67,8 @@
       </th:block>
 
       <div class="row gap-8" style="justify-content:flex-end;margin-top:12px">
+        <a th:if="${features.handover and r.status.name() != 'OPEN'}"
+           th:replace="~{bulusma-fragments :: mesajBaglantisi('request', ${r.id})}"></a>
         <form th:if="${r.status.name() == 'OPEN'}" th:action="@{'/istek/' + ${r.id} + '/sil'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Kaldır</button>
         </form>

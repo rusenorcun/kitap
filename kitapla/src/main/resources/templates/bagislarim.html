@@ -84,6 +84,9 @@
               <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
             </form>
             <div th:if="${features.handover}" style="flex-basis:100%">
+              <div class="row gap-8" style="justify-content:flex-end">
+                <a th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
+              </div>
               <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
               <div th:if="${c.status.name() != 'DELIVERED'}"
                    th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar})}"></div>

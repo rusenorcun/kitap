@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Mesajlar')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('mesajlar')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:720px">
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 6px">Mesajlar</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Eşleştiğin kişilerle buluşma yerini ve saatini burada konuşabilirsin.
+  </p>
+
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <div th:if="${#lists.isEmpty(sohbetler)}" class="card card-pad" style="text-align:center;padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz sohbetin yok</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">
+      Bir bağış aldığında, isteğin karşılandığında ya da takas teklifin kabul edildiğinde
+      karşı tarafla buradan yazışabilirsin.
+    </p>
+    <a class="btn btn-primary" th:href="@{/kesfet}">Bağışları keşfet</a>
+  </div>
+
+  <div class="stack gap-10" th:unless="${#lists.isEmpty(sohbetler)}">
+    <a th:each="c : ${sohbetler}" th:href="@{'/mesajlar/' + ${c.id}}"
+       class="card card-pad row gap-14" style="color:inherit">
+      <div class="avatar" style="flex-shrink:0" th:text="${c.other(currentUser).initials}">EY</div>
+      <div style="flex:1;min-width:0">
+        <div class="row gap-8">
+          <span style="font-size:15px;font-weight:800" th:text="${c.other(currentUser).name}">Ad</span>
+          <span class="badge badge-muted" style="font-size:10px"
+                th:text="${c.kind.name() == 'CLAIM'} ? 'Bağış'
+                       : (${c.kind.name() == 'REQUEST'} ? 'İstek' : 'Takas')">Tür</span>
+        </div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px;
+                    overflow:hidden;text-overflow:ellipsis;white-space:nowrap"
+             th:text="${c.lastMessage} ?: 'Henüz mesaj yok'">Son mesaj</div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div class="muted" style="font-size:11px;font-weight:600"
+             th:text="${c.lastMessageAtText}">tarih</div>
+        <span th:if="${okunmamis.get(c.id) > 0}" th:text="${okunmamis.get(c.id)}"
+              style="display:inline-flex;align-items:center;justify-content:center;margin-top:4px;
+                     min-width:20px;height:20px;padding:0 6px;border-radius:999px;
+                     background:var(--accent);color:#fff;font-size:11px;font-weight:800">2</span>
+      </div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

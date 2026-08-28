@@ -25,12 +25,15 @@ public class AdminService {
     private final SwapBookRepository swapBooks;
     private final SwapOfferRepository swapOffers;
     private final NotificationRepository notificationRepo;
+    private final ConversationRepository conversations;
+    private final MessageRepository messages;
     private final NotificationService notifications;
     private final Path documentDir;
 
     public AdminService(UserRepository users, BookRepository books, DonationRepository donations,
                         ClaimRepository claims, BookRequestRepository requests, SwapBookRepository swapBooks,
                         SwapOfferRepository swapOffers, NotificationRepository notificationRepo,
+                        ConversationRepository conversations, MessageRepository messages,
                         NotificationService notifications,
                         @Value("${kitapla.upload-dir}") String uploadDir) {
         this.users = users;
@@ -41,6 +44,8 @@ public class AdminService {
         this.swapBooks = swapBooks;
         this.swapOffers = swapOffers;
         this.notificationRepo = notificationRepo;
+        this.conversations = conversations;
+        this.messages = messages;
         this.notifications = notifications;
         this.documentDir = Path.of(uploadDir, "documents");
     }
@@ -200,6 +205,11 @@ public class AdminService {
 
         deleteDocument(u.getDocumentPath());
         notificationRepo.deleteByUser(u);
+        // Sohbetler ve mesajları da gitmeli; yoksa yabancı anahtar bağı kalır
+        conversations.findMine(u).forEach(c -> {
+            messages.deleteByConversation(c);
+            conversations.delete(c);
+        });
         users.delete(u);
     }
 

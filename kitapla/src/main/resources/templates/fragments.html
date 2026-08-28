@@ -50,6 +50,13 @@
     <a th:href="@{/bagislarim}" th:classappend="${active=='bagislarim'}?'active'">Bağışlarım</a>
     <a th:href="@{/aldiklarim}" th:classappend="${active=='aldiklarim'}?'active'">Aldıklarım</a>
     <a th:href="@{/takas}" th:classappend="${active=='takas'}?'active'">Takas</a>
+    <a th:href="@{/mesajlar}" th:classappend="${active=='mesajlar'}?'active'">
+      Mesajlar
+      <span th:if="${unreadMessages > 0}" th:text="${unreadMessages}"
+            style="margin-left:5px;min-width:16px;height:16px;border-radius:999px;background:var(--accent);
+                   color:#fff;font-size:10px;font-weight:800;display:inline-flex;align-items:center;
+                   justify-content:center;padding:0 4px">1</span>
+    </a>
     <a th:href="@{/panom}" th:classappend="${active=='panom'}?'active'">Panom</a>
     <a sec:authorize="hasRole('ADMIN')" th:href="@{/admin}"
        th:classappend="${active=='admin'}?'active'">Yönetim</a>
