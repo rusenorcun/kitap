@@ -1,0 +1,176 @@
+package app.kitapla.service;
+
+import app.kitapla.domain.*;
+import app.kitapla.repo.*;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+
+/**
+ * Şikâyet kaydı ve yönetim tarafındaki inceleme.
+ * <p>
+ * Şikâyet, yöneticiye ilgili içeriği görme yetkisi açar. Sohbetler için bu
+ * kritik: yönetici yalnızca <b>açık şikâyeti olan</b> bir sohbetin mesajlarını
+ * okuyabilir ({@link #canAdminRead(ConversationKind, Long)} değil,
+ * {@link #hasOpenReport}). Diğer sohbetler yönetime de kapalıdır.
+ */
+@Service
+public class ReportService {
+
+    private static final int MAX_NOT = 1000;
+
+    private final ReportRepository reports;
+    private final ConversationRepository conversations;
+    private final DonationRepository donations;
+    private final BookRequestRepository requests;
+    private final SwapBookRepository swapBooks;
+    private final UserRepository users;
+    private final NotificationService notifications;
+
+    public ReportService(ReportRepository reports, ConversationRepository conversations,
+                         DonationRepository donations, BookRequestRepository requests,
+                         SwapBookRepository swapBooks, UserRepository users,
+                         NotificationService notifications) {
+        this.reports = reports;
+        this.conversations = conversations;
+        this.donations = donations;
+        this.requests = requests;
+        this.swapBooks = swapBooks;
+        this.users = users;
+        this.notifications = notifications;
+    }
+
+    // ---------- Şikâyet oluşturma ----------
+
+    /**
+     * Şikâyeti kaydeder. Şikâyet eden kişinin o içeriğe gerçekten erişimi
+     * olmalıdır; sohbet şikâyetinde taraf olmayan biri şikâyet edemez.
+     */
+    @Transactional
+    public Report create(User reporter, ReportKind kind, Long refId, ReportReason reason, String note) {
+        if (reason == null) throw new IllegalStateException("Şikâyet gerekçesi seçilmeli.");
+
+        User sahibi = dogrulaVeSahibiBul(reporter, kind, refId);
+        if (sahibi != null && sahibi.getId().equals(reporter.getId()))
+            throw new IllegalStateException("Kendi içeriğini şikâyet edemezsin.");
+
+        if (reports.existsByReporterAndKindAndRefIdAndStatus(reporter, kind, refId, ReportStatus.OPEN))
+            throw new IllegalStateException("Bunu zaten şikâyet ettin; yönetim inceliyor.");
+
+        String aciklama = note == null ? null : note.trim();
+        if (aciklama != null && aciklama.isEmpty()) aciklama = null;
+        if (aciklama != null && aciklama.length() > MAX_NOT) aciklama = aciklama.substring(0, MAX_NOT);
+
+        Report r = new Report();
+        r.setReporter(reporter);
+        r.setKind(kind);
+        r.setRefId(refId);
+        r.setReason(reason);
+        r.setNote(aciklama);
+        r.setReportedUser(sahibi);
+        reports.save(r);
+
+        // Yöneticilere haber ver
+        users.findAll().stream().filter(User::isAdmin).forEach(a ->
+                notifications.notify(a, "sikayet",
+                        reporter.getName() + " bir " + turAdi(kind) + " şikâyet etti: " + reason.getEtiket()));
+        return r;
+    }
+
+    /** Erişim denetimi + şikâyet edilen içeriğin sahibini bulur. */
+    private User dogrulaVeSahibiBul(User reporter, ReportKind kind, Long refId) {
+        switch (kind) {
+            case CONVERSATION -> {
+                Conversation c = conversations.findByIdWithUsers(refId)
+                        .orElseThrow(() -> new IllegalStateException("Sohbet bulunamadı."));
+                if (!c.has(reporter))
+                    throw new IllegalStateException("Bu sohbet sana ait değil.");
+                return c.other(reporter);
+            }
+            case DONATION -> {
+                Donation d = donations.findByIdWithDetails(refId)
+                        .orElseThrow(() -> new IllegalStateException("Bağış bulunamadı."));
+                return d.getDonor();
+            }
+            case REQUEST -> {
+                BookRequest r = requests.findByIdWithDetails(refId)
+                        .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
+                return r.getStudent();
+            }
+            case SWAP_BOOK -> {
+                SwapBook s = swapBooks.findByIdWithDetails(refId)
+                        .orElseThrow(() -> new IllegalStateException("Takas ilanı bulunamadı."));
+                return s.getUser();
+            }
+            case USER -> {
+                return users.findById(refId)
+                        .orElseThrow(() -> new IllegalStateException("Üye bulunamadı."));
+            }
+            default -> throw new IllegalStateException("Bilinmeyen şikâyet türü.");
+        }
+    }
+
+    private static String turAdi(ReportKind k) {
+        return switch (k) {
+            case CONVERSATION -> "sohbeti";
+            case DONATION -> "bağış ilanını";
+            case REQUEST -> "isteği";
+            case SWAP_BOOK -> "takas ilanını";
+            case USER -> "üyeyi";
+        };
+    }
+
+    // ---------- Yönetim ----------
+
+    public List<Report> open() {
+        return reports.findByStatusWithUsers(ReportStatus.OPEN);
+    }
+
+    public List<Report> all() {
+        return reports.findAllWithUsers();
+    }
+
+    public long openCount() {
+        return reports.countByStatus(ReportStatus.OPEN);
+    }
+
+    public Optional<Report> find(Long id) {
+        return reports.findByIdWithUsers(id);
+    }
+
+    /**
+     * Yöneticinin bu içeriği görme yetkisi var mı? Açık şikâyet yoksa yoktur.
+     * Sohbet mesajlarının gizliliği buna dayanır.
+     */
+    public boolean hasOpenReport(ReportKind kind, Long refId) {
+        return reports.existsByKindAndRefIdAndStatus(kind, refId, ReportStatus.OPEN);
+    }
+
+    /** Şikâyeti sonuçlandırır ve şikâyet edene bilgi verir. */
+    @Transactional
+    public Report resolve(Long reportId, User admin, boolean actioned, String adminNote) {
+        Report r = reports.findByIdWithUsers(reportId)
+                .orElseThrow(() -> new IllegalStateException("Şikâyet bulunamadı."));
+        if (r.getStatus() != ReportStatus.OPEN)
+            throw new IllegalStateException("Bu şikâyet zaten sonuçlandırılmış.");
+
+        String not = adminNote == null ? null : adminNote.trim();
+        if (not != null && not.isEmpty()) not = null;
+        if (not != null && not.length() > MAX_NOT) not = not.substring(0, MAX_NOT);
+
+        r.setStatus(actioned ? ReportStatus.ACTIONED : ReportStatus.DISMISSED);
+        r.setReviewedBy(admin);
+        r.setReviewedAt(Instant.now());
+        r.setAdminNote(not);
+        reports.save(r);
+
+        notifications.notify(r.getReporter(), "sikayet_sonuc", actioned
+                ? "Şikâyetin incelendi ve gerekli işlem yapıldı. Bildirdiğin için teşekkürler."
+                : "Şikâyetin incelendi; kurallara aykırı bir durum görülmedi."
+                  + (not == null ? "" : " Not: " + not));
+        return r;
+    }
+}

@@ -4,6 +4,7 @@ import app.kitapla.domain.*;
 import app.kitapla.repo.BookRepository;
 import app.kitapla.repo.DonationRepository;
 import app.kitapla.repo.UserRepository;
+import app.kitapla.security.AppUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,6 +92,26 @@ class CatalogPagesTest {
                 .andExpect(view().name("kitap-detay"))
                 .andExpect(content().string(containsString("Katalog Test Kitabı")))
                 .andExpect(content().string(containsString("Öğrenci önceliği")));
+    }
+
+    @Test
+    void kitapDetayiGIRIS_YAPMIS_kullaniciya_da_acilir() throws Exception {
+        // Sayfada sec:authorize="isAuthenticated()" ile gösterilen bölümler var.
+        // Yalnızca anonim istekle test edilirse o bölümlerdeki hatalar görünmez —
+        // bir kez gerçekten öyle bir hata kaçmıştı (şikâyet bağlantısı 500 veriyordu).
+        User uye = new User();
+        uye.setName("Katalog Üye");
+        uye.setEmail("katalog-" + UUID.randomUUID() + "@test.local");
+        uye.setPasswordHash("x");
+        uye.setAddress("İzmir");
+        uye = users.save(uye);
+
+        mvc.perform(get("/kitap/" + seeded.getId())
+                        .with(org.springframework.security.test.web.servlet.request
+                                .SecurityMockMvcRequestPostProcessors.user(new AppUserDetails(uye))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Katalog Test Kitabı")))
+                .andExpect(content().string(containsString("şikâyet et")));
     }
 
     @Test

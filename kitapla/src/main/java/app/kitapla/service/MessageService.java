@@ -159,6 +159,20 @@ public class MessageService {
         return s.length() <= 80 ? s : s.substring(0, 80) + "…";
     }
 
+    /**
+     * Moderasyon için sohbeti açar. Yönetici bile <b>yalnızca açık şikâyeti
+     * olan</b> bir sohbeti okuyabilir; şikâyetsiz sohbetler yönetime de kapalıdır.
+     * Kural burada zorlanır ki controller'da unutulması mümkün olmasın.
+     */
+    public Conversation requireForModeration(Long conversationId, ReportService reports) {
+        Conversation c = conversations.findByIdWithUsers(conversationId)
+                .orElseThrow(() -> new IllegalStateException("Sohbet bulunamadı."));
+        if (!reports.hasOpenReport(ReportKind.CONVERSATION, conversationId))
+            throw new IllegalStateException(
+                    "Bu sohbetin açık şikâyeti yok; mesajlar yönetime kapalıdır.");
+        return c;
+    }
+
     // ---------- Yardımcılar ----------
 
     /** Belirli bir alışverişin sohbeti (varsa). */

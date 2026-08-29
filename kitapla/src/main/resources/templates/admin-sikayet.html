@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Şikâyet incele')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:760px">
+  <a class="btn btn-soft btn-sm" th:href="@{/admin/sikayetler}" style="margin-bottom:18px">← Şikâyetler</a>
+
+  <div class="card card-pad" style="margin-bottom:18px">
+    <div class="row gap-8" style="flex-wrap:wrap;margin-bottom:12px">
+      <span class="badge badge-accent" th:text="${sikayet.reason.etiket}">Gerekçe</span>
+      <span class="badge badge-muted"
+            th:text="${sikayet.kind.name() == 'CONVERSATION'} ? 'Sohbet'
+                   : (${sikayet.kind.name() == 'DONATION'} ? 'Bağış'
+                   : (${sikayet.kind.name() == 'REQUEST'} ? 'İstek'
+                   : (${sikayet.kind.name() == 'SWAP_BOOK'} ? 'Takas' : 'Üye')))">Tür</span>
+      <span th:if="${sikayet.status.name() == 'ACTIONED'}" class="badge badge-sage">İşlem yapıldı</span>
+      <span th:if="${sikayet.status.name() == 'DISMISSED'}" class="badge badge-muted">İşlem gerekmedi</span>
+      <div class="nav-spacer"></div>
+      <span class="muted" style="font-size:12px;font-weight:600" th:text="${sikayet.createdAtText}">tarih</span>
+    </div>
+
+    <div class="duo">
+      <div>
+        <div class="label">Şikâyet eden</div>
+        <div style="font-size:15px;font-weight:800" th:text="${sikayet.reporter.name}">Ad</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${sikayet.reporter.email}">e-posta</div>
+      </div>
+      <div th:if="${sikayet.reportedUser}">
+        <div class="label">Şikâyet edilen</div>
+        <div style="font-size:15px;font-weight:800" th:text="${sikayet.reportedUser.name}">Ad</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${sikayet.reportedUser.email}">e-posta</div>
+      </div>
+    </div>
+
+    <div th:if="${sikayet.note}" style="margin-top:14px">
+      <div class="label">Açıklaması</div>
+      <p style="font-size:14px;font-weight:600;line-height:1.6;margin:4px 0 0;white-space:pre-wrap"
+         th:text="${sikayet.note}">Açıklama</p>
+    </div>
+  </div>
+
+  <!-- Şikâyet edilen sohbetin mesajları -->
+  <th:block th:if="${sikayet.kind.name() == 'CONVERSATION'}">
+    <div th:if="${sohbetHatasi}" class="alert alert-error" role="alert" th:text="${sohbetHatasi}">Kapalı</div>
+
+    <div th:if="${sohbet}" class="card card-pad" style="margin-bottom:18px">
+      <div class="label" style="margin-bottom:12px">
+        Sohbet — <span th:text="${sohbet.userA.name}">A</span> ve <span th:text="${sohbet.userB.name}">B</span>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:8px;max-height:50vh;overflow-y:auto">
+        <p th:if="${#lists.isEmpty(mesajlar)}" class="muted" style="font-weight:500;margin:0">Mesaj yok.</p>
+        <div th:each="m : ${mesajlar}"
+             style="background:var(--surface2);border-radius:12px;padding:10px 12px">
+          <div class="row gap-8" style="margin-bottom:4px">
+            <span style="font-size:12px;font-weight:800" th:text="${m.sender.name}">Gönderen</span>
+            <span class="muted" style="font-size:11px;font-weight:600" th:text="${m.createdAtText}">tarih</span>
+          </div>
+          <div style="font-size:14px;font-weight:600;line-height:1.5;white-space:pre-wrap"
+               th:text="${m.body}">Mesaj</div>
+        </div>
+      </div>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:12px 0 0">
+        Bu mesajlar yalnızca açık şikâyet olduğu için görünüyor. Şikâyet kapatıldığında erişim kalkar.
+      </p>
+    </div>
+  </th:block>
+
+  <!-- Sonuçlandırma -->
+  <div class="card card-pad" th:if="${sikayet.status.name() == 'OPEN'}">
+    <h2 style="font-size:17px;font-weight:800;margin:0 0 6px">Sonuçlandır</h2>
+    <p class="muted" style="font-weight:500;font-size:13px;margin:0 0 14px">
+      İçeriği kaldırmak ya da üyeyi askıya almak için
+      <a th:href="@{/admin/icerik}">İçerik</a> ve <a th:href="@{/admin/uyeler}">Üyeler</a>
+      sayfalarını kullan, sonra şikâyeti burada kapat.
+    </p>
+    <form th:action="@{'/admin/sikayetler/' + ${sikayet.id} + '/sonuclandir'}" method="post">
+      <div class="field">
+        <label class="label" for="adminNote">Not <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+        <input class="input" id="adminNote" name="adminNote" maxlength="1000"
+               placeholder="Şikâyet edene iletilecek kısa not"/>
+      </div>
+      <div class="row gap-8">
+        <button class="btn btn-primary btn-sm" type="submit" name="actioned" value="true">
+          İşlem yaptım, kapat</button>
+        <button class="btn btn-soft btn-sm" type="submit" name="actioned" value="false">
+          İşlem gerekmedi, kapat</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card card-pad" th:unless="${sikayet.status.name() == 'OPEN'}">
+    <div class="label">Sonuç</div>
+    <div style="font-size:14px;font-weight:700;margin-top:4px">
+      <span th:text="${sikayet.reviewedBy != null} ? ${sikayet.reviewedBy.name} : 'Yönetim'">Yönetici</span>
+      inceledi ·
+      <span th:text="${sikayet.status.name() == 'ACTIONED'} ? 'işlem yapıldı' : 'işlem gerekmedi'">sonuç</span>
+    </div>
+    <p th:if="${sikayet.adminNote}" class="muted" style="font-size:13px;font-weight:500;margin:8px 0 0"
+       th:text="${sikayet.adminNote}">Not</p>
+  </div>
+</div>
+</body>
+</html>

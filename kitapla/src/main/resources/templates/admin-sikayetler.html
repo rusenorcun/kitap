@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Şikâyetler')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:900px">
+  <div class="row" style="justify-content:space-between;margin-bottom:6px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Şikâyetler</h1>
+    <a class="btn btn-soft btn-sm" th:if="${!hepsi}" th:href="@{/admin/sikayetler(tumu=1)}">Tümünü göster</a>
+    <a class="btn btn-soft btn-sm" th:if="${hepsi}" th:href="@{/admin/sikayetler}">Yalnızca açıklar</a>
+  </div>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Üyelerin bildirdiği kural dışı içerikler. Sonuçlandırdığında şikâyet edene bildirim gider.
+  </p>
+
+  <div th:replace="~{fragments :: adminnav('sikayetler')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" role="status" th:text="${basari}">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <div th:if="${#lists.isEmpty(sikayetler)}" class="card card-pad" style="text-align:center;padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Bekleyen şikâyet yok</div>
+    <p class="muted" style="font-weight:500;margin:0">Yeni şikâyetler geldiğinde burada listelenecek.</p>
+  </div>
+
+  <div class="stack gap-10" th:unless="${#lists.isEmpty(sikayetler)}">
+    <a th:each="s : ${sikayetler}" th:href="@{'/admin/sikayetler/' + ${s.id}}"
+       class="card card-pad row gap-14" style="color:inherit;flex-wrap:wrap"
+       th:style="${s.status.name() != 'OPEN'} ? 'color:inherit;flex-wrap:wrap;opacity:.65' : 'color:inherit;flex-wrap:wrap'">
+      <div style="flex:1;min-width:220px">
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <span class="badge badge-accent" th:text="${s.reason.etiket}">Gerekçe</span>
+          <span class="badge badge-muted"
+                th:text="${s.kind.name() == 'CONVERSATION'} ? 'Sohbet'
+                       : (${s.kind.name() == 'DONATION'} ? 'Bağış'
+                       : (${s.kind.name() == 'REQUEST'} ? 'İstek'
+                       : (${s.kind.name() == 'SWAP_BOOK'} ? 'Takas' : 'Üye')))">Tür</span>
+          <span th:if="${s.status.name() == 'ACTIONED'}" class="badge badge-sage">İşlem yapıldı</span>
+          <span th:if="${s.status.name() == 'DISMISSED'}" class="badge badge-muted">İşlem gerekmedi</span>
+        </div>
+        <div style="font-size:14px;font-weight:700;margin-top:8px">
+          <span th:text="${s.reporter.name}">Şikâyet eden</span>
+          <span class="muted" style="font-weight:500"> → </span>
+          <span th:text="${s.reportedUser != null} ? ${s.reportedUser.name} : '—'">Şikâyet edilen</span>
+        </div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:4px"
+             th:if="${s.note}" th:text="${s.note}">Açıklama</div>
+      </div>
+      <div class="muted" style="font-size:12px;font-weight:600;text-align:right"
+           th:text="${s.createdAtText}">tarih</div>
+    </a>
+  </div>
+</div>
+</body>
+</html>

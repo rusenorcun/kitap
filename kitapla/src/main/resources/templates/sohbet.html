@@ -44,10 +44,14 @@
     <button class="btn btn-primary" type="submit">Gönder</button>
   </form>
 
-  <p class="muted" style="font-size:12px;font-weight:500;margin-top:12px">
-    Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma. Kural dışı mesajları
-    <a th:href="@{/iletisim}">yönetime bildirebilirsin</a>.
-  </p>
+  <div class="row gap-8" style="justify-content:space-between;margin-top:14px;flex-wrap:wrap">
+    <p class="muted" style="font-size:12px;font-weight:500;margin:0;flex:1;min-width:220px">
+      Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.
+    </p>
+    <a class="btn btn-soft btn-sm"
+       th:href="@{'/sikayet/conversation/' + ${sohbet.id}(geri='/mesajlar/' + ${sohbet.id})}">
+      Bu sohbeti şikâyet et</a>
+  </div>
 </div>
 
 <script th:inline="javascript">

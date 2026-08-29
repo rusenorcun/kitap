@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Şikâyet')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container-narrow" style="max-width:520px;padding-top:40px;padding-bottom:56px">
+  <h1 style="font-size:24px;font-weight:800;letter-spacing:-.5px;margin:0 0 6px">Şikâyet et</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Kurallara aykırı bir durum gördüysen bildir. Yönetim inceler ve sonucu sana bildirim olarak gönderir.
+  </p>
+
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <form th:action="@{'/sikayet/' + ${tur} + '/' + ${refId}}" method="post">
+    <input type="hidden" name="geri" th:value="${geri}"/>
+
+    <div class="field">
+      <div class="label" style="margin-bottom:10px">Gerekçe</div>
+      <div class="stack gap-8">
+        <label th:each="g, s : ${gerekceler}" class="card card-pad row gap-12"
+               style="cursor:pointer;padding:12px 14px">
+          <input type="radio" name="reason" th:value="${g.name()}" required
+                 th:checked="${s.first}" style="accent-color:var(--accent)"/>
+          <span style="font-size:14px;font-weight:700" th:text="${g.etiket}">Gerekçe</span>
+        </label>
+      </div>
+    </div>
+
+    <div class="field">
+      <label class="label" for="note">Açıklama <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <textarea class="input" id="note" name="note" maxlength="1000"
+                placeholder="Ne olduğunu kısaca anlatabilirsin"></textarea>
+    </div>
+
+    <div class="row gap-8">
+      <button class="btn btn-primary" type="submit">Şikâyeti gönder</button>
+      <a class="btn btn-soft" th:href="${geri}">Vazgeç</a>
+    </div>
+  </form>
+
+  <p class="muted" style="font-size:12px;font-weight:500;margin-top:18px;line-height:1.6">
+    Sohbeti şikâyet edersen yönetim, incelemek için o sohbetteki mesajları görebilir.
+    Şikâyet edilmemiş sohbetler yönetime de kapalıdır.
+  </p>
+</div>
+</body>
+</html>

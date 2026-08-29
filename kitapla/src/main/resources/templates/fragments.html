@@ -94,6 +94,12 @@
      th:classappend="${active=='icerik'} ? 'btn-primary' : 'btn-soft'">İçerik</a>
   <a th:href="@{/admin/noktalar}" class="btn btn-sm"
      th:classappend="${active=='noktalar'} ? 'btn-primary' : 'btn-soft'">Teslim noktaları</a>
+  <a th:href="@{/admin/sikayetler}" class="btn btn-sm"
+     th:classappend="${active=='sikayetler'} ? 'btn-primary' : 'btn-soft'">
+    Şikâyetler
+    <span th:if="${sikayetSayisi > 0}" th:text="${sikayetSayisi}"
+          style="margin-left:6px;min-width:18px;height:18px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px">1</span>
+  </a>
 </div>
 
 <!-- Footer -->

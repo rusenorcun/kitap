@@ -3,7 +3,10 @@ package app.kitapla.web;
 import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
 import app.kitapla.service.AdminService;
+import app.kitapla.domain.ReportKind;
+import app.kitapla.service.MessageService;
 import app.kitapla.service.PickupPointService;
+import app.kitapla.service.ReportService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -28,16 +31,27 @@ public class AdminController {
 
     private final AdminService admin;
     private final PickupPointService points;
+    private final ReportService reports;
+    private final MessageService messages;
 
-    public AdminController(AdminService admin, PickupPointService points) {
+    public AdminController(AdminService admin, PickupPointService points,
+                           ReportService reports, MessageService messages) {
         this.admin = admin;
         this.points = points;
+        this.reports = reports;
+        this.messages = messages;
     }
 
     /** Alt navigasyondaki bekleyen belge rozeti her yönetim sayfasında görünür. */
     @ModelAttribute("bekleyenSayisi")
     public long bekleyenSayisi() {
         return admin.pendingDocumentCount();
+    }
+
+    /** Açık şikâyet rozeti. */
+    @ModelAttribute("sikayetSayisi")
+    public long sikayetSayisi() {
+        return reports.openCount();
     }
 
     @GetMapping
@@ -208,6 +222,58 @@ public class AdminController {
             ra.addFlashAttribute("hata", ex.getMessage());
         }
         return "redirect:/admin/noktalar";
+    }
+
+    // ---------- Şikâyetler ----------
+
+    @GetMapping("/sikayetler")
+    public String sikayetler(@RequestParam(required = false) String tumu, Model model) {
+        boolean hepsi = tumu != null;
+        model.addAttribute("sikayetler", hepsi ? reports.all() : reports.open());
+        model.addAttribute("hepsi", hepsi);
+        return "admin-sikayetler";
+    }
+
+    /**
+     * Şikâyet edilen içeriği gösterir. Sohbetlerde mesajlar yalnızca açık
+     * şikâyet varsa okunabilir; bu kural servis katmanında zorlanır.
+     */
+    @GetMapping("/sikayetler/{id}")
+    public String sikayet(@PathVariable Long id, Model model, RedirectAttributes ra) {
+        var r = reports.find(id).orElse(null);
+        if (r == null) {
+            ra.addFlashAttribute("hata", "Şikâyet bulunamadı.");
+            return "redirect:/admin/sikayetler";
+        }
+        model.addAttribute("sikayet", r);
+
+        if (r.getKind() == ReportKind.CONVERSATION) {
+            try {
+                var sohbet = messages.requireForModeration(r.getRefId(), reports);
+                model.addAttribute("sohbet", sohbet);
+                model.addAttribute("mesajlar", messages.messagesOf(sohbet));
+            } catch (IllegalStateException ex) {
+                model.addAttribute("sohbetHatasi", ex.getMessage());
+            }
+        }
+        return "admin-sikayet";
+    }
+
+    @PostMapping("/sikayetler/{id}/sonuclandir")
+    public String sikayetSonuclandir(@AuthenticationPrincipal AppUserDetails principal,
+                                     @PathVariable Long id,
+                                     @RequestParam(defaultValue = "false") boolean actioned,
+                                     @RequestParam(required = false) String adminNote,
+                                     RedirectAttributes ra) {
+        try {
+            reports.resolve(id, principal.getUser(), actioned, adminNote);
+            ra.addFlashAttribute("basari", actioned
+                    ? "Şikâyet işleme alındı olarak kapatıldı."
+                    : "Şikâyet, işlem gerekmedi olarak kapatıldı.");
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+        }
+        return "redirect:/admin/sikayetler";
     }
 
     // ---------- İçerik moderasyonu ----------

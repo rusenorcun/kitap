@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<html lang="tr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head th:replace="~{fragments :: head('KİTAPLA — Kitap')}"></head>
 <body>
 <th:block th:if="${currentUser != null}"><div th:replace="~{fragments :: appnav('kesfet')}"></div></th:block>
@@ -81,6 +81,11 @@
       <form th:if="${eligibility.allowed}" th:action="@{'/kitap/' + ${d.id} + '/al'}" method="post">
         <button class="btn btn-primary btn-block" type="submit">Kitabı al</button>
       </form>
+
+      <p sec:authorize="isAuthenticated()" style="text-align:center;margin:12px 0 0">
+        <a class="muted" style="font-size:12px;font-weight:600"
+           th:href="@{'/sikayet/donation/' + ${d.id}(geri='/kitap/' + ${d.id})}">Bu ilanı şikâyet et</a>
+      </p>
 
       <div th:unless="${eligibility.allowed}">
         <button class="btn btn-block" type="button" disabled
