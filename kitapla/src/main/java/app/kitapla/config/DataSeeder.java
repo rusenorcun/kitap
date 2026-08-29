@@ -33,6 +33,9 @@ public class DataSeeder implements CommandLineRunner {
     @Value("${kitapla.admin.name}") private String adminName;
     @Value("${kitapla.upload-dir}") private String uploadDir;
 
+    /** Örnek üyeler, kitaplar ve teslim noktaları oluşturulsun mu? */
+    @Value("${kitapla.seed.demo:true}") private boolean demoVerisi;
+
     public DataSeeder(UserRepository users, BookRepository books, DonationRepository donations,
                       PickupPointRepository pickupPoints, PasswordEncoder encoder, JdbcTemplate jdbc) {
         this.pickupPoints = pickupPoints;
@@ -64,7 +67,15 @@ public class DataSeeder implements CommandLineRunner {
             users.save(a);
         });
 
-        // 2) Teslim noktaları (yalnızca hiç yoksa) — kampüs içi yüz yüze teslim için
+        // 2) Örnek veri kapalıysa burada dur: yönetici hesabı yeterli.
+        //    Herkese açık kurulumda örnek hesapların şifresi bilinen bir değer
+        //    olduğu için (sifre123) kapatmak isteyebilirsin.
+        if (!demoVerisi) {
+            log.info("Örnek veri kapalı (kitapla.seed.demo=false); yalnızca yönetici hesabı hazır.");
+            return;
+        }
+
+        // 3) Teslim noktaları (yalnızca hiç yoksa) — kampüs içi yüz yüze teslim için
         if (pickupPoints.count() == 0) {
             record Nokta(String kampus, String ad, String tarif) {}
             List.of(
@@ -82,7 +93,7 @@ public class DataSeeder implements CommandLineRunner {
             });
         }
 
-        // 3) Örnek veri (yalnızca boşsa)
+        // 4) Örnek üyeler ve kitaplar (yalnızca boşsa)
         if (books.count() > 0) return;
 
         User donor = new User();
