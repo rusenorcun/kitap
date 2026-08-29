@@ -8,3 +8,6 @@ uploads/
 *.log
 .env
 .DS_Store
+
+# code-review-graph verisi
+.code-review-graph/

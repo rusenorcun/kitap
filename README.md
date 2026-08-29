@@ -133,6 +133,13 @@ KITAPLA_ADMIN_PASSWORD=guclu-parola ./mvnw spring-boot:run
 Diğer ayarlar: `kitapla.upload-dir` (yüklenen dosyalar, varsayılan `./uploads`),
 `kitapla.login.max-attempts`, `kitapla.login.window-minutes`.
 
+## Mobil uygulama
+
+Backend sunucu-render (Thymeleaf) mimarisiyle çalışır; **JSON API yoktur**.
+Mobil uygulamayı uyarlayacak kişi için hazırlanan devir notu — mevcut uçlar,
+iş kuralları, eski sürüme göre değişenler ve önerilen API katmanı:
+**[docs/MOBIL-DEVIR.md](docs/MOBIL-DEVIR.md)**
+
 ## Teknoloji
 
 | Katman | Seçim |
