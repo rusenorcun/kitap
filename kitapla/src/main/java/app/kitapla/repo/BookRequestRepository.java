@@ -57,6 +57,21 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            """)
     Optional<BookRequest> findByIdWithDetails(@Param("id") Long id);
 
+    @Query("""
+           select r from BookRequest r
+           join fetch r.book
+           join fetch r.student
+           left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
+           where r.status = :status
+             and r.meeting.arrangedAt is not null
+             and r.meeting.remindedAt is null
+             and r.meeting.at between :simdi and :esik
+           """)
+    List<BookRequest> findYaklasanBulusmalar(@Param("status") RequestStatus status,
+                                             @Param("simdi") java.time.Instant simdi,
+                                             @Param("esik") java.time.Instant esik);
+
     List<BookRequest> findByStatusOrderByCreatedAtDesc(RequestStatus status);
     List<BookRequest> findByStudentOrderByCreatedAtDesc(User student);
     List<BookRequest> findByFulfilledByOrderByFulfilledAtDesc(User fulfilledBy);

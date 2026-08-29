@@ -70,6 +70,36 @@ public class MeetingController {
                 () -> swapService.arrange(offerId, principal.getUser(), request(pointId, note, at)));
     }
 
+    // ---------- Gelinmedi bildirimi ----------
+
+    @PostMapping("/gelmedi/bagis/{claimId}")
+    public String bagisGelmedi(@AuthenticationPrincipal AppUserDetails principal,
+                               @PathVariable Long claimId, RedirectAttributes ra) {
+        return gelmedi(ra, "/aldiklarim", () -> donationService.noShow(claimId, principal.getUser()));
+    }
+
+    @PostMapping("/gelmedi/istek/{requestId}")
+    public String istekGelmedi(@AuthenticationPrincipal AppUserDetails principal,
+                               @PathVariable Long requestId, RedirectAttributes ra) {
+        return gelmedi(ra, "/isteklerim", () -> requestService.noShow(requestId, principal.getUser()));
+    }
+
+    @PostMapping("/gelmedi/takas/{offerId}")
+    public String takasGelmedi(@AuthenticationPrincipal AppUserDetails principal,
+                               @PathVariable Long offerId, RedirectAttributes ra) {
+        return gelmedi(ra, "/takas/takaslarim", () -> swapService.noShow(offerId, principal.getUser()));
+    }
+
+    private String gelmedi(RedirectAttributes ra, String target, Runnable action) {
+        try {
+            action.run();
+            ra.addFlashAttribute("basari", "Gelinmedi bildirimin kaydedildi.");
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+        }
+        return "redirect:" + target;
+    }
+
     /** Form yerel saat gönderir; sunucunun saat diliminde yorumlanır. */
     private static MeetingRequest request(Long pointId, String note, LocalDateTime at) {
         return new MeetingRequest(pointId, note,

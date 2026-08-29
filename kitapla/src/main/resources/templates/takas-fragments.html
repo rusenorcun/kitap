@@ -61,6 +61,7 @@
       <th:block th:if="${features.handover and o.status.name() == 'ACCEPTED'}">
         <div class="row gap-8" style="justify-content:flex-end;margin-bottom:8px">
           <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
+          <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/takas/' + ${o.id}, ${o.meeting})}"></form>
         </div>
         <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
         <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${o.id}, ${o.meeting}, ${noktalar})}"></div>

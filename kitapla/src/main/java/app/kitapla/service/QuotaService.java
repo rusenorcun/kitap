@@ -21,8 +21,16 @@ public class QuotaService {
         this.requests = requests;
     }
 
-    private static final List<RequestStatus> FULFILLED =
-            List.of(RequestStatus.FULFILLED, RequestStatus.SHIPPED, RequestStatus.DELIVERED);
+    /**
+     * Kotadan düşen istek durumları.
+     * <p>
+     * ARRANGED (buluşma ayarlandı) da buradadır: aksi hâlde buluşma ayarlanan
+     * istek kotadan düşerdi. NO_SHOW da sayılır — buluşmaya gelmeyen kişi
+     * hakkını kullanmış sayılır, yoksa gelmemek kotayı sıfırlamanın yolu olurdu.
+     */
+    private static final List<RequestStatus> FULFILLED = List.of(
+            RequestStatus.FULFILLED, RequestStatus.ARRANGED, RequestStatus.SHIPPED,
+            RequestStatus.DELIVERED, RequestStatus.NO_SHOW);
 
     private long countWindow(User user, Duration window) {
         Instant after = Instant.now().minus(window);

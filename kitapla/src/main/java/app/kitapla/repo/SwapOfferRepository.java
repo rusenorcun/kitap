@@ -53,6 +53,16 @@ public interface SwapOfferRepository extends JpaRepository<SwapOffer, Long> {
     long countByBookAndStatuses(@Param("book") SwapBook book, @Param("statuses") List<OfferStatus> statuses);
 
     long countByFromUserOrToUser(User fromUser, User toUser);
+    @Query(DETAILS + """
+            where o.status = :status
+              and o.meeting.arrangedAt is not null
+              and o.meeting.remindedAt is null
+              and o.meeting.at between :simdi and :esik
+            """)
+    List<SwapOffer> findYaklasanBulusmalar(@Param("status") OfferStatus status,
+                                           @Param("simdi") java.time.Instant simdi,
+                                           @Param("esik") java.time.Instant esik);
+
     List<SwapOffer> findByToUserOrderByCreatedAtDesc(User toUser);
     List<SwapOffer> findByFromUserOrderByCreatedAtDesc(User fromUser);
     long countByStatus(OfferStatus status);

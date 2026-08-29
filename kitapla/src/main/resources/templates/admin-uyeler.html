@@ -37,6 +37,9 @@
           <span th:if="${u.student}" class="badge badge-sage">Öğrenci</span>
           <span th:if="${u.studentStatus.name() == 'PENDING'}" class="badge badge-accent">Belge incelemede</span>
           <span th:if="${u.studentStatus.name() == 'REJECTED'}" class="badge badge-muted">Belge reddedildi</span>
+          <span th:if="${u.noShowCount > 0}" class="badge badge-accent"
+                th:text="${u.noShowCount} + ' kez gelmedi'"
+                th:title="'Buluşmaya gelmediği bildirilen sefer sayısı'">2 kez gelmedi</span>
         </div>
         <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px" th:text="${u.email}">a@b.com</div>
       </div>

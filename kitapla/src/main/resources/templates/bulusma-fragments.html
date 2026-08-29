@@ -28,6 +28,14 @@
   Mesaj gönder
 </a>
 
+<!--/* Buluşma saati geçtiyse "gelmedi" bildirimi. action: gönderilecek uç */-->
+<form th:fragment="gelmediFormu(action, meeting)" th:action="${action}" method="post" style="margin:0"
+      th:if="${meeting != null and meeting.arranged and meeting.at != null
+              and meeting.at.isBefore(T(java.time.Instant).now())}"
+      onsubmit="return confirm('Karşı tarafın buluşmaya gelmediğini bildirmek üzeresin. Emin misin?')">
+  <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Gelmedi</button>
+</form>
+
 <div th:fragment="bulusmaFormu(action, meeting, noktalar)" style="margin-top:12px">
   <details class="card card-pad" th:open="${meeting == null or !meeting.arranged}">
     <summary style="font-size:14px;font-weight:800;cursor:pointer;list-style:none"

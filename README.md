@@ -44,7 +44,7 @@ java -jar target/kitapla-0.1.0.jar
 | Başvuru sahibi | `mert@ornek.com` | `sifre123` | Belgesi incelemede |
 
 ```bash
-./mvnw test                   # 169 test
+./mvnw test                   # 248 test
 ```
 
 ## Hesap modeli
@@ -58,17 +58,20 @@ Tek hesap; herkes hem **bağış yapabilir** hem de **kitap alabilir**. Alıcı 
 
 ## Akışlar
 
-1. **Bağış** — Üye kitap seçip miktar, hedef seviye ve kaynak (satın alıp gönderir / elindeki kopya) belirler. Uygun alıcılar talep eder.
-2. **İstek** — Alıcı ihtiyacı olan kitabı listeler; başka biri satın alarak ya da elindeki kopyayla karşılar.
-3. **Takas** — Üyeler kitaplarını takasa açar, başkasının kitabına kendi kitabıyla teklif verir. Kabul edilince iki taraf karşılıklı kargolar. Kotadan bağımsızdır.
+1. **Bağış** — Üye kitap seçer, miktar ve hedef seviyeyi belirler, teslim edeceği kampüs noktasını önerir. Uygun alıcılar talep eder.
+2. **İstek** — Alıcı ihtiyacı olan kitabı listeler; başka biri elindeki kopyayla karşılar.
+3. **Takas** — Üyeler kitaplarını takasa açar, başkasının kitabına kendi kitabıyla teklif verir. Kabul edilince kampüste buluşup karşılıklı verirler. Kotadan bağımsızdır.
 
-Her akışta kitap, eşleşen tarafın **teslimat adresine** kargolanır. Adres yalnızca eşleşilen karşı tarafa görünür. Teslimat `eşleşti → kargoda → teslim edildi` (takas: çift kargo → `tamamlandı`) olarak izlenir.
+Teslim **kampüs içinde yüz yüze** yapılır; kargo yoktur ve **ev adresi paylaşılmaz**. Eşleşen taraflar mesajlaşarak yer ve saatte anlaşır, biri buluşmayı kaydeder, karşı tarafa bildirim gider. Buluşmadan önce hatırlatma düşer. Akış `eşleşti → buluşma ayarlandı → teslim edildi`; karşı taraf gelmezse **gelinmedi** olarak işaretlenir (kitap havuza döner, gelmeyenin kota hakkı yanar).
+
+Eşleşen taraflar **mesajlaşabilir**; sohbet yalnızca bir alışveriş üzerinden açılır. Kural dışı içerik **şikâyet** edilebilir.
 
 ## Kurallar
 
 - **Öğrenci önceliği** — Yeni bağış ilk **48 saat** yalnızca onaylı öğrencilere açıktır; süre dolunca tüm üyelere açılır.
 - **Kota** — Öğrenci son 7 günde **3**, 30 günde **10**; üye son 7 günde **1**, 30 günde **3** kitap alabilir. Bağıştan alınanlar ve karşılanan istekler sayıma dahildir. Bağış yapmanın sınırı yoktur.
-- **Teslimat adresi** — Kitap almak, istek oluşturmak ve takas için profilde adres tanımlı olmalıdır.
+- **Teslim** — Kampüs içindeki teslim noktalarında yüz yüze. Ev adresi istenmez.
+- **Gelinmedi** — Buluşma saati geçtikten sonra karşı taraf bildirebilir. Kitap havuza döner ama gelmeyenin kota hakkı yanar; tekrarı yönetim tarafından görülür.
 - **Öğrenci belgesi** — Belge numarası + belge dosyası gerekir. Aynı belge numarasıyla iki kayıt olmaz. Belge onaylanana kadar başvuru incelemededir.
 - **Kitap kaydı** — Aynı ad + yazar ikinci kez oluşturulmaz (bul ya da oluştur). Alışveriş linki verilirse başlık ve kapak **OpenGraph** ile otomatik doldurulur.
 - **Giriş denemesi** — Aynı e-posta + IP için 15 dakikada 8 hatalı denemeden sonra giriş geçici olarak kilitlenir.
@@ -176,5 +179,5 @@ Karanlık tema `prefers-color-scheme` ile otomatik gelir. Logo üç kitap sırt�
 cd kitapla && ./mvnw test
 ```
 
-169 test; iş kuralları (kota, öncelik penceresi, takas durumları, moderasyon) servis testleriyle,
+248 test; iş kuralları (kota, öncelik penceresi, takas durumları, moderasyon) servis testleriyle,
 sayfa akışları ve erişim denetimi MockMvc testleriyle doğrulanır.

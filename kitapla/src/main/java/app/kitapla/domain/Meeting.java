@@ -37,6 +37,10 @@ public class Meeting {
     @Column(name = "meeting_arranged_at")
     private Instant arrangedAt;
 
+    /** Hatırlatma gönderildiği an; aynı buluşma için iki kez hatırlatılmaz. */
+    @Column(name = "meeting_reminded_at")
+    private Instant remindedAt;
+
     @Transient
     public boolean isArranged() {
         return arrangedAt != null;

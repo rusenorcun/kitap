@@ -3,6 +3,7 @@ package app.kitapla.service;
 import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.BookRequestRepository;
+import app.kitapla.repo.UserRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,15 +23,17 @@ public class RequestService {
 
     private final Features features;
     private final MeetingService meetings;
+    private final UserRepository users;
     private final BookRequestRepository requests;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
-    public RequestService(Features features, MeetingService meetings,
+    public RequestService(Features features, MeetingService meetings, UserRepository users,
                           BookRequestRepository requests, QuotaService quotaService,
                           NotificationService notifications) {
         this.features = features;
         this.meetings = meetings;
+        this.users = users;
         this.requests = requests;
         this.quotaService = quotaService;
         this.notifications = notifications;
@@ -158,6 +161,57 @@ public class RequestService {
         notifications.notify(digeri, "meeting_arranged",
                 "\"" + r.getBook().getTitle() + "\" için buluşma ayarlandı: "
                         + meetings.summary(r.getMeeting()));
+        return r;
+    }
+
+    /**
+     * Karşı taraf buluşmaya gelmedi. İstek yeniden açılmaz — isteyen kişi
+     * hakkını kullanmış sayılır (kota cezası); karşılayan gelmediyse istek
+     * yeniden açık hâle gelir ki başkası karşılayabilsin.
+     */
+    @Transactional
+    public BookRequest noShow(Long requestId, User bildiren) {
+        BookRequest r = requests.findByIdWithDetails(requestId)
+                .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
+
+        boolean isteyen = r.getStudent().getId().equals(bildiren.getId());
+        boolean karsilayan = r.getFulfilledBy() != null
+                && r.getFulfilledBy().getId().equals(bildiren.getId());
+        if (!isteyen && !karsilayan) throw new IllegalStateException("Bu istek sana ait değil.");
+
+        if (r.getStatus() == RequestStatus.DELIVERED)
+            throw new IllegalStateException("Bu kitap zaten teslim edilmiş.");
+        if (r.getStatus() == RequestStatus.NO_SHOW)
+            throw new IllegalStateException("Bu kayıt zaten gelinmedi olarak işaretlenmiş.");
+        if (!r.getMeeting().isArranged())
+            throw new IllegalStateException("Önce bir buluşma ayarlanmış olmalı.");
+        if (r.getMeeting().getAt() != null && Instant.now().isBefore(r.getMeeting().getAt()))
+            throw new IllegalStateException("Buluşma saati daha gelmedi.");
+
+        User gelmeyen = isteyen ? r.getFulfilledBy() : r.getStudent();
+        String kitap = r.getBook().getTitle();
+
+        if (isteyen) {
+            // Karşılayan gelmedi: istek yeniden açılır, başkası karşılayabilsin
+            r.setStatus(RequestStatus.OPEN);
+            r.setFulfilledBy(null);
+            r.setFulfilledAt(null);
+            r.getMeeting().setArrangedAt(null);
+        } else {
+            // İsteyen gelmedi: kayıt kapanır, kota hakkı yanar
+            r.setStatus(RequestStatus.NO_SHOW);
+        }
+        requests.save(r);
+
+        if (gelmeyen != null) {
+            gelmeyen.setNoShowCount(gelmeyen.getNoShowCount() + 1);
+            users.save(gelmeyen);
+            notifications.notify(gelmeyen, "gelmedi",
+                    "\"" + kitap + "\" buluşmasına gelmediğin bildirildi. "
+                            + "Tekrarlanırsa hesabın askıya alınabilir.");
+        }
+        notifications.notify(bildiren, "gelmedi_kayit",
+                "\"" + kitap + "\" için gelinmedi bildirimin kaydedildi.");
         return r;
     }
 

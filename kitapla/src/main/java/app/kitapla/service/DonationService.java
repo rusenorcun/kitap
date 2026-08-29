@@ -3,6 +3,7 @@ package app.kitapla.service;
 import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.ClaimRepository;
+import app.kitapla.repo.UserRepository;
 import app.kitapla.repo.DonationRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,17 +23,20 @@ public class DonationService {
     private final Features features;
     private final MeetingService meetings;
     private final PickupPointService points;
+    private final UserRepository users;
     private final DonationRepository donations;
     private final ClaimRepository claims;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
     public DonationService(Features features, MeetingService meetings, PickupPointService points,
+                           UserRepository users,
                            DonationRepository donations, ClaimRepository claims,
                            QuotaService quotaService, NotificationService notifications) {
         this.features = features;
         this.meetings = meetings;
         this.points = points;
+        this.users = users;
         this.donations = donations;
         this.claims = claims;
         this.quotaService = quotaService;
@@ -45,7 +49,7 @@ public class DonationService {
     }
 
     private DonationView toView(Donation d) {
-        long claimed = claims.countByDonation(d);
+        long claimed = claims.countByDonationAndStatusNot(d, ClaimStatus.NO_SHOW);
         return new DonationView(d, claimed, Math.max(0, d.getQuantity() - claimed));
     }
 
@@ -131,7 +135,7 @@ public class DonationService {
         if (!e.allowed()) throw new IllegalStateException(e.reason());
 
         // Yarış durumu: adet kontrolünü işlem içinde tekrarla
-        long taken = claims.countByDonation(d);
+        long taken = claims.countByDonationAndStatusNot(d, ClaimStatus.NO_SHOW);
         if (taken >= d.getQuantity()) throw new IllegalStateException("Bu bağışta kalan kitap yok.");
 
         Claim c = new Claim();
@@ -206,7 +210,7 @@ public class DonationService {
     @Transactional
     public void reopen(Long donationId, User donor) {
         Donation d = ownDonation(donationId, donor);
-        long taken = claims.countByDonation(d);
+        long taken = claims.countByDonationAndStatusNot(d, ClaimStatus.NO_SHOW);
         if (taken >= d.getQuantity())
             throw new IllegalStateException("Bu bağışta kalan kitap yok; yeniden açılamaz.");
         d.setStatus(DonationStatus.OPEN);
@@ -270,6 +274,47 @@ public class DonationService {
         notifications.notify(digeri, "meeting_arranged",
                 "\"" + c.getDonation().getBook().getTitle() + "\" için buluşma ayarlandı: "
                         + meetings.summary(c.getMeeting()));
+        return c;
+    }
+
+    /**
+     * Karşı taraf buluşmaya gelmedi. Yalnızca buluşma saati geçtikten sonra ve
+     * yalnızca alışverişin diğer tarafınca bildirilebilir.
+     * <p>
+     * Kitap havuza geri döner (kalan adet hesabına dahil edilmez) ama alıcının
+     * kota hakkı yanar — aksi hâlde gelmemek, kotayı sıfırlamanın yolu olurdu.
+     */
+    @Transactional
+    public Claim noShow(Long claimId, User bildiren) {
+        Claim c = claims.findByIdWithDetails(claimId)
+                .orElseThrow(() -> new IllegalStateException("Kayıt bulunamadı."));
+
+        boolean bagisci = c.getDonation().getDonor().getId().equals(bildiren.getId());
+        boolean alici = c.getStudent().getId().equals(bildiren.getId());
+        if (!bagisci && !alici) throw new IllegalStateException("Bu kayıt sana ait değil.");
+
+        if (c.getStatus() == ClaimStatus.DELIVERED)
+            throw new IllegalStateException("Bu kitap zaten teslim edilmiş.");
+        if (c.getStatus() == ClaimStatus.NO_SHOW)
+            throw new IllegalStateException("Bu kayıt zaten gelinmedi olarak işaretlenmiş.");
+        if (!c.getMeeting().isArranged())
+            throw new IllegalStateException("Önce bir buluşma ayarlanmış olmalı.");
+        if (c.getMeeting().getAt() != null && Instant.now().isBefore(c.getMeeting().getAt()))
+            throw new IllegalStateException("Buluşma saati daha gelmedi.");
+
+        c.setStatus(ClaimStatus.NO_SHOW);
+        claims.save(c);
+
+        User gelmeyen = bagisci ? c.getStudent() : c.getDonation().getDonor();
+        gelmeyen.setNoShowCount(gelmeyen.getNoShowCount() + 1);
+        users.save(gelmeyen);
+
+        String kitap = c.getDonation().getBook().getTitle();
+        notifications.notify(gelmeyen, "gelmedi",
+                "\"" + kitap + "\" buluşmasına gelmediğin bildirildi. "
+                        + "Tekrarlanırsa hesabın askıya alınabilir.");
+        notifications.notify(bildiren, "gelmedi_kayit",
+                "\"" + kitap + "\" için gelinmedi bildirimin kaydedildi. Kitap yeniden başkalarına açıldı.");
         return c;
     }
 

@@ -3,6 +3,7 @@ package app.kitapla.service;
 import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.SwapBookRepository;
+import app.kitapla.repo.UserRepository;
 import app.kitapla.repo.SwapOfferRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,15 +23,17 @@ public class SwapService {
 
     private final Features features;
     private final MeetingService meetings;
+    private final UserRepository users;
     private final SwapBookRepository swapBooks;
     private final SwapOfferRepository offers;
     private final NotificationService notifications;
 
-    public SwapService(Features features, MeetingService meetings,
+    public SwapService(Features features, MeetingService meetings, UserRepository users,
                        SwapBookRepository swapBooks, SwapOfferRepository offers,
                        NotificationService notifications) {
         this.features = features;
         this.meetings = meetings;
+        this.users = users;
         this.swapBooks = swapBooks;
         this.offers = offers;
         this.notifications = notifications;
@@ -282,6 +285,42 @@ public class SwapService {
     }
 
     /** Adresler yalnızca kabul edilmiş/tamamlanmış takasta paylaşılır. */
+    /** Karşı taraf takas buluşmasına gelmedi. Takas iptal olur, kitaplar geri açılır. */
+    @Transactional
+    public SwapOffer noShow(Long offerId, User bildiren) {
+        SwapOffer o = offers.findByIdWithDetails(offerId)
+                .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
+        if (o.getStatus() != OfferStatus.ACCEPTED)
+            throw new IllegalStateException("Yalnızca kabul edilmiş takasta bildirilebilir.");
+        if (!o.getFromUser().getId().equals(bildiren.getId())
+                && !o.getToUser().getId().equals(bildiren.getId()))
+            throw new IllegalStateException("Bu takas sana ait değil.");
+        if (!o.getMeeting().isArranged())
+            throw new IllegalStateException("Önce bir buluşma ayarlanmış olmalı.");
+        if (o.getMeeting().getAt() != null && Instant.now().isBefore(o.getMeeting().getAt()))
+            throw new IllegalStateException("Buluşma saati daha gelmedi.");
+
+        o.setStatus(OfferStatus.CANCELLED);
+        o.setDecidedAt(Instant.now());
+        offers.save(o);
+
+        // Kitaplar yeniden takasa açılır
+        o.getOfferedSwapBook().setStatus(SwapBookStatus.OPEN);
+        o.getTargetSwapBook().setStatus(SwapBookStatus.OPEN);
+        swapBooks.save(o.getOfferedSwapBook());
+        swapBooks.save(o.getTargetSwapBook());
+
+        User gelmeyen = counterpart(o, bildiren);
+        gelmeyen.setNoShowCount(gelmeyen.getNoShowCount() + 1);
+        users.save(gelmeyen);
+
+        notifications.notify(gelmeyen, "gelmedi",
+                "Takas buluşmasına gelmediğin bildirildi. Tekrarlanırsa hesabın askıya alınabilir.");
+        notifications.notify(bildiren, "gelmedi_kayit",
+                "Gelinmedi bildirimin kaydedildi; takas iptal edildi ve kitaplar yeniden açıldı.");
+        return o;
+    }
+
     private String zatenMesaji() {
         return features.isShipping() ? "Zaten kargoya verdin." : "Teslimi zaten onayladın.";
     }

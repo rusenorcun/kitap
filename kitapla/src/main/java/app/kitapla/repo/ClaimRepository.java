@@ -14,6 +14,9 @@ import java.util.Optional;
 
 public interface ClaimRepository extends JpaRepository<Claim, Long> {
     long countByDonation(Donation donation);
+
+    /** Kalan adet hesabı: gelinmeyen buluşmalar kitabı havuza geri bırakır. */
+    long countByDonationAndStatusNot(Donation donation, ClaimStatus status);
     boolean existsByDonationAndStudent(Donation donation, User student);
     @Query("""
            select c from Claim c
@@ -45,6 +48,23 @@ public interface ClaimRepository extends JpaRepository<Claim, Long> {
            order by c.createdAt
            """)
     List<Claim> findByDonationWithStudent(@Param("donation") Donation donation);
+
+    /** Yaklaşan ve henüz hatırlatılmamış buluşmalar. */
+    @Query("""
+           select c from Claim c
+           join fetch c.donation d
+           join fetch d.book
+           join fetch d.donor
+           join fetch c.student
+           left join fetch c.meeting.point
+           where c.status = :status
+             and c.meeting.arrangedAt is not null
+             and c.meeting.remindedAt is null
+             and c.meeting.at between :simdi and :esik
+           """)
+    List<Claim> findYaklasanBulusmalar(@Param("status") ClaimStatus status,
+                                       @Param("simdi") Instant simdi,
+                                       @Param("esik") Instant esik);
 
     List<Claim> findByStudentOrderByCreatedAtDesc(User student);
     List<Claim> findByDonation(Donation donation);

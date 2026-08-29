@@ -48,6 +48,10 @@ public class User {
     @Column(nullable = false)
     private boolean blocked = false;
 
+    /** Buluşmaya gelmediği bildirilen sefer sayısı; yönetim üye listesinde görür. */
+    @Column(nullable = false)
+    private int noShowCount = 0;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 

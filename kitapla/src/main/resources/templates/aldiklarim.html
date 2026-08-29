@@ -32,10 +32,11 @@
         </div>
         <span class="badge"
               th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
-              th:text="${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
+              th:text="${c.status.name() == 'NO_SHOW'} ? 'Gelinmedi'
+                     : (${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
                      : (${c.status.name() == 'SHIPPED'} ? 'Kargoda'
                      : (${c.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
-                     : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor')))">Durum</span>
+                     : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor'))))">Durum</span>
       </div>
 
       <!-- Teslimat adımları -->
@@ -65,6 +66,8 @@
       <div class="row gap-8" style="justify-content:flex-end;margin-top:14px">
         <a th:if="${features.handover}"
            th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
+        <form th:if="${features.handover and c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW'}"
+              th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/bagis/' + ${c.id}, ${c.meeting})}"></form>
         <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/iptal'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">İptal et</button>
         </form>
