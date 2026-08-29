@@ -133,6 +133,26 @@ KITAPLA_ADMIN_PASSWORD=guclu-parola ./mvnw spring-boot:run
 Diğer ayarlar: `kitapla.upload-dir` (yüklenen dosyalar, varsayılan `./uploads`),
 `kitapla.login.max-attempts`, `kitapla.login.window-minutes`.
 
+## Sürüm yükseltme
+
+Şema `spring.jpa.hibernate.ddl-auto=update` ile yönetilir: yeni sürüm açıldığında
+eksik tablo ve sütunlar var olan veritabanına eklenir, veriler durur.
+
+Bunun çalışması için varsayılanı olan her `NOT NULL` alan `@ColumnDefault` taşır —
+yoksa H2 dolu bir tabloya varsayılansız `NOT NULL` sütun ekleyemez, DDL sessizce
+başarısız olur ve uygulama açılışın hemen ardından çöker. Docker'da `restart`
+politikası bunu **sürekli yeniden başlayan bir konteynere** dönüştürür: Spring
+başlıyor gibi görünür, sonra baştan alır.
+
+Belirti buysa günlüğe bakın:
+
+```bash
+docker compose logs kitapla | grep -i "GenerationTarget\|APPLICATION FAILED"
+```
+
+`app.kitapla.domain` altındaki entity'lere varsayılanı olan yeni bir `NOT NULL` alan
+eklerken `@ColumnDefault` yazmayı unutmayın; `SemaGuncellemeTest` bu kuralı korur.
+
 ## Mobil uygulama
 
 Backend sunucu-render (Thymeleaf) mimarisiyle çalışır; **JSON API yoktur**.

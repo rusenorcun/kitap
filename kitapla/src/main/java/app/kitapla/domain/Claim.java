@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -24,6 +25,7 @@ public class Claim {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'MATCHED'")
     private ClaimStatus status = ClaimStatus.MATCHED;
 
     @Embedded
@@ -33,6 +35,7 @@ public class Claim {
     private Instant deliveredAt;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     /**

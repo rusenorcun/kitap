@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -26,9 +27,11 @@ public class Notification {
     private String message;
 
     @Column(nullable = false)
+    @ColumnDefault("false")
     private boolean readFlag = false;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     /** Şablonlarda gösterim için yerel saat biçimi (Thymeleaf Instant'ı doğrudan biçimleyemiyor). */

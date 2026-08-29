@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -26,10 +27,12 @@ public class User {
     private String passwordHash;
 
     @Column(nullable = false)
+    @ColumnDefault("false")
     private boolean admin = false;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'NONE'")
     private StudentStatus studentStatus = StudentStatus.NONE;
 
     @Enumerated(EnumType.STRING)
@@ -46,13 +49,16 @@ public class User {
     private String phone;
 
     @Column(nullable = false)
+    @ColumnDefault("false")
     private boolean blocked = false;
 
     /** Buluşmaya gelmediği bildirilen sefer sayısı; yönetim üye listesinde görür. */
     @Column(nullable = false)
+    @ColumnDefault("0")
     private int noShowCount = 0;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     /** Öğrenci = belgesi onaylanmış üye */

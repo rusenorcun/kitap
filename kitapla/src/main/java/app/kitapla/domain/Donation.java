@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -34,14 +35,17 @@ public class Donation {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'PURCHASE'")
     private DonationSource source = DonationSource.PURCHASE;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'HEPSI'")
     private TargetLevel targetLevel = TargetLevel.HEPSI;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'OPEN'")
     private DonationStatus status = DonationStatus.OPEN;
 
     /** Bağışçının önerdiği teslim noktası; taraflar mesajlaşarak değiştirebilir. */
@@ -61,6 +65,7 @@ public class Donation {
     }
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     @Transient

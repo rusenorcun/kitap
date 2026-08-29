@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -37,9 +38,11 @@ public class PickupPoint {
 
     /** Pasif noktalar yeni seçimlerde görünmez; geçmiş kayıtlar bozulmaz. */
     @Column(nullable = false)
+    @ColumnDefault("true")
     private boolean active = true;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     /** Listelerde ve bildirimlerde kullanılan tam ad. */

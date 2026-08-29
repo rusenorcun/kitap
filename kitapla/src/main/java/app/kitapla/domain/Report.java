@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -46,6 +47,7 @@ public class Report {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'OPEN'")
     private ReportStatus status = ReportStatus.OPEN;
 
     /** Şikâyet edilen içeriğin sahibi; listede hızlı görünsün diye kaydedilir. */
@@ -62,6 +64,7 @@ public class Report {
     private String adminNote;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     @Transient

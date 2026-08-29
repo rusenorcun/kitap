@@ -3,6 +3,7 @@ package app.kitapla.domain;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.time.Instant;
 
@@ -27,6 +28,7 @@ public class BookRequest {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @ColumnDefault("'OPEN'")
     private RequestStatus status = RequestStatus.OPEN;
 
     @Enumerated(EnumType.STRING)
@@ -43,6 +45,7 @@ public class BookRequest {
     private Instant deliveredAt;
 
     @Column(nullable = false, updatable = false)
+    @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
     /**
