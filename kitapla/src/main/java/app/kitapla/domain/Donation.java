@@ -68,9 +68,31 @@ public class Donation {
     @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
+    /**
+     * Şablonlar bu alanları her satırda kullanır ({@code targetLevel.name()},
+     * {@code createdAt.plus(...)}). Eski ya da elle düzeltilmiş bir kayıtta biri boşsa
+     * tek satır yüzünden Keşfet'in tamamı 500 veriyordu; boş değer artık güvenli
+     * varsayılana düşer.
+     */
+    public TargetLevel getTargetLevel() {
+        return targetLevel == null ? TargetLevel.HEPSI : targetLevel;
+    }
+
+    public DonationStatus getStatus() {
+        return status == null ? DonationStatus.OPEN : status;
+    }
+
+    public DonationSource getSource() {
+        return source == null ? DonationSource.OWN : source;
+    }
+
+    public Instant getCreatedAt() {
+        return createdAt == null ? Instant.EPOCH : createdAt;
+    }
+
     @Transient
     public Instant getPriorityUntil() {
-        return createdAt.plus(Duration.ofHours(PRIORITY_WINDOW_HOURS));
+        return getCreatedAt().plus(Duration.ofHours(PRIORITY_WINDOW_HOURS));
     }
 
     @Transient

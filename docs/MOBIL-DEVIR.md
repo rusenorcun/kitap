@@ -62,10 +62,19 @@ Mobil tarafta silinecek/değişecek ekranlar: adres girişi, kargo takibi,
 "kargoya verdim" aksiyonu. Yerine gelecekler: teslim noktası seçici, buluşma
 ayarlama (yer + saat), buluşma kartı, "gelmedi" bildirimi.
 
-> Kargo ve satın alma **silinmedi, bayrakla kapatıldı**
-> (`kitapla.features.shipping`, `.purchase`, `.address`). İleride açılırsa
+> Kargo, satın alma ve belgeli öğrenci başvurusu **silinmedi, bayrakla kapatıldı**
+> (`kitapla.features.shipping`, `.purchase`, `.address`, `.document`). İleride açılırsa
 > eski akış geri gelir. Mobil tarafta bu bayrakları API'den okuyup ekranı
 > ona göre kurmak mantıklı olur.
+
+> Öğrenci doğrulaması belgeden **okul e-postasına** taşındı: `.edu.tr` uzantılı adres
+> yeterli. Mobilde belge yükleme ekranı yerine tek alanlı bir e-posta ekranı gerekiyor.
+> Posta servisi geldiğinde araya kod doğrulama adımı girecek.
+
+> Kapak görselleri artık **bizde** saklanıyor (`/uploads/covers/...`): bağış formunda
+> dosya yüklenebiliyor, linkten gelen `og:image` de sunucu tarafında indiriliyor.
+> `Book.coverUrl` ya bu göreli yol ya da indirilemeyen bir dış adres olur — mobilde
+> göreli yolun başına sunucu adresini eklemek gerekir.
 
 ### 2.2 Yeni: mesajlaşma
 Eşleşen iki taraf yazışabiliyor (bağış talebi, karşılanan istek, kabul edilmiş
@@ -116,13 +125,14 @@ olarak kullanılmalı: her satırın arkasındaki servis çağrısı ve kuralı 
 | Yöntem | Yol | Servis | Not |
 | --- | --- | --- | --- |
 | POST | `/login` | Spring Security | Form: `email`, `password`. **Oturum çerezi** döner |
-| POST | `/register` | `UserService.register` | multipart (öğrenci belgesi olabilir) |
+| POST | `/register` | `UserService.register` | `name`, `email`, `password`, `school`, `phone`. Adres **sorulmuyor**. E-posta `.edu.tr` ile bitiyorsa hesap doğrudan onaylı öğrenci açılır |
 | POST | `/sifremi-unuttum` | `PasswordResetService.request` | Adres kayıtlı olmasa da aynı cevap |
 | POST | `/sifre-sifirla` | `PasswordResetService.reset` | Token tek kullanımlık, 1 saat |
 | GET | `/profil` | — | Profil + kota |
-| POST | `/profil` | `UserService.updateProfile` | ad, adres, telefon |
+| POST | `/profil` | `UserService.updateProfile` | ad, telefon, `school`. Adres yalnızca `features.address` açıkken |
 | POST | `/profil/sifre` | `UserService.changePassword` | |
-| POST | `/profil/ogrenci` | `UserService.applyForStudent` | multipart belge → PENDING |
+| POST | `/profil/ogrenci/eposta` | `UserService.verifyStudentEmail` | `studentEmail` (`.edu.tr`) → anında APPROVED |
+| POST | `/profil/ogrenci` | `UserService.applyForStudent` | multipart belge → PENDING. **Kapalı** (`kitapla.features.document`) |
 
 ### 4.2 Keşif ve bağış
 
@@ -131,7 +141,7 @@ olarak kullanılmalı: her satırın arkasındaki servis çağrısı ve kuralı 
 | GET | `/kesfet` | `DonationService.openDonations(Filter)` — `level`, `q`, `available` |
 | GET | `/kitap/{id}` | `DonationService.view` + `eligibility` |
 | POST | `/kitap/{id}/al` | `DonationService.claim` |
-| POST | `/bagis/yeni` | `DonationService.create` (+ `pointId`, `pointNote`) |
+| POST | `/bagis/yeni` | `DonationService.create` (+ `pointId`, `pointNote`, multipart `coverFile`) |
 | GET | `/bagislarim` | `DonationService.myDonations` |
 | POST | `/bagis/{id}/kapat` `/ac` `/sil` | `close` / `reopen` / `delete` |
 | GET | `/aldiklarim` | `ClaimRepository.findByStudentWithDetails` |
@@ -300,7 +310,10 @@ ReportStatus    OPEN, ACTIONED, DISMISSED
 `point`, `note`, `at`, `arrangedAt`, `remindedAt`.
 
 > `User` entity'sini asla doğrudan serileştirme: `passwordHash`, `documentNo`,
-> `documentPath`, `address`, `phone` içerir. DTO kullan.
+> `documentPath`, `address`, `phone`, `studentEmail` içerir. DTO kullan.
+
+`User` yeni alanlar: `school` (`School` enum — ATATURK_UNIVERSITESI / ERZURUM_TEKNIK_UNIVERSITESI)
+ve `studentEmail` (okul adresi, tekil).
 
 ---
 

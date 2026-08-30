@@ -39,7 +39,7 @@ java -jar target/kitapla-0.1.0.jar
 | Hesap | E-posta | Şifre | Rolü |
 | --- | --- | --- | --- |
 | Yönetici | `admin@kitapla.app` | `admin123` | Yönetim paneli |
-| Bağışçı | `ayse@ornek.com` | `sifre123` | Üye (belgesiz) |
+| Bağışçı | `ayse@ornek.com` | `sifre123` | Üye (doğrulanmamış) |
 | Öğrenci | `elif@ornek.com` | `sifre123` | Onaylı öğrenci |
 | Başvuru sahibi | `mert@ornek.com` | `sifre123` | Belgesi incelemede |
 
@@ -51,10 +51,17 @@ java -jar target/kitapla-0.1.0.jar
 
 Tek hesap; herkes hem **bağış yapabilir** hem de **kitap alabilir**. Alıcı iki katmandan biridir:
 
-- **Üye** — belgesiz. Bağış yapar, takas eder, kitap alır. Önceliği yoktur, kotası düşüktür.
-- **Öğrenci** — belgesi yönetici tarafından onaylanmış üye. Bağışta **48 saat öncelik** ve daha yüksek kota kazanır.
+- **Üye** — okul adresi doğrulanmamış. Bağış yapar, takas eder, kitap alır. Önceliği yoktur, kotası düşüktür.
+- **Öğrenci** — okul e-postası (`.edu.tr`) doğrulanmış üye. Bağışta **48 saat öncelik** ve daha yüksek kota kazanır.
 
-Üye dilediği zaman `/profil/ogrenci` üzerinden öğrenci doğrulamasına başvurur; belge yönetici onayına gider.
+Kayıt sırasında `.edu.tr` uzantılı bir adres kullanan doğrudan öğrenci olur. Kişisel bir adresle kaydolan üye
+dilediği zaman `/profil/ogrenci` üzerinden okul adresini ekleyip öğrenci olabilir — yeniden kaydolması gerekmez.
+
+> Posta servisi bağlanana kadar adres yalnızca **uzantısına** bakılarak kabul edilir; gerçekten üyeye ait olduğu
+> doğrulanmaz. Servis geldiğinde bu adrese kod gönderilip onay istenecek (`User.studentEmail` bu yüzden ayrı tutulur).
+
+Belge yükleyerek başvuru **silinmedi**, kapatıldı: `kitapla.features.document=true` ile geri gelir ve yönetim
+onay ekranı olduğu gibi çalışır (`BelgeModuTest` bunu doğrular).
 
 ## Akışlar
 
@@ -68,11 +75,11 @@ Eşleşen taraflar **mesajlaşabilir**; sohbet yalnızca bir alışveriş üzeri
 
 ## Kurallar
 
-- **Öğrenci önceliği** — Yeni bağış ilk **48 saat** yalnızca onaylı öğrencilere açıktır; süre dolunca tüm üyelere açılır.
+- **Öğrenci önceliği** — Yeni bağış ilk **48 saat** yalnızca doğrulanmış öğrencilere açıktır; süre dolunca tüm üyelere açılır.
 - **Kota** — Öğrenci son 7 günde **3**, 30 günde **10**; üye son 7 günde **1**, 30 günde **3** kitap alabilir. Bağıştan alınanlar ve karşılanan istekler sayıma dahildir. Bağış yapmanın sınırı yoktur.
 - **Teslim** — Kampüs içindeki teslim noktalarında yüz yüze. Ev adresi istenmez.
 - **Gelinmedi** — Buluşma saati geçtikten sonra karşı taraf bildirebilir. Kitap havuza döner ama gelmeyenin kota hakkı yanar; tekrarı yönetim tarafından görülür.
-- **Öğrenci belgesi** — Belge numarası + belge dosyası gerekir. Aynı belge numarasıyla iki kayıt olmaz. Belge onaylanana kadar başvuru incelemededir.
+- **Öğrenci doğrulaması** — Okulun verdiği `.edu.tr` uzantılı e-posta adresi. Bir okul adresi yalnızca bir hesaba bağlanabilir.
 - **Kitap kaydı** — Aynı ad + yazar ikinci kez oluşturulmaz (bul ya da oluştur). Alışveriş linki verilirse başlık ve kapak **OpenGraph** ile otomatik doldurulur.
 - **Giriş denemesi** — Aynı e-posta + IP için 15 dakikada 8 hatalı denemeden sonra giriş geçici olarak kilitlenir.
 
@@ -119,6 +126,8 @@ ilettiği `X-Forwarded-*` başlıklarını dikkate alır.
 | `KITAPLA_ADMIN_NAME` | Yönetici adı | `Yönetici` |
 | `KITAPLA_CONTACT_EMAIL` | İletişim sayfasında gösterilen adres | yönetici e-postası |
 | `SERVER_PORT` | Sunucu portu | `8080` |
+| `KITAPLA_DOCUMENT` | Belgeyle öğrenci başvurusunu geri açar | `false` |
+| `KITAPLA_SHIPPING` / `KITAPLA_PURCHASE` / `KITAPLA_ADDRESS` | Kargo, satın alma ve adres akışlarını geri açar | `false` |
 
 Varsayılan yönetici şifresi kullanıldığında açılışta uyarı loglanır. Yerel deneme dışında mutlaka değiştirin:
 

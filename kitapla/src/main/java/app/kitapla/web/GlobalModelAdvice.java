@@ -40,6 +40,12 @@ public class GlobalModelAdvice {
         return features;
     }
 
+    /** Kayıt ve profil formlarındaki okul listesi. */
+    @ModelAttribute("okullar")
+    public app.kitapla.domain.School[] okullar() {
+        return app.kitapla.domain.School.values();
+    }
+
     @ModelAttribute("currentUser")
     public User currentUser() {
         return CurrentUser.get();

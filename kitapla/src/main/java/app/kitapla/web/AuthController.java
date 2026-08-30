@@ -1,5 +1,7 @@
 package app.kitapla.web;
 
+import app.kitapla.config.Features;
+import app.kitapla.domain.School;
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.security.LoginAttemptService;
 import app.kitapla.service.UserService;
@@ -21,12 +23,14 @@ public class AuthController {
 
     private final UserService userService;
     private final LoginAttemptService attempts;
+    private final Features features;
     private final Path uploadDir;
 
-    public AuthController(UserService userService, LoginAttemptService attempts,
+    public AuthController(UserService userService, LoginAttemptService attempts, Features features,
                           @Value("${kitapla.upload-dir}") String uploadDir) {
         this.userService = userService;
         this.attempts = attempts;
+        this.features = features;
         this.uploadDir = Path.of(uploadDir, "documents");
     }
 
@@ -47,11 +51,16 @@ public class AuthController {
                            @RequestParam String password,
                            @RequestParam(required = false) String address,
                            @RequestParam(required = false) String phone,
+                           @RequestParam(required = false) String school,
                            @RequestParam(required = false, defaultValue = "false") boolean wantsStudent,
                            @RequestParam(required = false) String schoolLevel,
                            @RequestParam(required = false) String documentNo,
                            @RequestParam(required = false) MultipartFile document,
                            Model model) {
+        // Belgeli başvuru kapalıyken kayıt formunda bu alanlar hiç gösterilmez;
+        // gönderilseler bile dikkate alınmazlar.
+        if (!features.isDocument()) wantsStudent = false;
+
         String documentPath = null;
         try {
             if (wantsStudent && document != null && !document.isEmpty()) {
@@ -63,7 +72,8 @@ public class AuthController {
                 documentPath = fname;
             }
             SchoolLevel level = (schoolLevel == null || schoolLevel.isBlank()) ? null : SchoolLevel.valueOf(schoolLevel);
-            userService.register(name, email, password, address, phone, wantsStudent, level, documentNo, documentPath);
+            userService.register(name, email, password, address, phone, School.of(school),
+                    wantsStudent, level, documentNo, documentPath);
             return "redirect:/login?kayit";
         } catch (IllegalArgumentException ex) {
             discard(documentPath);
@@ -73,6 +83,7 @@ public class AuthController {
             form.put("email", email);
             form.put("address", address);
             form.put("phone", phone);
+            form.put("school", school);
             model.addAttribute("form", form);
             return "register";
         } catch (Exception ex) {

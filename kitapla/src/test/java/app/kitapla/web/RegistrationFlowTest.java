@@ -1,5 +1,6 @@
 package app.kitapla.web;
 
+import app.kitapla.domain.School;
 import app.kitapla.domain.StudentStatus;
 import app.kitapla.repo.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -47,24 +48,53 @@ class RegistrationFlowTest {
     }
 
     @Test
-    void belgeliKayitOgrenciDogrulamasiniBeklemeyeAlir() throws Exception {
+    void okulEpostasiyleKayitDogrudanOgrenciYapar() throws Exception {
+        mvc.perform(post("/register").with(csrf())
+                        .param("name", "Okullu Üye")
+                        .param("email", "ogr@atauni.edu.tr")
+                        .param("password", "sifre123")
+                        .param("school", "ATATURK_UNIVERSITESI"))
+                .andExpect(redirectedUrl("/login?kayit"));
+
+        var saved = users.findByEmail("ogr@atauni.edu.tr").orElseThrow();
+        assertThat(saved.getStudentStatus()).isEqualTo(StudentStatus.APPROVED);
+        assertThat(saved.isStudent()).isTrue();
+        assertThat(saved.getStudentEmail()).isEqualTo("ogr@atauni.edu.tr");
+        assertThat(saved.getSchool()).isEqualTo(School.ATATURK_UNIVERSITESI);
+        // Belge istenmedi
+        assertThat(saved.getDocumentPath()).isNull();
+    }
+
+    @Test
+    void kisiselEpostaylaKayitUyeOlarakBaslar() throws Exception {
+        mvc.perform(post("/register").with(csrf())
+                        .param("name", "Kişisel Üye")
+                        .param("email", "kisisel@gmail.com")
+                        .param("password", "sifre123")
+                        .param("school", "ERZURUM_TEKNIK_UNIVERSITESI"))
+                .andExpect(redirectedUrl("/login?kayit"));
+
+        var saved = users.findByEmail("kisisel@gmail.com").orElseThrow();
+        assertThat(saved.getStudentStatus()).isEqualTo(StudentStatus.NONE);
+        assertThat(saved.getSchool()).isEqualTo(School.ERZURUM_TEKNIK_UNIVERSITESI);
+    }
+
+    @Test
+    void belgeliKayitBayrakKapaliykenYokSayilir() throws Exception {
         var belge = new MockMultipartFile("document", "belge.pdf", "application/pdf", "sahte-belge".getBytes());
 
         mvc.perform(multipart("/register").file(belge).with(csrf())
-                        .param("name", "Test Öğrenci")
-                        .param("email", "ogrenci@test.local")
+                        .param("name", "Belgeli Aday")
+                        .param("email", "belgeli@test.local")
                         .param("password", "sifre123")
-                        .param("address", "İzmir")
                         .param("wantsStudent", "true")
                         .param("schoolLevel", "LISE")
                         .param("documentNo", "LS-9001"))
-                .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/login?kayit"));
 
-        var saved = users.findByEmail("ogrenci@test.local").orElseThrow();
-        assertThat(saved.getStudentStatus()).isEqualTo(StudentStatus.PENDING);
-        assertThat(saved.isStudent()).isFalse(); // onaylanana kadar öğrenci sayılmaz
-        assertThat(saved.getDocumentPath()).isNotBlank();
+        var saved = users.findByEmail("belgeli@test.local").orElseThrow();
+        assertThat(saved.getStudentStatus()).isEqualTo(StudentStatus.NONE);
+        assertThat(saved.getDocumentPath()).isNull();
     }
 
     @Test

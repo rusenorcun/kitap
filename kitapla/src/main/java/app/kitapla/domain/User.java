@@ -48,6 +48,17 @@ public class User {
 
     private String phone;
 
+    /** Üyenin kampüsü; teslim noktaları ve buluşmalar buna göre önerilir. */
+    @Enumerated(EnumType.STRING)
+    private School school;
+
+    /**
+     * Öğrenci doğrulamasında kullanılan okul e-postası (.edu.tr).
+     * Posta servisi devreye girdiğinde bu adrese kod gönderilecek.
+     */
+    @Column(unique = true)
+    private String studentEmail;
+
     @Column(nullable = false)
     @ColumnDefault("false")
     private boolean blocked = false;

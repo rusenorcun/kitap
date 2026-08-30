@@ -2,6 +2,7 @@ package app.kitapla.service;
 
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.domain.StudentStatus;
+import app.kitapla.domain.School;
 import app.kitapla.domain.User;
 import app.kitapla.repo.UserRepository;
 import org.junit.jupiter.api.Test;
@@ -36,7 +37,7 @@ class ProfileServiceTest {
     @Test
     void profilGuncellenir() {
         User u = mk("guncelle", "Eski Adres");
-        userService.updateProfile(u, "Yeni Ad", "Yeni Adres 42", "05551112233");
+        userService.updateProfile(u, "Yeni Ad", "Yeni Adres 42", "05551112233", School.ATATURK_UNIVERSITESI);
 
         User saved = users.findById(u.getId()).orElseThrow();
         assertThat(saved.getName()).isEqualTo("Yeni Ad");
@@ -47,7 +48,7 @@ class ProfileServiceTest {
     @Test
     void bosAdReddedilir() {
         User u = mk("bosad", "Adres");
-        assertThatThrownBy(() -> userService.updateProfile(u, "   ", "Adres", null))
+        assertThatThrownBy(() -> userService.updateProfile(u, "   ", "Adres", null, null))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("Ad boş");
     }

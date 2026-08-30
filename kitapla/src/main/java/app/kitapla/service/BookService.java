@@ -17,10 +17,12 @@ public class BookService {
 
     private final BookRepository books;
     private final OpenGraphService openGraph;
+    private final CoverService covers;
 
-    public BookService(BookRepository books, OpenGraphService openGraph) {
+    public BookService(BookRepository books, OpenGraphService openGraph, CoverService covers) {
         this.books = books;
         this.openGraph = openGraph;
+        this.covers = covers;
     }
 
     private static String clean(String s, int max) {
@@ -74,8 +76,20 @@ public class BookService {
                     "Kitap adı gerekli. Geçerli bir alışveriş linki verin ya da adı elle girin.");
         }
 
+        // Kapak dışarıdan geliyorsa indirip kendimizde saklarız; adres olduğu gibi
+        // tutulduğunda satış sitelerinin çoğu görseli bize göstermiyor.
+        cover = clean(covers.saveFromUrl(cover), 1000);
+
         Optional<Book> existing = find(t, a);
-        if (existing.isPresent()) return existing.get();
+        if (existing.isPresent()) {
+            // Aynı kitap daha önce eksik bilgiyle eklenmiş olabilir; boş alanları tamamla.
+            Book b = existing.get();
+            boolean degisti = false;
+            if (b.getCoverUrl() == null && cover != null) { b.setCoverUrl(cover); degisti = true; }
+            if (b.getPurchaseLink() == null && link != null) { b.setPurchaseLink(link); degisti = true; }
+            if (b.getDescription() == null && desc != null) { b.setDescription(desc); degisti = true; }
+            return degisti ? books.save(b) : b;
+        }
 
         Book b = new Book();
         b.setTitle(t);

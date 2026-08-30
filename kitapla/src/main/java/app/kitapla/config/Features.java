@@ -18,15 +18,18 @@ public class Features {
     private final boolean purchase;
     private final boolean address;
     private final boolean handover;
+    private final boolean document;
 
     public Features(@Value("${kitapla.features.shipping:false}") boolean shipping,
                     @Value("${kitapla.features.purchase:false}") boolean purchase,
                     @Value("${kitapla.features.address:false}") boolean address,
-                    @Value("${kitapla.features.handover:true}") boolean handover) {
+                    @Value("${kitapla.features.handover:true}") boolean handover,
+                    @Value("${kitapla.features.document:false}") boolean document) {
         this.shipping = shipping;
         this.purchase = purchase;
         this.address = address;
         this.handover = handover;
+        this.document = document;
     }
 
     /** Kargo akışı (kargoya verildi → teslim alındı) açık mı? */
@@ -47,5 +50,13 @@ public class Features {
     /** Kampüs içi yüz yüze teslim akışı açık mı? */
     public boolean isHandover() {
         return handover;
+    }
+
+    /**
+     * Belge yükleyerek öğrenci başvurusu açık mı? Öğrenci doğrulaması okul e-postasına
+     * (.edu.tr) taşındığı için kapalıdır; kod, yönetim ekranı ve sütunlar yerinde durur.
+     */
+    public boolean isDocument() {
+        return document;
     }
 }

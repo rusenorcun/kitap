@@ -9,7 +9,8 @@
     <a th:href="@{/profil}" style="color:inherit">Hesap ayarları</a> · Öğrenci doğrulama
   </div>
   <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Öğrenci ol</h1>
-  <p class="muted" style="font-weight:500;margin:0 0 22px">Belgeni doğrula, bağışlarda önceliği kazan.</p>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    Okulunun verdiği <strong>.edu.tr</strong> uzantılı adresi gir, bağışlarda önceliği kazan.</p>
 
   <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
@@ -23,7 +24,34 @@
     <div style="font-size:14px;font-weight:600;padding:8px 0">Haftada 3, ayda 10 kitap hakkı</div>
   </div>
 
-  <form th:action="@{/profil/ogrenci}" method="post" enctype="multipart/form-data" class="card card-pad">
+  <div th:if="${user.studentStatus?.name() == 'APPROVED'}" class="alert alert-ok" role="status">
+    Zaten onaylı bir öğrencisin<span th:if="${user.studentEmail}"
+      th:text="' (' + ${user.studentEmail} + ')'"></span>.
+  </div>
+
+  <form th:unless="${user.studentStatus?.name() == 'APPROVED'}"
+        th:action="@{/profil/ogrenci/eposta}" method="post" class="card card-pad">
+    <div class="field">
+      <label class="label" for="studentEmail">Okul e-posta adresin</label>
+      <input class="input" type="email" id="studentEmail" name="studentEmail" required
+             placeholder="ornek@atauni.edu.tr" th:value="${user.studentEmail}"/>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+        <strong>.edu.tr</strong> ile bitmelidir. Giriş e-postandan farklı olabilir —
+        hesabını kişisel adresinle açtıysan tekrar kaydolmana gerek yok.</p>
+    </div>
+    <button class="btn btn-primary btn-block" type="submit">Öğrenci ol</button>
+    <p class="muted" style="font-size:12px;font-weight:500;margin:12px 0 0;line-height:1.6">
+      Şu an adres yalnızca uzantısına bakılarak kabul ediliyor. Posta servisi devreye girdiğinde
+      bu adrese bir kod gönderilip onay istenecek.</p>
+  </form>
+
+  <!--/* Belgeyle başvuru silinmedi; kitapla.features.document=true ile geri gelir. */-->
+  <form th:if="${features.document and user.studentStatus?.name() != 'APPROVED'}"
+        th:action="@{/profil/ogrenci}" method="post" enctype="multipart/form-data"
+        class="card card-pad" style="margin-top:18px">
+    <div style="font-size:15px;font-weight:800;margin-bottom:4px">Okul adresin yok mu?</div>
+    <p class="muted" style="font-size:13px;font-weight:500;margin:0 0 14px">
+      Belgeni yükle, yönetim incelesin.</p>
     <div class="field">
       <label class="label" for="schoolLevel">Okul seviyesi</label>
       <select class="input" id="schoolLevel" name="schoolLevel" required>
@@ -43,7 +71,7 @@
       <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
         PDF veya görsel · e-Devlet belgesi ya da okul kartı. Belgeni yalnızca yöneticiler görür.</p>
     </div>
-    <button class="btn btn-primary btn-block" type="submit">Doğrulamaya gönder</button>
+    <button class="btn btn-soft btn-block" type="submit">Doğrulamaya gönder</button>
   </form>
 </div>
 </body>

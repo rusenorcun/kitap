@@ -6,7 +6,8 @@
 
 <div class="container-narrow" style="padding-top:40px; padding-bottom:56px;">
   <h1 style="font-size:30px;font-weight:800;letter-spacing:-.7px;margin:0 0 6px">Aramıza katıl</h1>
-  <p class="muted" style="margin:0 0 26px;font-weight:500">Herkes bağış yapabilir ve kitap alabilir. Öğrenciysen belgeni doğrulayıp öncelik kazanırsın.</p>
+  <p class="muted" style="margin:0 0 26px;font-weight:500">Herkes bağış yapabilir ve kitap alabilir.
+    Okulunun verdiği <strong>.edu.tr</strong> adresiyle kaydolursan öğrenci önceliğini doğrudan kazanırsın.</p>
 
   <div th:if="${error}" class="alert alert-error" th:text="${error}" role="alert">Hata</div>
 
@@ -25,39 +26,61 @@
         <input class="input" type="password" id="password" name="password" required placeholder="en az 6 karakter"/>
       </div>
     </div>
-    <div class="field">
-      <label class="label" for="address">Teslimat adresi <span class="muted" style="font-weight:500">(kitap almak/takas için)</span></label>
+    <!--/* Teslim kampüste yüz yüze yapıldığı için adres istenmez.
+           Alan silinmedi: kitapla.features.address=true ile geri gelir. */-->
+    <div class="field" th:if="${features.address}">
+      <label class="label" for="address">Teslimat adresi <span class="muted" style="font-weight:500">(kargo için)</span></label>
       <textarea class="input" id="address" name="address" th:text="${form?.address}"></textarea>
     </div>
-    <div class="field">
-      <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
-      <input class="input" id="phone" name="phone" th:value="${form?.phone}"/>
-    </div>
 
-    <label class="row gap-8" style="margin:8px 0 4px; cursor:pointer; font-weight:700; font-size:14px">
-      <input type="checkbox" name="wantsStudent" value="true" onchange="document.getElementById('ogr').style.display=this.checked?'block':'none'"/>
-      Öğrenciyim — belgeyle doğrula, öncelik kazan
-    </label>
-
-    <div id="ogr" style="display:none; border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
-      <div class="duo">
-        <div class="field">
-          <label class="label" for="schoolLevel">Okul seviyesi</label>
-          <select class="input" id="schoolLevel" name="schoolLevel">
-            <option value="">Seçin</option>
-            <option value="ORTAOKUL">Ortaokul</option>
-            <option value="LISE">Lise</option>
-            <option value="UNIVERSITE">Üniversite</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="label" for="documentNo">Öğrenci belge numarası</label>
-          <input class="input" id="documentNo" name="documentNo"/>
-        </div>
+    <div class="duo">
+      <div class="field">
+        <label class="label" for="school">Okulun</label>
+        <select class="input" id="school" name="school" required>
+          <option value="">Seçin</option>
+          <option th:each="o : ${okullar}" th:value="${o.name()}" th:text="${o.label}"
+                  th:selected="${form?.school == o.name()}">Okul</option>
+        </select>
       </div>
       <div class="field">
-        <label class="label" for="document">Öğrenci belgesi (PDF/görsel)</label>
-        <input class="input" type="file" id="document" name="document" accept="application/pdf,image/*"/>
+        <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+        <input class="input" id="phone" name="phone" th:value="${form?.phone}"/>
+      </div>
+    </div>
+
+    <p class="muted" style="font-size:13px;font-weight:500;margin:4px 0 0;line-height:1.6">
+      <strong>Öğrenci misin?</strong> Yukarıya okulunun verdiği <strong>.edu.tr</strong> uzantılı adresi yazman yeterli —
+      belge yüklemene gerek yok. Başka bir adresle kaydolursan sonradan profilinden okul adresini ekleyip
+      öğrenci olabilirsin.</p>
+
+    <!--/* Belgeyle başvuru silinmedi; kitapla.features.document=true ile geri gelir. */-->
+    <div th:if="${features.document}">
+      <label class="row gap-8" style="margin:8px 0 4px; cursor:pointer; font-weight:700; font-size:14px">
+        <input type="checkbox" name="wantsStudent" value="true"
+               onchange="document.getElementById('ogr').style.display=this.checked?'block':'none'"/>
+        Öğrenciyim — belgeyle doğrula, öncelik kazan
+      </label>
+
+      <div id="ogr" style="display:none; border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
+        <div class="duo">
+          <div class="field">
+            <label class="label" for="schoolLevel">Okul seviyesi</label>
+            <select class="input" id="schoolLevel" name="schoolLevel">
+              <option value="">Seçin</option>
+              <option value="ORTAOKUL">Ortaokul</option>
+              <option value="LISE">Lise</option>
+              <option value="UNIVERSITE">Üniversite</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="label" for="documentNo">Öğrenci belge numarası</label>
+            <input class="input" id="documentNo" name="documentNo"/>
+          </div>
+        </div>
+        <div class="field">
+          <label class="label" for="document">Öğrenci belgesi (PDF/görsel)</label>
+          <input class="input" type="file" id="document" name="document" accept="application/pdf,image/*"/>
+        </div>
       </div>
     </div>
 

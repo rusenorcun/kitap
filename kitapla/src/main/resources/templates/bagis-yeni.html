@@ -10,7 +10,7 @@
 
   <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
-  <form th:action="@{/bagis/yeni}" method="post"
+  <form th:action="@{/bagis/yeni}" method="post" enctype="multipart/form-data"
         class="split-main">
 
     <div>
@@ -38,6 +38,14 @@
         </div>
       </div>
       <input type="hidden" id="coverUrl" name="coverUrl"/>
+
+      <div class="field">
+        <label class="label" for="coverFile">Kapak görseli <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+        <input class="input" type="file" id="coverFile" name="coverFile" accept="image/*"/>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+          JPG, PNG, WEBP ya da GIF · en fazla 3 MB. Link verdiysen kapak kendiliğinden gelir;
+          buraya bir dosya seçersen o kullanılır.</p>
+      </div>
 
       <div class="split-qty">
         <div class="field">

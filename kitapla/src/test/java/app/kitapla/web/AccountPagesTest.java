@@ -1,5 +1,6 @@
 package app.kitapla.web;
 
+import app.kitapla.domain.School;
 import app.kitapla.domain.StudentStatus;
 import app.kitapla.domain.User;
 import app.kitapla.repo.UserRepository;
@@ -72,15 +73,22 @@ class AccountPagesTest {
         User u = mk("form", "Eski");
         mvc.perform(post("/profil").with(user(as(u))).with(csrf())
                         .param("name", "Güncel Ad")
-                        .param("address", "Yeni Adres 7")
+                        .param("school", "ATATURK_UNIVERSITESI")
                         .param("phone", "05551112233"))
                 .andExpect(redirectedUrl("/profil"));
 
-        assertThat(users.findById(u.getId()).orElseThrow().getName()).isEqualTo("Güncel Ad");
+        User kayitli = users.findById(u.getId()).orElseThrow();
+        assertThat(kayitli.getName()).isEqualTo("Güncel Ad");
+        assertThat(kayitli.getSchool()).isEqualTo(School.ATATURK_UNIVERSITESI);
+        // Adres alanı kampüs modunda formda yok; gelmeyen değer kayıtlı adresi silmemeli
+        assertThat(kayitli.getAddress()).isEqualTo("Eski");
+
         // Oturumdaki (bayat) kullanıcıyla istesek bile sayfa güncel veriyi göstermeli
         mvc.perform(get("/profil").with(user(as(u))))
-                .andExpect(content().string(containsString("Yeni Adres 7")))
-                .andExpect(content().string(containsString("Güncel Ad")));
+                .andExpect(content().string(containsString("Güncel Ad")))
+                .andExpect(content().string(containsString("Atatürk Üniversitesi")))
+                // Teslim yüz yüze: adres hiç sorulmuyor
+                .andExpect(content().string(not(containsString("Teslimat adresi"))));
     }
 
     @Test
@@ -108,37 +116,45 @@ class AccountPagesTest {
     }
 
     @Test
-    void ogrenciBasvurusuBelgeYuklerVeBeklemeyeAlir() throws Exception {
-        User u = mk("ogrenci", "İzmir Bornova");
+    void okulEpostasiyleOgrenciOlunur() throws Exception {
+        User u = mk("edu", "İzmir");
+
+        mvc.perform(post("/profil/ogrenci/eposta").with(user(as(u))).with(csrf())
+                        .param("studentEmail", "ogr-" + UUID.randomUUID() + "@atauni.edu.tr"))
+                .andExpect(redirectedUrl("/profil"))
+                .andExpect(flash().attributeExists("basari"));
+
+        assertThat(users.findById(u.getId()).orElseThrow().getStudentStatus())
+                .isEqualTo(StudentStatus.APPROVED);
+    }
+
+    @Test
+    void eduTrOlmayanAdresReddedilir() throws Exception {
+        User u = mk("edu-degil", "İzmir");
+
+        mvc.perform(post("/profil/ogrenci/eposta").with(user(as(u))).with(csrf())
+                        .param("studentEmail", "birisi@gmail.com"))
+                .andExpect(redirectedUrl("/profil/ogrenci"))
+                .andExpect(flash().attributeExists("hata"));
+
+        assertThat(users.findById(u.getId()).orElseThrow().getStudentStatus())
+                .isEqualTo(StudentStatus.NONE);
+    }
+
+    @Test
+    void belgeliBasvuruKapaliykenDosyaYazilmaz() throws Exception {
+        User u = mk("belge-kapali", "İzmir");
         var belge = new MockMultipartFile("document", "belge.pdf", "application/pdf", "sahte".getBytes());
+        long oncekiBelgeSayisi = belgeSayisi();
 
         mvc.perform(multipart("/profil/ogrenci").file(belge).with(user(as(u))).with(csrf())
                         .param("schoolLevel", "LISE")
                         .param("documentNo", "LS-" + UUID.randomUUID()))
-                .andExpect(redirectedUrl("/profil"))
-                .andExpect(flash().attributeExists("basari"));
-
-        User saved = users.findById(u.getId()).orElseThrow();
-        assertThat(saved.getStudentStatus()).isEqualTo(StudentStatus.PENDING);
-        assertThat(saved.getDocumentPath()).isNotBlank();
-
-        mvc.perform(get("/profil").with(user(as(saved))))
-                .andExpect(content().string(containsString("incelemede")));
-    }
-
-    @Test
-    void basarisizOgrenciBasvurusuBelgeBirakmaz() throws Exception {
-        // Adres artık zorunlu değil; hatayı okul seviyesini boş bırakarak tetikliyoruz
-        User u = mk("eksik-seviye", "İzmir");
-        var belge = new MockMultipartFile("document", "b.pdf", "application/pdf", "x".getBytes());
-        long oncekiBelgeSayisi = belgeSayisi();
-
-        mvc.perform(multipart("/profil/ogrenci").file(belge).with(user(as(u))).with(csrf())
-                        .param("documentNo", "LS-Z"))
                 .andExpect(redirectedUrl("/profil/ogrenci"))
                 .andExpect(flash().attributeExists("hata"));
 
-        // Başvuru reddedildiyse diske yazılan belge geride kalmamalı
+        assertThat(users.findById(u.getId()).orElseThrow().getStudentStatus())
+                .isEqualTo(StudentStatus.NONE);
         assertThat(belgeSayisi()).isEqualTo(oncekiBelgeSayisi);
     }
 

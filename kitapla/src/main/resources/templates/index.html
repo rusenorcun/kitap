@@ -15,7 +15,8 @@
     <h1 style="font-size:54px; line-height:1.05; font-weight:800; letter-spacing:-1.5px; margin:0 0 20px;">Bir kitabın,<br>bir öğrencinin<br>eline ulaşsın.</h1>
     <p style="font-size:18px; line-height:1.6; color:var(--muted); font-weight:500; margin:0 0 30px; max-width:470px;">İhtiyacı olan öğrenciye kitap bağışla, elindeki kitapları takas et. Öğrenciler öncelikli; herkes katılabilir.</p>
     <div class="row gap-12" style="margin-bottom:24px;">
-      <a class="btn btn-primary" th:href="@{/register}" style="padding:16px 28px;">Kitap bağışla</a>
+      <a class="btn btn-primary" th:href="${currentUser != null} ? @{/bagis/yeni} : @{/register}"
+         style="padding:16px 28px;">Kitap bağışla</a>
       <a class="btn btn-soft" th:href="@{/kesfet}" style="padding:16px 28px;">Bağışları keşfet</a>
     </div>
     <div class="row gap-8" style="font-size:14px; color:var(--muted); font-weight:600;">
@@ -24,7 +25,7 @@
         <span style="width:30px;height:30px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);margin-left:-10px"></span>
         <span style="width:30px;height:30px;border-radius:50%;background:#7A2E2A;border:2px solid var(--bg);margin-left:-10px"></span>
       </div>
-      420+ üye şimdiden katıldı
+      <span th:text="${stats.members} + ' üye katıldı'">420 üye katıldı</span>
     </div>
   </div>
   <div class="hero-art">
@@ -59,25 +60,36 @@
   <div class="container section">
     <div style="text-align:center; margin-bottom:44px;">
       <div class="eyebrow" style="margin-bottom:10px">Nasıl çalışır</div>
-      <h2 style="font-size:36px;font-weight:800;letter-spacing:-.8px;margin:0">Üç basit yol</h2>
+      <h2 style="font-size:36px;font-weight:800;letter-spacing:-.8px;margin:0">Üç adımda tamam</h2>
+      <p class="muted" style="font-size:15px;font-weight:500;margin:12px 0 0">
+        Her şey kampüs içinde, yüz yüze. Kargo yok, ödeme yok, adres paylaşılmıyor.</p>
     </div>
     <div class="cols-3">
       <div class="card card-pad" style="background:var(--bg)">
         <div class="badge badge-accent" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7S12 3 8.5 3 5 7 12 7"/><path d="M12 7s0-4 3.5-4S19 7 12 7"/></svg></div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Bağışla</div>
-        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">Linki yapıştır, kapak otomatik gelsin. Satın alıp gönder ya da elindeki kopyayı bağışla.</div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">1 · İlan ver</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">
+          Elindeki kitabı bağışla, aradığın kitabı iste ya da takasa çıkar.
+          Satış sitesi linkini yapıştırırsan ad, yazar ve kapak kendiliğinden dolar.</div>
       </div>
       <div class="card card-pad" style="background:var(--bg)">
-        <div class="badge badge-sage" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10 12 5 2 10l10 5 10-5Z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Al</div>
-        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">İhtiyacın olan kitabı bul ya da iste. Öğrenciysen öncelikli, üyeysen sıradan alırsın.</div>
+        <div class="badge badge-sage" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z"/></svg></div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">2 · Eşleş ve mesajlaş</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">
+          Eşleşme olduğu anda iki taraf arasında mesajlaşma açılır.
+          Kampüsteki teslim noktasını ve saati birlikte kararlaştırırsınız.</div>
       </div>
       <div class="card card-pad" style="background:var(--bg)">
-        <div class="badge badge-accent" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></div>
-        <div style="font-size:20px;font-weight:800;margin-bottom:8px">Takas et</div>
-        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">Okuduğun kitabı başkasınınkiyle değiştir. Kabul edilince adresler paylaşılır, kotadan bağımsız.</div>
+        <div class="badge badge-accent" style="width:52px;height:52px;border-radius:15px;justify-content:center;margin-bottom:16px;padding:0"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg></div>
+        <div style="font-size:20px;font-weight:800;margin-bottom:8px">3 · Kampüste teslim</div>
+        <div class="muted" style="font-size:15px;font-weight:500;line-height:1.6">
+          Buluşmadan önce ikinize de hatırlatma gider. Kitap elden verilir,
+          alan taraf teslim aldığını işaretler ve iş biter.</div>
       </div>
     </div>
+    <p class="muted" style="text-align:center;font-size:14px;font-weight:500;margin:32px 0 0">
+      Öğrenciler önceliklidir: yeni bağışlar ilk 48 saat yalnızca öğrencilere açıktır.
+      Öğrenci doğrulaması <strong>.edu.tr</strong> uzantılı e-posta ile yapılır.</p>
   </div>
 </div>
 
@@ -87,7 +99,10 @@
     <h2 style="font-size:38px;font-weight:800;letter-spacing:-1px;margin:0 0 14px">Bugün bir kitap bağışla</h2>
     <p style="font-size:17px;font-weight:500;opacity:.92;margin:0 0 26px">Rafındaki bir kitap, bir öğrencinin dönemini kurtarabilir.</p>
     <div class="row gap-12" style="justify-content:center">
-      <a class="btn" th:href="@{/register}" style="background:#fff;color:var(--accent)">Ücretsiz üye ol</a>
+      <a th:if="${currentUser == null}" class="btn" th:href="@{/register}"
+         style="background:#fff;color:var(--accent)">Ücretsiz üye ol</a>
+      <a th:if="${currentUser != null}" class="btn" th:href="@{/bagis/yeni}"
+         style="background:#fff;color:var(--accent)">Kitap bağışla</a>
       <a class="btn" th:href="@{/kesfet}" style="background:rgba(255,255,255,.16);color:#fff;border-color:rgba(255,255,255,.4)">Bağışları keşfet</a>
     </div>
   </div>

@@ -1,6 +1,7 @@
 package app.kitapla.service;
 
 import app.kitapla.config.Features;
+import app.kitapla.domain.School;
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.domain.StudentStatus;
 import app.kitapla.domain.User;
@@ -30,6 +31,15 @@ public class UserService {
         return e == null ? null : e.trim().toLowerCase();
     }
 
+    /**
+     * Okul e-postası mı? Türkiye'de üniversite adresleri {@code .edu.tr} ile biter;
+     * öğrenci doğrulaması şimdilik yalnızca buna bakar.
+     */
+    public static boolean isStudentEmail(String email) {
+        String e = normalizeEmail(email);
+        return e != null && e.endsWith(".edu.tr");
+    }
+
     private static String clean(String s, int max) {
         if (s == null) return null;
         s = s.trim();
@@ -43,6 +53,7 @@ public class UserService {
      */
     @Transactional
     public User register(String name, String email, String rawPassword, String address, String phone,
+                         School school,
                          boolean wantsStudent, SchoolLevel level, String documentNo, String documentPath) {
         name = clean(name, 120);
         email = normalizeEmail(email);
@@ -58,6 +69,8 @@ public class UserService {
             throw new IllegalArgumentException("Şifre en az 6 karakter olmalıdır.");
         if (users.existsByEmail(email))
             throw new IllegalArgumentException("Bu e-posta zaten kayıtlı.");
+        if (isStudentEmail(email) && users.existsByStudentEmail(email))
+            throw new IllegalArgumentException("Bu okul adresi başka bir hesapta öğrenci doğrulaması için kullanılıyor.");
 
         if (wantsStudent) {
             if (level == null) throw new IllegalArgumentException("Okul seviyesi seçilmelidir.");
@@ -76,6 +89,15 @@ public class UserService {
         u.setPasswordHash(encoder.encode(rawPassword));
         u.setAddress(address);
         u.setPhone(phone);
+        u.setSchool(school);
+
+        // Okul e-postasıyla kaydolan doğrudan öğrenci sayılır; belge istenmez.
+        if (isStudentEmail(email)) {
+            u.setStudentEmail(email);
+            u.setStudentStatus(StudentStatus.APPROVED);
+            u.setSchoolLevel(SchoolLevel.UNIVERSITE);
+        }
+
         if (wantsStudent) {
             u.setStudentStatus(StudentStatus.PENDING);
             u.setSchoolLevel(level);
@@ -89,7 +111,7 @@ public class UserService {
 
     /** Ad, adres ve telefon günceller. Boş bırakılan alanlar değişmez. */
     @Transactional
-    public User updateProfile(User user, String name, String address, String phone) {
+    public User updateProfile(User user, String name, String address, String phone, School school) {
         User u = users.findById(user.getId())
                 .orElseThrow(() -> new IllegalStateException("Kullanıcı bulunamadı."));
 
@@ -98,6 +120,7 @@ public class UserService {
         u.setName(n);
         u.setAddress(clean(address, 500));
         u.setPhone(clean(phone, 40));
+        if (school != null) u.setSchool(school);
         return users.save(u);
     }
 
@@ -118,6 +141,38 @@ public class UserService {
 
         u.setPasswordHash(encoder.encode(newPassword));
         users.save(u);
+    }
+
+    /**
+     * Okul e-postasıyla öğrenci doğrulaması. Adres {@code .edu.tr} ile bitiyorsa üye
+     * anında öğrenci olur.
+     *
+     * <p><b>Not:</b> Posta servisi bağlanana kadar adresin gerçekten üyeye ait olduğu
+     * doğrulanmaz — yalnızca uzantıya bakılır. Servis geldiğinde bu adrese kod
+     * gönderilip onay beklenecek; o yüzden adres burada ayrıca saklanıyor.</p>
+     */
+    @Transactional
+    public User verifyStudentEmail(User user, String eduEmail) {
+        User u = users.findById(user.getId())
+                .orElseThrow(() -> new IllegalStateException("Kullanıcı bulunamadı."));
+
+        String e = normalizeEmail(eduEmail);
+        if (e == null || e.isBlank() || !EMAIL.matcher(e).matches())
+            throw new IllegalStateException("Geçerli bir e-posta adresi girin.");
+        if (!isStudentEmail(e))
+            throw new IllegalStateException(
+                    "Adres .edu.tr ile bitmelidir. Okulunun verdiği e-posta adresini gir.");
+        if (u.getStudentStatus() == StudentStatus.APPROVED)
+            throw new IllegalStateException("Zaten onaylı bir öğrencisin.");
+        if (!e.equals(u.getEmail()) && users.existsByEmail(e))
+            throw new IllegalStateException("Bu adres başka bir hesabın giriş e-postası.");
+        if (!e.equals(u.getStudentEmail()) && users.existsByStudentEmail(e))
+            throw new IllegalStateException("Bu okul adresi başka bir hesapta kullanılıyor.");
+
+        u.setStudentEmail(e);
+        u.setStudentStatus(StudentStatus.APPROVED);
+        if (u.getSchoolLevel() == null) u.setSchoolLevel(SchoolLevel.UNIVERSITE);
+        return users.save(u);
     }
 
     /**

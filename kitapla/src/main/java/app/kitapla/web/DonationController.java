@@ -23,15 +23,18 @@ import java.util.Map;
 public class DonationController {
 
     private final BookService bookService;
+    private final app.kitapla.service.CoverService coverService;
     private final DonationService donationService;
     private final ClaimRepository claims;
     private final PickupPointService points;
     private final app.kitapla.config.Features features;
 
-    public DonationController(BookService bookService, DonationService donationService,
+    public DonationController(BookService bookService, app.kitapla.service.CoverService coverService,
+                              DonationService donationService,
                               ClaimRepository claims, PickupPointService points,
                               app.kitapla.config.Features features) {
         this.bookService = bookService;
+        this.coverService = coverService;
         this.donationService = donationService;
         this.claims = claims;
         this.points = points;
@@ -59,6 +62,7 @@ public class DonationController {
                           @RequestParam(required = false) String author,
                           @RequestParam(required = false) String purchaseLink,
                           @RequestParam(required = false) String coverUrl,
+                          @RequestParam(required = false) org.springframework.web.multipart.MultipartFile coverFile,
                           @RequestParam(required = false) String description,
                           @RequestParam(defaultValue = "1") int quantity,
                           @RequestParam(required = false) String targetLevel,
@@ -68,7 +72,9 @@ public class DonationController {
                           RedirectAttributes ra, Model model) {
         User donor = principal.getUser();
         try {
-            Book book = bookService.findOrCreate(title, author, purchaseLink, coverUrl, null, donor.getId());
+            // Elle girişte yüklenen görsel, linkten gelen kapağın önüne geçer.
+            String kapak = coverService.resolve(coverFile, coverUrl);
+            Book book = bookService.findOrCreate(title, author, purchaseLink, kapak, null, donor.getId());
             TargetLevel level = (targetLevel == null || targetLevel.isBlank())
                     ? TargetLevel.HEPSI : TargetLevel.valueOf(targetLevel);
             // Satın alma kapalıyken kaynak sorulmaz; elindeki kopya varsayılır

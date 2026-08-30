@@ -1,5 +1,7 @@
 package app.kitapla.web;
 
+import app.kitapla.config.Features;
+import app.kitapla.domain.School;
 import app.kitapla.domain.SchoolLevel;
 import app.kitapla.domain.User;
 import app.kitapla.security.AppUserDetails;
@@ -23,12 +25,14 @@ public class ProfileController {
 
     private final UserService userService;
     private final QuotaService quotaService;
+    private final Features features;
     private final Path documentDir;
 
-    public ProfileController(UserService userService, QuotaService quotaService,
+    public ProfileController(UserService userService, QuotaService quotaService, Features features,
                              @Value("${kitapla.upload-dir}") String uploadDir) {
         this.userService = userService;
         this.quotaService = quotaService;
+        this.features = features;
         this.documentDir = Path.of(uploadDir, "documents");
     }
 
@@ -45,9 +49,12 @@ public class ProfileController {
                            @RequestParam String name,
                            @RequestParam(required = false) String address,
                            @RequestParam(required = false) String phone,
+                           @RequestParam(required = false) String school,
                            RedirectAttributes ra) {
         try {
-            userService.updateProfile(principal.getUser(), name, address, phone);
+            // Adres alanı kampüs modunda formda hiç yok; gelmeyen değer kaydı silmesin.
+            String adres = features.isAddress() ? address : principal.getUser().getAddress();
+            userService.updateProfile(principal.getUser(), name, adres, phone, School.of(school));
             ra.addFlashAttribute("basari", "Profilin güncellendi.");
         } catch (IllegalStateException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());
@@ -76,12 +83,33 @@ public class ProfileController {
         return "profil-ogrenci";
     }
 
+    /** Okul e-postasıyla öğrenci doğrulama; belgesiz ve anında. */
+    @PostMapping("/ogrenci/eposta")
+    public String okulEpostasi(@AuthenticationPrincipal AppUserDetails principal,
+                               @RequestParam(required = false) String studentEmail,
+                               RedirectAttributes ra) {
+        try {
+            userService.verifyStudentEmail(principal.getUser(), studentEmail);
+            ra.addFlashAttribute("basari",
+                    "Okul adresin kaydedildi, artık öğrencisin. Yeni bağışlarda ilk 48 saat önceliklisin.");
+            return "redirect:/profil";
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+            return "redirect:/profil/ogrenci";
+        }
+    }
+
     @PostMapping("/ogrenci")
     public String ogrenciBasvuru(@AuthenticationPrincipal AppUserDetails principal,
                                  @RequestParam(required = false) String schoolLevel,
                                  @RequestParam(required = false) String documentNo,
                                  @RequestParam(required = false) MultipartFile document,
                                  RedirectAttributes ra) {
+        if (!features.isDocument()) {
+            ra.addFlashAttribute("hata", "Öğrenci doğrulaması okul e-postasıyla yapılıyor.");
+            return "redirect:/profil/ogrenci";
+        }
+
         String savedPath = null;
         try {
             if (document != null && !document.isEmpty()) {

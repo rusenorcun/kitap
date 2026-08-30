@@ -68,7 +68,7 @@
        class="card card-pad row gap-12" style="background:var(--sage-soft);border-color:transparent;margin-bottom:18px">
     <div style="flex:1">
       <b>Öğrenci misin?</b>
-      <span class="muted">Belgeni doğrula; bağışlarda 48 saat öncelik ve haftada 3 kitap hakkı kazan.</span>
+      <span class="muted">Okul e-postanı (.edu.tr) doğrula; bağışlarda 48 saat öncelik ve haftada 3 kitap hakkı kazan.</span>
     </div>
     <a class="btn btn-sage btn-sm" th:href="@{/profil/ogrenci}">Öğrenci ol</a>
   </div>
@@ -80,12 +80,23 @@
       <label class="label" for="name">Ad soyad</label>
       <input class="input" id="name" name="name" th:value="${user.name}" required/>
     </div>
-    <div class="field">
+    <!--/* Teslim kampüste yüz yüze; adres yalnızca kargo modunda sorulur. */-->
+    <div class="field" th:if="${features.address}">
       <label class="label" for="address">Teslimat adresi</label>
       <textarea class="input" id="address" name="address" th:text="${user.address}"
                 placeholder="Kitap almak, istek oluşturmak ve takas için gerekli"></textarea>
       <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
         Adresin yalnızca eşleştiğin karşı tarafa gösterilir.</p>
+    </div>
+    <div class="field">
+      <label class="label" for="school">Okulun</label>
+      <select class="input" id="school" name="school">
+        <option value="">Seçin</option>
+        <option th:each="o : ${okullar}" th:value="${o.name()}" th:text="${o.label}"
+                th:selected="${user.school != null and user.school.name() == o.name()}">Okul</option>
+      </select>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+        Buluşma noktaları kampüsüne göre önerilir.</p>
     </div>
     <div class="field">
       <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
