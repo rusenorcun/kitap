@@ -95,6 +95,33 @@ Gerçek posta denemek istersen `docker-compose.yml` içindeki
 docker compose down -v          # -v: BİRİMLERİ DE SİLER, tüm veri gider
 ```
 
+### Veritabanına DBeaver ile bağlanmak
+
+Ayrı bir veritabanı konteyneri yok: uygulama **H2**'yi dosya modunda kullanır
+(`kitapla-veri` biriminde `kitapla.mv.db`). `docker-compose.yml`, H2'nin TCP
+sunucusunu sabit **9092** portunda açar ve bunu yalnızca `127.0.0.1`'e yayınlar.
+
+H2 bu sunucuyu bir anahtarla korur; anahtar **her konteyner başlatılışında değişir**
+ve kilit dosyasından okunur:
+
+```bash
+docker exec kitapla sed -n "s/^id=//p" /uygulama/data/kitapla.lock.db
+```
+
+DBeaver'da **Yeni Bağlantı → H2 Server** seç (sürücü sürümü 2.x olmalı; DBeaver
+sürücüyü ilk seferde kendisi indirir) ve şunları gir:
+
+| Alan | Değer |
+| --- | --- |
+| URL | `jdbc:h2:tcp://localhost:9092/<yukarıdaki anahtar>` |
+| Kullanıcı | `sa` |
+| Şifre | *(boş)* |
+
+Uygulama çalışırken bağlanabilirsin; tablolar `PUBLIC` şemasındadır. Konteyneri
+yeniden başlattıktan sonra bağlantı kesilirse anahtarı yeniden okuyup URL'yi güncelle.
+Tarayıcıdan hızlı bakış için <http://localhost:8080/h2> adresindeki H2 konsolu da
+açıktır (JDBC URL: `jdbc:h2:file:./data/kitapla`, kullanıcı `sa`, şifre boş).
+
 ## Aynı sunucuda birden fazla site (ortak Caddy)
 
 Aynı makinede başka projelerin de varsa Caddy'yi ortaklaştırıp her şeyi tek

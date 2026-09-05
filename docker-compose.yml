@@ -16,8 +16,14 @@ services:
 
     ports:
       - "8080:8080"
+      # H2 TCP sunucusu (DBeaver vb. icin). Sadece bu makineden erisilebilir;
+      # basindaki 127.0.0.1 silinmemeli (sa kullanicisinin sifresi yok).
+      - "127.0.0.1:9092:9092"
 
     environment:
+      # H2 AUTO_SERVER rastgele port yerine sabit 9092 kullanir; yukaridaki
+      # port yayini ile DBeaver dogrudan baglanabilir (bkz. deploy/DOCKER.md, "DBeaver").
+      SPRING_DATASOURCE_URL: "jdbc:h2:file:./data/kitapla;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092"
       # Yerelde HTTPS yok, bu yüzden prod profili kullanılmaz.
       KITAPLA_ADMIN_EMAIL: admin@kitapla.local
       KITAPLA_ADMIN_PASSWORD: admin123
