@@ -57,4 +57,11 @@ public class SwapOffer {
         if (meeting == null) meeting = new Meeting();
         return meeting;
     }
+
+    @Transient
+    public String getCreatedAtText() {
+        if (createdAt == null) return "";
+        return java.time.format.DateTimeFormatter.ofPattern("dd.MM HH:mm")
+                .withZone(java.time.ZoneId.systemDefault()).format(createdAt);
+    }
 }

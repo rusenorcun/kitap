@@ -114,14 +114,23 @@ class NoShowAndReminderTest {
         Claim c = gecmisBulusma(donor, alici, 1);
         assertThat(quotas.quotaFor(alici).weeklyUsed()).isEqualTo(oncekiKota + 1);
 
-        // Bağış tek adetlikti; talep varken kalan 0 olmalı
+        // Bağış tek adetlikti; talep varken kalan 0 ve durum CLOSED olmalı
         Long donationId = c.getDonation().getId();
         assertThat(donationService.view(donationId).orElseThrow().getRemaining()).isZero();
+        assertThat(donationService.view(donationId).orElseThrow().donation().getStatus()).isEqualTo(DonationStatus.CLOSED);
 
         donationService.noShow(c.getId(), donor);
 
-        // Kitap yeniden havuzda
-        assertThat(donationService.view(donationId).orElseThrow().getRemaining()).isEqualTo(1);
+        // Kitap yeniden havuzda ve bağış OPEN durumuna geçmiş olmalı
+        DonationView sonra = donationService.view(donationId).orElseThrow();
+        assertThat(sonra.getRemaining()).isEqualTo(1);
+        assertThat(sonra.donation().getStatus()).isEqualTo(DonationStatus.OPEN);
+        assertThat(donationService.openDonations(null)).extracting(DonationView::getId).contains(donationId);
+
+        // Başka bir üye kitabı alabilmeli
+        User digerOgrenci = mk("kota3", true);
+        assertThat(donationService.eligibility(sonra, digerOgrenci).allowed()).isTrue();
+
         // Ama kota hakkı yanmış durumda — gelmemek kotayı sıfırlamanın yolu olmamalı
         assertThat(quotas.quotaFor(alici).weeklyUsed())
                 .as("gelmeyen kişinin kota hakkı geri verilmemeli")

@@ -14,14 +14,53 @@
   <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
   <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
-  <form th:action="@{/takas/kitaplarim}" method="post" class="card card-pad" style="margin-bottom:22px">
-    <div class="label" style="margin-bottom:10px">Kitap ekle</div>
-    <div class="duo-sm">
-      <input class="input" name="title" aria-label="Kitap adı" placeholder="Kitap adı" required/>
-      <input class="input" name="author" aria-label="Yazar" placeholder="Yazar (isteğe bağlı)"/>
+  <form th:action="@{/takas/kitaplarim}" method="post" enctype="multipart/form-data" class="card card-pad" style="margin-bottom:22px">
+    <div class="label" style="margin-bottom:6px">Kitap ekle</div>
+    <p class="muted" style="font-size:13px;font-weight:500;margin:0 0 14px">
+      Alışveriş linkini yapıştırarak başlık ve kapağı otomatik getirebilir ya da bilgileri elle doldurabilirsin.
+    </p>
+
+    <!-- Link + HTMX önizleme -->
+    <div class="field">
+      <label class="label" for="purchaseLink">Alışveriş linki <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <div class="row gap-8">
+        <input class="input" id="purchaseLink" name="purchaseLink" type="url"
+               placeholder="https://..." style="flex:1"/>
+        <button class="btn btn-sage" type="button"
+                hx-post="/takas/onizleme" hx-include="#purchaseLink"
+                hx-target="#onizleme" hx-indicator="#og-yukleniyor">Getir</button>
+      </div>
+      <div id="og-yukleniyor" class="htmx-indicator muted" style="font-size:12px;margin-top:6px">linkten bilgiler alınıyor…</div>
     </div>
-    <input class="input" name="note" aria-label="Takas notu" placeholder="Karşılığında ne istersin? Örn. distopya / klasik" style="margin-top:12px"/>
-    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:12px">Takasa aç</button>
+
+    <!-- Canlı Önizleme Kutusu -->
+    <div id="onizleme" style="margin-bottom:12px">
+      <div th:replace="~{takas-kitaplarim :: onizleme}"></div>
+    </div>
+
+    <div class="duo-sm">
+      <div class="field">
+        <label class="label" for="title">Kitap adı</label>
+        <input class="input" id="title" name="title" aria-label="Kitap adı" placeholder="Örn. Simyacı" required/>
+      </div>
+      <div class="field">
+        <label class="label" for="author">Yazar</label>
+        <input class="input" id="author" name="author" aria-label="Yazar" placeholder="Örn. Paulo Coelho"/>
+      </div>
+    </div>
+    <input type="hidden" id="coverUrl" name="coverUrl"/>
+
+    <div class="field">
+      <label class="label" for="coverFile">Kapak görseli <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <input class="input" type="file" id="coverFile" name="coverFile" accept="image/*"/>
+    </div>
+
+    <div class="field">
+      <label class="label" for="note">Takas notu <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
+      <input class="input" id="note" name="note" aria-label="Takas notu" placeholder="Karşılığında ne istersin? Örn. distopya / klasik"/>
+    </div>
+
+    <button class="btn btn-primary btn-sm" type="submit" style="margin-top:6px">Takasa aç</button>
   </form>
 
   <div th:if="${#lists.isEmpty(books)}" class="card card-pad" style="text-align:center;padding:48px 24px">
@@ -30,7 +69,7 @@
   </div>
 
   <div class="stack gap-12" th:unless="${#lists.isEmpty(books)}">
-    <div th:each="s : ${books}" class="card card-pad row gap-14">
+    <div th:each="s : ${books}" class="card card-pad row gap-14" style="align-items:flex-start">
       <div th:if="${!s.book.hasCover()}" class="cover"
            th:style="'width:46px;height:64px;flex-shrink:0;padding:0;background:' + ${s.book.coverColor}"></div>
       <img th:if="${s.book.hasCover()}" th:src="${s.book.coverUrl}" alt=""
@@ -38,11 +77,15 @@
       <div style="flex:1">
         <div style="font-size:15px;font-weight:800" th:text="${s.book.title}">Kitap</div>
         <div class="muted" style="font-size:12px;font-weight:500" th:text="${s.book.author}">Yazar</div>
+        <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px" th:if="${s.note}" th:text="${s.note}">Not</div>
         <span class="badge" style="margin-top:7px"
               th:classappend="${s.status.name() == 'OPEN'} ? 'badge-sage' : 'badge-muted'"
               th:text="${s.status.name() == 'OPEN'} ? 'Takasta' : 'Kapalı'">Durum</span>
       </div>
-      <div class="row gap-8">
+      <div class="row gap-8" style="flex-wrap:wrap">
+        <form th:action="@{'/takas/kitaplarim/' + ${s.id} + '/bagisa-aktar'}" method="post">
+          <button class="btn btn-soft btn-sm" type="submit" title="Takastan kaldırıp bağış listene ekle">Bağışa aktar</button>
+        </form>
         <form th:action="@{'/takas/kitaplarim/' + ${s.id} + '/durum'}" method="post">
           <input type="hidden" name="status" th:value="${s.status.name() == 'OPEN'} ? 'CLOSED' : 'OPEN'"/>
           <button class="btn btn-soft btn-sm" type="submit"
@@ -53,6 +96,33 @@
         </form>
       </div>
     </div>
+  </div>
+</div>
+
+<!-- HTMX ile değişen önizleme parçası -->
+<div th:fragment="onizleme">
+  <div th:if="${meta != null and !bulunamadi}" class="card card-pad row gap-14" style="background:var(--surface2);border-radius:12px;margin-top:6px;align-items:center">
+    <img th:if="${meta.imageUrl}" th:src="${meta.imageUrl}" alt=""
+         style="width:54px;height:76px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+    <div>
+      <div style="font-size:15px;font-weight:800" th:text="${meta.title}">Başlık</div>
+      <div class="muted" style="font-size:13px;font-weight:500" th:text="${meta.author} ?: 'Yazar belirtilmemiş'">Yazar</div>
+      <span class="badge badge-sage" style="margin-top:6px">Linkten alındı</span>
+    </div>
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      (function () {
+        var t = /*[[${meta.title}]]*/ null, a = /*[[${meta.author}]]*/ null, c = /*[[${meta.imageUrl}]]*/ null;
+        var ti = document.getElementById('title'), ai = document.getElementById('author'), ci = document.getElementById('coverUrl');
+        if (ti && t && !ti.value) ti.value = t;
+        if (ai && a && !ai.value) ai.value = a;
+        if (ci && c) ci.value = c;
+      })();
+      /*]]>*/
+    </script>
+  </div>
+  <div th:if="${meta != null and bulunamadi}" class="muted" style="font-size:12px;font-weight:500;margin-top:6px">
+    Bu linkten bilgi alınamadı. Kitap adını ve yazarını elle yazabilirsin.
   </div>
 </div>
 </body>

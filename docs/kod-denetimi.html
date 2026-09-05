@@ -1,0 +1,1036 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KİTAPLA Kod Denetimi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=JetBrains+Mono:wght@400;600&display=swap">
+
+<style>
+:root {
+  --ground:      #F5F8F7;
+  --surface:     #FFFFFF;
+  --surface-alt: #EDF2F1;
+  --ink:         #131E1D;
+  --ink-soft:    #4E615E;
+  --ink-faint:   #7C8F8C;
+  --rule:        #DBE4E2;
+  --rule-strong: #C3D0CD;
+  --accent:      #0B6E63;
+  --accent-soft: #E0EFEC;
+
+  --sev-crit:    #A82016;
+  --sev-crit-bg: #FAE7E5;
+  --sev-high:    #9A5406;
+  --sev-high-bg: #FCEDDD;
+  --sev-med:     #7A6A00;
+  --sev-med-bg:  #F6F1D8;
+  --sev-low:     #4E615E;
+  --sev-low-bg:  #E7EDEC;
+
+  --mono: "JetBrains Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --body: "Source Sans 3", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --disp: "Archivo", "Segoe UI", system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --ground:      #0E1514;
+    --surface:     #151E1D;
+    --surface-alt: #1C2726;
+    --ink:         #E5EDEB;
+    --ink-soft:    #9EB2AF;
+    --ink-faint:   #748A86;
+    --rule:        #243230;
+    --rule-strong: #33443F;
+    --accent:      #46C4B2;
+    --accent-soft: #17302D;
+
+    --sev-crit:    #FF8D80;
+    --sev-crit-bg: #331A17;
+    --sev-high:    #F0A94E;
+    --sev-high-bg: #2E2214;
+    --sev-med:     #D3C05C;
+    --sev-med-bg:  #2A2716;
+    --sev-low:     #9EB2AF;
+    --sev-low-bg:  #1E2A28;
+  }
+}
+
+:root[data-theme="dark"] {
+  --ground:      #0E1514;
+  --surface:     #151E1D;
+  --surface-alt: #1C2726;
+  --ink:         #E5EDEB;
+  --ink-soft:    #9EB2AF;
+  --ink-faint:   #748A86;
+  --rule:        #243230;
+  --rule-strong: #33443F;
+  --accent:      #46C4B2;
+  --accent-soft: #17302D;
+
+  --sev-crit:    #FF8D80;
+  --sev-crit-bg: #331A17;
+  --sev-high:    #F0A94E;
+  --sev-high-bg: #2E2214;
+  --sev-med:     #D3C05C;
+  --sev-med-bg:  #2A2716;
+  --sev-low:     #9EB2AF;
+  --sev-low-bg:  #1E2A28;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 17px;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0 20px 96px;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap { max-width: 940px; margin: 0 auto; }
+.col  { max-width: 68ch; }
+
+/* ---------- başlık ---------- */
+
+.masthead {
+  padding: 72px 0 32px;
+  border-bottom: 2px solid var(--ink);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.eyebrow {
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  font-weight: 600;
+}
+h1 {
+  font-family: var(--disp);
+  font-weight: 700;
+  font-size: clamp(34px, 6vw, 52px);
+  line-height: 1.04;
+  letter-spacing: -0.022em;
+  margin: 0;
+  text-wrap: balance;
+}
+.standfirst {
+  font-size: 19px;
+  color: var(--ink-soft);
+  margin: 0;
+  max-width: 62ch;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  padding-top: 4px;
+}
+.meta b { color: var(--ink-soft); font-weight: 600; }
+
+/* ---------- özet ---------- */
+
+.scorecard {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin: 40px 0 8px;
+}
+.score {
+  background: var(--surface);
+  padding: 18px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.score .n {
+  font-family: var(--disp);
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+.score .l {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.score.crit .n { color: var(--sev-crit); }
+.score.high .n { color: var(--sev-high); }
+.score.med  .n { color: var(--sev-med);  }
+.score.low  .n { color: var(--sev-low);  }
+
+.caption {
+  font-size: 14px;
+  color: var(--ink-faint);
+  margin: 0 0 44px;
+  font-style: italic;
+}
+
+/* ---------- bölümler ---------- */
+
+section { padding-top: 56px; }
+
+h2 {
+  font-family: var(--disp);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 6px;
+}
+.sec-title {
+  font-family: var(--disp);
+  font-size: clamp(24px, 3.6vw, 31px);
+  font-weight: 600;
+  letter-spacing: -0.016em;
+  line-height: 1.15;
+  margin: 0 0 14px;
+  text-wrap: balance;
+}
+.lede { color: var(--ink-soft); margin: 0 0 30px; max-width: 66ch; }
+
+p { margin: 0 0 16px; }
+a { color: var(--accent); }
+
+/* ---------- bulgu ---------- */
+
+.findings { display: flex; flex-direction: column; gap: 18px; }
+
+.f {
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--sev-low);
+  padding: 20px 24px 22px;
+}
+.f.crit { border-left-color: var(--sev-crit); }
+.f.high { border-left-color: var(--sev-high); }
+.f.med  { border-left-color: var(--sev-med);  }
+
+.f-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fid {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  letter-spacing: 0.04em;
+}
+.pill {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: var(--sev-low-bg);
+  color: var(--sev-low);
+}
+.pill.crit { background: var(--sev-crit-bg); color: var(--sev-crit); }
+.pill.high { background: var(--sev-high-bg); color: var(--sev-high); }
+.pill.med  { background: var(--sev-med-bg);  color: var(--sev-med);  }
+.pill.proof {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.f-title {
+  font-family: var(--disp);
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+  margin: 0;
+  flex-basis: 100%;
+  text-wrap: balance;
+}
+.f p { margin: 0 0 12px; font-size: 16px; }
+.f p:last-child { margin-bottom: 0; }
+
+.f dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 6px 16px;
+  font-size: 15.5px;
+}
+.f dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  padding-top: 5px;
+}
+.f dd { margin: 0; }
+@media (max-width: 620px) {
+  .f dl { grid-template-columns: 1fr; gap: 2px 0; }
+  .f dt { padding-top: 10px; }
+}
+
+code, .path {
+  font-family: var(--mono);
+  font-size: 0.86em;
+  background: var(--surface-alt);
+  padding: 1px 5px;
+  border-radius: 2px;
+  word-break: break-word;
+}
+
+pre {
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.55;
+  background: var(--surface-alt);
+  border: 1px solid var(--rule);
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 0 0 14px;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+.term { color: var(--ink-soft); }
+.term .bad { color: var(--sev-crit); font-weight: 600; }
+
+/* ---------- plan ---------- */
+
+.phases { display: flex; flex-direction: column; gap: 0; }
+
+.ph {
+  display: grid;
+  grid-template-columns: 62px 1fr;
+  gap: 0 24px;
+  border-top: 1px solid var(--rule-strong);
+  padding: 26px 0 28px;
+}
+.ph:last-child { border-bottom: 1px solid var(--rule-strong); }
+.ph-n {
+  font-family: var(--disp);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 0.9;
+  color: var(--rule-strong);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+}
+.ph-body { min-width: 0; }
+.ph h3 {
+  font-family: var(--disp);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  margin: 0 0 4px;
+  line-height: 1.25;
+}
+.ph .cost {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  margin: 0 0 12px;
+}
+.ph ul { margin: 0 0 12px; padding-left: 20px; }
+.ph li { margin-bottom: 6px; }
+.ph .out {
+  font-size: 15px;
+  color: var(--ink-soft);
+  border-left: 2px solid var(--accent);
+  padding-left: 14px;
+  margin: 14px 0 0;
+}
+.ph .out b { color: var(--ink); font-weight: 600; }
+.ref {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  color: var(--ink-faint);
+  letter-spacing: 0.03em;
+}
+@media (max-width: 620px) {
+  .ph { grid-template-columns: 1fr; gap: 0; }
+  .ph-n { font-size: 26px; margin-bottom: 6px; }
+}
+
+/* ---------- tablo ---------- */
+
+.tw { overflow-x: auto; border: 1px solid var(--rule); background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 520px; }
+th, td { text-align: left; padding: 10px 16px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  font-weight: 600;
+  background: var(--surface-alt);
+}
+tr:last-child td { border-bottom: none; }
+td.mono { font-family: var(--mono); font-size: 13px; }
+
+/* ---------- kapanış ---------- */
+
+.closing {
+  margin-top: 64px;
+  padding: 28px 30px;
+  background: var(--surface);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--accent);
+}
+.closing p:last-child { margin-bottom: 0; }
+
+footer {
+  margin-top: 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--rule);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-faint);
+  line-height: 1.7;
+}
+
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+<style>
+/* Bagimsiz dosya icin asgari sifirlama (artifact calisma zamani bunu kendisi veriyordu) */
+*, *::before, *::after { box-sizing: border-box; }
+img, svg { max-width: 100%; height: auto; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header class="masthead">
+  <div class="eyebrow">Kod grafiği denetimi · code-review-graph</div>
+  <h1>KİTAPLA Kod Denetimi</h1>
+  <p class="standfirst">Backend, web ve Android katmanlarının tek geçişte incelenmesi: canlıda çalışmayan bir sayfa, 31 bulgu, kanıtlanmış iki kırık test ve altı fazlık bir düzeltme sırası.</p>
+  <div class="meta">
+    <span><b>Backend</b> 133 dosya · 1.238 düğüm · 14.411 kenar</span>
+    <span><b>Android</b> 22 dosya · 442 düğüm · 6.175 kenar</span>
+    <span><b>Test</b> 256 koşuldu, 2 kırık</span>
+    <span><b>Tarih</b> 30.08.2026</span>
+  </div>
+</header>
+
+<div class="scorecard">
+  <div class="score crit"><span class="n">1</span><span class="l">Canlı arıza</span></div>
+  <div class="score crit"><span class="n">2</span><span class="l">Kritik</span></div>
+  <div class="score high"><span class="n">9</span><span class="l">Yüksek</span></div>
+  <div class="score med"><span class="n">12</span><span class="l">Orta</span></div>
+  <div class="score low"><span class="n">6</span><span class="l">Düşük</span></div>
+  <div class="score"><span class="n">1</span><span class="l">Engelleyici</span></div>
+</div>
+<p class="caption">"Canlı arıza" şu anda üretimde açık; "engelleyici" ise bir hata değil, henüz yazılmamış bir katman.</p>
+
+<!-- ================= ÖZET ================= -->
+<section>
+  <h2>Genel değerlendirme</h2>
+  <p class="sec-title">Sağlam bir çekirdek, eksik bir kabuk</p>
+  <div class="col">
+    <p>Backend'in iş mantığı beklediğimden iyi durumda. Yetkilendirme kontrolleri servis katmanında tutarlı biçimde uygulanmış — <code>ownDonation</code>, <code>claimOfReceiver</code>, <code>taraflar()</code> gibi yardımcılar sahiplik doğrulamasını tek yere toplamış, ve mesajlaşmada SSE akışı dahil her uç erişim denetiminden geçiyor. Jeton üretimi (256 bit rastgele, veritabanında yalnızca SHA-256 özeti, tek kullanımlık, TTL'li, saatlik sınırlı) örnek gösterilecek kalitede. Şablonlarda tek bir <code>th:utext</code> yok. 250 test var.</p>
+    <p>Sorunlar iki yerde toplanıyor: <strong>çevre katmanı</strong> (dosya yükleme, dış URL indirme, üretim yapılandırması, oturum yaşam döngüsü) ve <strong>mobil ile backend arasındaki boşluk</strong>. Android tarafı eksiksiz bir istemci sözleşmesi tanımlamış ama karşılığında konuşacağı bir sunucu yok; bu arada uygulamanın kendi durum yönetimi, sunucu reddettiğinde ekranda başarı gösterecek şekilde kurulmuş.</p>
+    <p>Denetim sırasında canlı site de yoklandı ve <strong>keşfet sayfasının şu anda 500 döndürdüğü</strong> görüldü (P-01). Bu, raporun geri kalanında teorik risk olarak yazılan <code>ddl-auto=update</code> sorununun çoktan gerçekleşmiş hâli.</p>
+    <p>Aşağıdaki bulguların dördü doğrudan çalıştırılarak doğrulandı; geri kalanı kod okumasına dayanıyor ve her birinin dosya/satır kanıtı verildi.</p>
+  </div>
+</section>
+
+<!-- ================= CANLI ARIZA ================= -->
+<section>
+  <h2>Canlı arıza</h2>
+  <p class="sec-title">Keşfet sayfası şu anda çalışmıyor</p>
+  <p class="lede">Bu bölüm kod okumasına değil, canlı siteye atılan isteklere dayanıyor. Sitenin ana tarama sayfası ve tüm kitap detay sayfaları üretimde 500 döndürüyor.</p>
+
+  <div class="findings">
+    <article class="f crit">
+      <div class="f-head">
+        <span class="fid">P-01</span>
+        <span class="pill crit">Canlı arıza</span>
+        <span class="pill proof">Doğrulandı</span>
+        <h3 class="f-title">Keşfet ve kitap detay sayfaları üretimde 500 veriyor</h3>
+      </div>
+      <p><strong>Kök neden bulundu ve yerelde birebir üretildi.</strong> Hata bağışta değil, <b>bağışçının üye satırında</b>. Mekanizma bir NullPointerException değil:</p>
+      <pre class="term"><code>org.hibernate.PropertyAccessException: Null value was assigned to a property
+  [app.kitapla.domain.User.blocked] of primitive type (setter)
+Caused by: <span class="bad">Can not set boolean field User.blocked to null value</span></code></pre>
+      <dl>
+        <dt>Zincir</dt>
+        <dd><code>users.blocked</code> ve <code>users.no_show_count</code> b27ed88'de NOT NULL olarak eklendi ama varsayılanları yoktu. <code>ddl-auto=update</code>, dolu bir tabloya böyle bir sütun ekleyemez; sütun boş değer alabilir hâlde kaldı ve eski üye satırları NULL ile yaşamaya devam etti. d280016 <code>@ColumnDefault</code> ekleyerek <i>sonraki</i> yükseltmeleri düzeltti, ama hâlihazırda bozulmuş satırlara dokunmadı — Hibernate <code>update</code> var olan bir sütunun tanımını değiştirmez.</dd>
+        <dt>Neden tüm sayfa düşüyor</dt>
+        <dd>Alanlar <code>boolean</code>/<code>int</code> ilkel tiplerine eşlendiği için NULL okununca Hibernate satırı hiç yükleyemiyor. Keşfet sorgusu bağışçıyı <code>join fetch</code> ile çektiğinden, bozuk üyeye ait <b>tek bir bağış</b> listeye girdiğinde sayfanın tamamı 500 dönüyor. <code>/kitap/{id}</code> de "benzer bağışlar" listesinde aynı kaydı topladığı için hepsi düşüyor.</dd>
+        <dt>Doğrulama</dt>
+        <dd>Canlı sitede harf taramasıyla (<code>?q=a</code> → 500, <code>?q=e</code> → 200) tek bir kayda indirildi. Yerelde yarım kalmış şema birebir kurulup arıza üretildi, sonra düzeltmeyle giderildi: <span class="path">BozukKayitDayaniklilikTest</span>.</dd>
+        <dt>Düzeltme</dt>
+        <dd><span class="path">config/SemaOnarim.java</span> — açılışta, <code>@ColumnDefault</code> taşıyan her sütundaki NULL'ları varsayılana çeker. Alan listesi elle tutulmaz; <code>domain</code> paketi taranır, böylece yeni alanlar kendiliğinden kapsanır. Etkisizdir (idempotent), temiz kurulumda sessizce geçer ve onardığı satır sayısını WARN olarak loglar. <span class="path">DataSeeder</span> artık <code>@Order(1)</code> ile ondan sonra çalışır.</dd>
+        <dt>Kalan sınır</dt>
+        <dd>Onarım değerleri doldurur ama sütuna NOT NULL kısıtını geri koymaz; kalıcı çözüm şema değişikliklerinin Flyway'e alınmasıdır (<span class="ref">B-11</span>). Ayrıca bu teşhis üretim veritabanına değil, birebir üretilen modele dayanıyor — dağıtımdan sonra log satırı ("Şema onarımı: … satır düzeltildi") teyidi verir.</dd>
+      </dl>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">P-02</span><span class="pill med">Orta</span><span class="pill proof">Doğrulandı</span>
+        <h3 class="f-title">Yönlendirmeler <code>http://</code> olarak üretiliyor</h3>
+      </div>
+      <p>Korumalı bir uca yapılan istek <code>Location: http://kitap.rorcun.com/login</code> döndürüyor — <code>https</code> değil. Tarayıcıda fazladan bir hop demek; mobilde ise <code>secure</code> işaretli oturum çerezi o hop'ta gönderilmiyor.</p>
+      <p><code>application-prod.properties</code> <code>forward-headers-strategy=framework</code> ayarlıyor ve prod profilinin etkin olduğu hata gövdesinden anlaşılıyor (mesaj alanı bastırılmış). <span class="path">deploy/Caddyfile:22-26</span> ise yalnızca <code>X-Real-IP</code> iletiyor. Ters vekilin <code>X-Forwarded-Proto</code> gönderdiği sunucu üzerinde doğrulanmalı.</p>
+    </article>
+  </div>
+</section>
+
+<!-- ================= KRİTİK ================= -->
+<section>
+  <h2>Kritik ve yüksek</h2>
+  <p class="sec-title">Önce kapatılması gerekenler</p>
+  <p class="lede">Bu sekiz bulgunun ikisi kanıtlı (test kırıyor), altısı kod okumasıyla tespit edildi ve saldırı yolu somut.</p>
+
+  <div class="findings">
+
+    <article class="f crit">
+      <div class="f-head">
+        <span class="fid">B-01</span>
+        <span class="pill crit">Kritik</span>
+        <span class="pill proof">Kanıtlı</span>
+        <h3 class="f-title">Türkçe locale <code>toUpperCase()</code> hatası dört akışı bozuyor</h3>
+      </div>
+      <p><code>"claim".toUpperCase()</code> Türkçe locale'de <code>CLAİM</code> üretiyor — noktalı büyük İ ile. Enum sabiti <code>CLAIM</code> olduğu için eşleşme başarısız. Test çıktısı:</p>
+      <pre class="term"><code>MessagePagesTest.alisverisUzerindenSohbetAcilirVeYazisilir:89
+  value = <span class="bad">No enum constant app.kitapla.domain.ConversationKind.CLAİM</span>
+
+ReportPagesTest.formVeGonderimCalisir:89
+  value = <span class="bad">No enum constant app.kitapla.domain.ReportKind.CONVERSATİON</span></code></pre>
+      <dl>
+        <dt>Kaynak</dt>
+        <dd><span class="path">MessageController.java:55</span>, <span class="path">ReportController.java:44</span>, <span class="path">CatalogController.java:33</span> — ve kod tabanında toplam 16 locale'siz dönüşüm</dd>
+        <dt>Etki</dt>
+        <dd>Alışveriş üzerinden sohbet açma çalışmıyor. Sohbet şikâyeti çalışmıyor. <code>lise</code> ve <code>universite</code> seviye filtreleri <code>CatalogController</code>'daki <code>try/catch</code> yüzünden sessizce <em>tüm</em> sonuçları döndürüyor — hata bile vermiyor. Arama, içinde I/i geçen kitap başlıklarını kaçırıyor.</dd>
+        <dt>Neden görülmedi</dt>
+        <dd>Üretimde <code>LANG=C.UTF-8</code> ayarlı (Dockerfile ve kitapla.service), bu da hatayı maskeliyor. Ancak doğruluk bir ortam değişkenine bağımlı hâle gelmiş: geliştirme makinesinde bugün kırık, farklı bir sunucuda yeniden ortaya çıkar.</dd>
+        <dt>Çözüm</dt>
+        <dd>16 çağrının hepsine <code>Locale.ROOT</code> ekle. Bir saatlik iş, testleri yeşile döndürür.</dd>
+      </dl>
+    </article>
+
+    <article class="f crit">
+      <div class="f-head">
+        <span class="fid">B-02</span>
+        <span class="pill crit">Kritik</span>
+        <h3 class="f-title">Öğrenci belgesi yüklemesi yönetici hesabında kod çalıştırmaya açık</h3>
+      </div>
+      <dl>
+        <dt>Yol</dt>
+        <dd><span class="path">ProfileController.java:83</span> yüklenen dosyanın adını temizliyor (dizin geçişi kapalı, bu iyi) ama <strong>uzantı, MIME türü veya sihirli bayt kontrolü yapmıyor</strong>. Ardından <span class="path">AdminController.java:97</span> dosyayı <code>guessContentTypeFromName</code> ile <code>Content-Disposition: inline</code> olarak sunuyor.</dd>
+        <dt>Sömürü</dt>
+        <dd>Herhangi bir kayıtlı kullanıcı <code>belge.html</code> (veya <code>belge.svg</code>) yükler. Yönetici bunu inceleme ekranından açtığında dosya <em>uygulamanın kendi kaynağında</em> render edilir ve yöneticinin oturum çerezine erişen script çalışır. Yönetici hesabı devralınır.</dd>
+        <dt>Çözüm</dt>
+        <dd>Yüklemede uzantı beyaz listesi (<code>pdf, jpg, jpeg, png</code>) + sihirli bayt doğrulaması. Sunumda sabit güvenli content-type, <code>Content-Disposition: attachment</code>, <code>X-Content-Type-Options: nosniff</code>. Belge sunan uç için ayrı <code>Content-Security-Policy: sandbox</code>.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-03</span>
+        <span class="pill high">Yüksek</span>
+        <h3 class="f-title">SSRF: alışveriş linki sunucuya keyfi istek yaptırıyor</h3>
+      </div>
+      <dl>
+        <dt>Kaynak</dt>
+        <dd><span class="path">OpenGraphService.java:44-60</span>, <span class="path">BookService.java:65</span> üzerinden bağış oluştururken tetikleniyor</dd>
+        <dt>Sorun</dt>
+        <dd><code>fetch()</code> kullanıcının verdiği herhangi bir <code>http(s)://</code> adresini indiriyor: yönlendirmeleri takip ediyor (<code>followRedirects(true)</code>), content-type'ı yok sayıyor, IP/host kısıtı yok, yanıt boyutu sınırsız. Çekilen başlık ve açıklama kitap kaydına yazılıp kullanıcıya geri gösteriliyor.</dd>
+        <dt>Etki</dt>
+        <dd>Giriş yapmış bir kullanıcı sunucuyu <code>http://127.0.0.1:8080/h2/</code>, iç ağ servisleri veya bulut metadata uçlarına yönlendirebilir; yanıtın bir kısmını kitap başlığı olarak geri okuyabilir. Aynı uç iç ağ port taraması için de kullanılabilir.</dd>
+        <dt>Çözüm</dt>
+        <dd>DNS çözümünden sonra hedef IP'yi doğrula: loopback, özel aralıklar (10/8, 172.16/12, 192.168/16), link-local (169.254/16) ve IPv6 karşılıklarını reddet. Her yönlendirme adımını yeniden doğrula (veya yönlendirmeyi kapat). Yanıt boyutunu sınırla. Mümkünse tanınan kitapçı alan adlarıyla beyaz liste.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-04</span>
+        <span class="pill high">Yüksek</span>
+        <h3 class="f-title">Üretimde örnek hesaplar bilinen şifreyle açılıyor</h3>
+      </div>
+      <dl>
+        <dt>Zincir</dt>
+        <dd><code>kitapla.seed.demo</code> varsayılanı <code>true</code>. <span class="path">application-prod.properties</span> bunu ezmiyor. Kullanımdaki <span class="path">.env</span> dosyasında <code>KITAPLA_SEED_DEMO</code> hiç yok — yalnızca <span class="path">.env.ornek</span> içinde <code>false</code> olarak duruyor, ki o dosya çalıştırmada okunmuyor.</dd>
+        <dt>Sonuç</dt>
+        <dd><span class="path">DataSeeder.java:102,109,120</span> üç örnek hesabı <code>sifre123</code> şifresiyle oluşturuyor. Ayrıca <span class="path">.env</span> içinde <code>KITAPLA_ADMIN_PASSWORD=buraya-uzun-bir-parola-yaz</code> — yer tutucu metnin kendisi şifre olarak kullanılıyor.</dd>
+        <dt>Çözüm</dt>
+        <dd><code>application-prod.properties</code> içine <code>kitapla.seed.demo=false</code> sabitle (ortam değişkeniyle ezilemesin). Açılışta admin şifresi bilinen yer tutucularla eşleşiyorsa uygulamayı <em>başlatma</em> — uyarı logu yetersiz kaldığını bu vaka gösteriyor.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-05</span>
+        <span class="pill high">Yüksek</span>
+        <h3 class="f-title">Giriş deneme sayacı sınırsız büyüyor ve yarış içeriyor</h3>
+      </div>
+      <dl>
+        <dt>Bellek</dt>
+        <dd><span class="path">LoginAttemptService.java:60</span> — <code>recent()</code> içindeki <code>computeIfAbsent</code>, <em>her sorguda</em> yeni bir anahtar yaratıyor. <code>isBlocked</code> da bu metodu çağırdığı için her benzersiz e-posta denemesi haritaya kalıcı bir giriş ekliyor. Hiçbir tahliye mekanizması yok → bellek tükenmesi.</dd>
+        <dt>Yarış</dt>
+        <dd><span class="path">LoginAttemptService.java:39-42</span> — <code>recent()</code> deque'i <code>synchronized</code> blokta temizliyor ama <code>recordFailure</code> <code>addLast</code>'i blok <em>dışında</em> çağırıyor. <code>ArrayDeque</code> thread-safe değil; eşzamanlı başarısızlıklar veri yapısını bozabilir.</dd>
+        <dt>Kapsam</dt>
+        <dd>Anahtar <code>e-posta|IP</code> olduğu için <strong>password spraying</strong> (tek şifre, binlerce e-posta) hiç engellenmiyor — her deneme farklı anahtara düşüyor.</dd>
+        <dt>Çözüm</dt>
+        <dd>Süreli/boyut sınırlı bir önbellek (Caffeine) kullan. Tüm deque erişimini tek bir <code>synchronized</code> bloğa al. E-posta+IP sayacına ek olarak yalnız-IP sayacı ekle.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-06</span>
+        <span class="pill high">Yüksek</span>
+        <span class="pill proof">Tutarsızlık kanıtlı</span>
+        <h3 class="f-title">"Gelinmedi" bildirimi bağışı yeniden açmıyor — ama açtığını söylüyor</h3>
+      </div>
+      <dl>
+        <dt>Kaynak</dt>
+        <dd><span class="path">DonationService.java:288-325</span></dd>
+        <dt>Sorun</dt>
+        <dd>Metot kullanıcıya <em>"Kitap yeniden başkalarına açıldı"</em> bildirimi gönderiyor, ancak bağışın durumunu hiç değiştirmiyor. Kontenjan dolduğunda <code>claim()</code> bağışı <code>CLOSED</code> yapıyor; no-show sonrası talep sayımdan düşse de bağış <code>CLOSED</code> kalıyor.</dd>
+        <dt>Karşılaştırma</dt>
+        <dd>Aynı senaryoda <span class="path">RequestService.java:196</span> isteği <code>OPEN</code>'a çekiyor, <span class="path">SwapService.java:308-309</span> her iki kitabı yeniden açıyor. Yalnız bağış akışı bunu atlamış — yani bu bir tasarım tercihi değil, unutulmuş bir satır.</dd>
+        <dt>Etki</dt>
+        <dd>Boşalan kontenjan hiçbir zaman kullanılamıyor; bağış kalıcı olarak kapalı kalıyor ve kullanıcıya yanlış bilgi veriliyor.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-07</span>
+        <span class="pill high">Yüksek</span>
+        <h3 class="f-title">Bağış talebinde aşırı dağıtım yarışı</h3>
+      </div>
+      <dl>
+        <dt>Kaynak</dt>
+        <dd><span class="path">DonationService.java:128-134</span></dd>
+        <dt>Sorun</dt>
+        <dd>Kod yorumu "yarış durumu: adet kontrolünü işlem içinde tekrarla" diyor, ama işlem içinde tekrar <em>okumak</em> READ_COMMITTED izolasyonunda yarışı çözmez. İki eşzamanlı istek aynı <code>taken</code> değerini okur, ikisi de kaydı yazar — son kitap iki kişiye verilir.</dd>
+        <dt>Çözüm</dt>
+        <dd>Bağışı <code>@Lock(PESSIMISTIC_WRITE)</code> ile çek, ya da bağışta bir <code>claimedCount</code> sütunu tutup koşullu <code>UPDATE ... WHERE claimed_count &lt; quantity</code> ile artır.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-08</span>
+        <span class="pill high">Yüksek</span>
+        <h3 class="f-title">Şifre sıfırlandığında mevcut oturumlar kapanmıyor</h3>
+      </div>
+      <dl>
+        <dt>Kaynak</dt>
+        <dd><span class="path">PasswordResetService.java:66-83</span> ve şifre değiştirme akışı</dd>
+        <dt>Sorun</dt>
+        <dd>Şifre değişiyor ama kullanıcının açık oturumları geçersizleştirilmiyor. Hesabı ele geçiren biri, kurban şifresini sıfırlasa bile oturumunu korur — sıfırlamanın temel amacı boşa çıkıyor. Oturum ömrü üretimde 7 gün.</dd>
+        <dt>Çözüm</dt>
+        <dd><code>SessionRegistry</code> bean'i tanımla, sıfırlama ve şifre değiştirmede kullanıcının tüm oturumlarını <code>expireNow()</code> ile sonlandır.</dd>
+      </dl>
+    </article>
+
+  </div>
+</section>
+
+<!-- ================= ORTA ================= -->
+<section>
+  <h2>Orta öncelik — backend ve web</h2>
+  <p class="sec-title">Ölçek, tutarlılık ve dağıtım</p>
+
+  <div class="findings">
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">B-09</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Tek taraflı "gelmedi" bildirimi doğrulanmadan ceza yazıyor</h3>
+      </div>
+      <p>Üç akışta da bildiren taraf, karşı tarafın <code>noShowCount</code> sayacını tek başına artırabiliyor ve bu sayaç hesap askıya alma gerekçesi. Herhangi bir itiraz penceresi, karşılıklı onay veya yönetici incelemesi eşiği yok. Kötü niyetli bir kullanıcı, eşleştiği herkesi tekrar tekrar raporlayarak hesaplarını askıya aldırabilir.</p>
+      <p class="ref">DonationService.java:315 · RequestService.java:205 · SwapService.java:314</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">B-10</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Keşif sayfasında N+1 sorgu ve hiç sayfalama yok</h3>
+      </div>
+      <p><code>openDonations</code> tüm <code>OPEN</code> bağışları belleğe çekip filtrelemeyi Java'da yapıyor; ardından <code>toView</code> her bağış için ayrı bir <code>COUNT</code> sorgusu atıyor (<span class="path">DonationService.java:51-53</span>). Kod tabanının tamamında tek bir <code>Pageable</code> kullanımı yok — liste uçlarının hepsi sınırsız.</p>
+      <p>Birkaç bin kayıtta keşif sayfası hem veritabanını hem belleği zorlar. Mobil API yazıldığında aynı uçlar sayfalama olmadan servis edilecek, sorun oradan da katlanacak.</p>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">B-11</span><span class="pill high">Yüksek</span>
+        <h3 class="f-title">Üretim veritabanı H2 dosyası, şema <code>ddl-auto=update</code> ile yönetiliyor</h3>
+      </div>
+      <p><span class="path">application-prod.properties</span> üretimde <code>jdbc:h2:file:</code> kullanıyor. Bu, gömülü/geliştirme veritabanı: eşzamanlı erişim, yedekleme ve sürüm geçişi hikâyesi yok. Buna <code>ddl-auto=update</code> eklenince şema, kod değişikliklerine göre sessizce evriliyor — geri alınabilir bir migrasyon geçmişi yok.</p>
+      <p><strong>Bu risk teorik değil: <span class="ref">P-01</span> tam olarak bu mekanizmayla oluştu.</strong> Şemaya sonradan eklenen bir sütun mevcut satırlarda boş kaldı, kod o alanı null denetimi olmadan okudu ve keşfet sayfası düştü. Testler her koşuda temiz şema kurduğu için hiçbiri bunu yakalayamadı. PostgreSQL + Flyway'e geçiş, veri hacmi küçükken en ucuz hâliyle yapılmalı.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">B-12</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Clickjacking koruması H2 konsolu için tüm uygulamada gevşetilmiş</h3>
+      </div>
+      <p><span class="path">SecurityConfig.java:72-73</span> — <code>frameOptions.sameOrigin()</code> global olarak uygulanıyor, oysa gerekçesi yalnızca geliştirmedeki H2 konsolu. Ayrıca uygulamada hiç <code>Content-Security-Policy</code> başlığı yok. Aynı dosyada <code>/h2/**</code> için CSRF de devre dışı; bu kural yalnızca <code>spring.h2.console.enabled</code> açıkken eklenmesine rağmen CSRF muafiyeti koşulsuz.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">B-13</span><span class="pill med">Orta</span>
+        <h3 class="f-title">systemd dağıtımında saat dilimi ayarlanmamış</h3>
+      </div>
+      <p><span class="path">Dockerfile:33</span> <code>TZ=Europe/Istanbul</code> veriyor; <span class="path">deploy/kitapla.service</span> yalnızca <code>LANG</code> veriyor, <code>TZ</code> yok. <code>Meeting.getAtText()</code> ve dört domain sınıfı daha <code>ZoneId.systemDefault()</code> kullandığı için UTC bir sunucuda tüm buluşma saatleri kullanıcıya üç saat kaymış görünür.</p>
+      <p>Kalıcı çözüm: biçimlendirmeyi sunucu saatinden ayır, uygulama düzeyinde sabit bir zaman dilimi kullan (<code>Europe/Istanbul</code>) veya biçimlendirmeyi tarayıcıya bırak.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">B-14</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Global istisna işleyicisi yok</h3>
+      </div>
+      <p>Kod tabanında tek bir <code>@ExceptionHandler</code> yok. Controller'ların çoğu <code>IllegalStateException</code>'ı elle yakalıyor, ama yakalamayanlarda kural ihlali kullanıcıya 500 hata sayfası olarak dönüyor. REST katmanı yazıldığında bu zaten zorunlu hâle gelecek: mobil sözleşmesi <code>{"error":"mesaj"}</code> gövdesiyle 400/403/404 bekliyor, bugün hiçbir şey bunu üretmiyor.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">B-15</span><span class="pill">Düşük</span>
+        <h3 class="f-title">Hatırlatıcı zamanlayıcısı kendi işlem sınırını atlıyor</h3>
+      </div>
+      <p><span class="path">ReminderService.java:52</span> — <code>@Scheduled</code> metodu aynı bean içindeki <code>@Transactional sendDue()</code>'yu çağırıyor. Spring'in proxy'si kendi kendine çağrıda devreye girmez, dolayısıyla döngü işlem dışında çalışıyor; her <code>save</code> ayrı commit oluyor. Sorgular fetch-join kullandığı için lazy yükleme hatası çıkmıyor, ama döngü ortasında bir hata olursa hatırlatmalar yarım kalıyor.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">B-16</span><span class="pill">Düşük</span>
+        <h3 class="f-title">SSE bağlantı sayısı sınırsız</h3>
+      </div>
+      <p><span class="path">SseHub.java:30</span> — kullanıcı veya sohbet başına açık bağlantı sınırı yok. Bir istemci istediği kadar <code>/mesajlar/{id}/akis</code> bağlantısı açabilir; her biri 30 dakika boyunca kaynak tutar.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">B-17</span><span class="pill">Düşük</span>
+        <h3 class="f-title">Kullanılmayan repository metotları ve alan getter'ları</h3>
+      </div>
+      <p>Grafik analizi 102 erişilemeyen sembol buldu. Çoğu Spring giriş noktası ve framework override'ı (yanlış pozitif), ancak 15+ repository sorgu metodu (<span class="path">BookRequestRepository.java:75-77</span>, <span class="path">ClaimRepository.java:69-70</span>, <span class="path">DonationRepository.java:50-51</span>, <span class="path">SwapBookRepository.java:62-63</span>, <span class="path">SwapOfferRepository.java:66-67</span>) ve birkaç domain getter'ı gerçekten çağrılmıyor. Bunlar bakım yükü ve yanlış yönlendirme kaynağı.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">B-18</span><span class="pill">Düşük</span>
+        <h3 class="f-title">Jeton tüketimi atomik değil, süresi dolanlar temizlenmiyor</h3>
+      </div>
+      <p><code>TokenService.verify()</code> ile <code>consume()</code> arasında atomik bir adım yok; eşzamanlı iki istek aynı sıfırlama jetonunu iki kez harcayabilir. Ayrıca süresi dolmuş jetonları silen bir bakım işi yok, <code>auth_token</code> tablosu sınırsız büyüyor.</p>
+    </article>
+
+  </div>
+</section>
+
+<!-- ================= MOBİL ================= -->
+<section>
+  <h2>Android istemcisi</h2>
+  <p class="sec-title">Sözleşme hazır, karşılığı yok</p>
+  <p class="lede">Uygulama <code>assembleDebug</code> ile temiz derleniyor (yalnızca deprecation uyarıları). Sorun derlemede değil, çalışma zamanı davranışında ve karşısında duran sunucunun yokluğunda.</p>
+
+  <div class="findings">
+
+    <article class="f crit">
+      <div class="f-head">
+        <span class="fid">M-01</span>
+        <span class="pill crit">Engelleyici</span>
+        <span class="pill proof">Doğrulandı</span>
+        <h3 class="f-title">Adres doğru, arkasındaki uçlar henüz yazılmamış</h3>
+      </div>
+      <p><strong>Mimari kurgu doğru ve yerinde:</strong> tek Spring uygulaması hem web HTML'ini hem mobil JSON'unu aynı alan adından servis edecek, oturum çerezle taşınacak. Ayrı bir API sunucusu gerekmiyor ve <code>ApiConfig.BASE_URL</code> doğru adresi gösteriyor. Eksik olan adres değil, o adresin arkasındaki katman.</p>
+      <dl>
+        <dt>Canlı kanıt</dt>
+        <dd><pre class="term" style="margin:6px 0 0"><code>GET  /saglik            200  text/plain   ✅ sunucu ayakta
+GET  /api/v1/features   <span class="bad">302  → /login</span>    ❌ JSON değil, HTML giriş sayfası
+GET  /api/v1/donations  <span class="bad">302  → /login</span>    ❌
+POST /api/v1/auth/login <span class="bad">403</span>              ❌ CSRF filtresi engelliyor</code></pre></dd>
+        <dt>Koddaki karşılığı</dt>
+        <dd><span class="path">SecurityConfig.java:44-57</span> içinde <code>/api/v1/**</code> için hiçbir kural yok; istekler <code>.anyRequest().authenticated()</code>'a düşüp giriş sayfasına yönlendiriliyor. Retrofit + kotlinx.serialization JSON beklerken HTML alıyor. Ayrıca <code>/api/v1/**</code> için CSRF muafiyeti tanımlı olmadığından login POST'u 403 dönüyor. <code>@RestController</code> ile işaretli tek sınıf <span class="path">HealthController</span>.</dd>
+        <dt>Ekibin notu</dt>
+        <dd>Bu boşluk <span class="path">docs/MOBIL-DEVIR.md §1</span>'de zaten belgelenmiş ve önerilen yol (mevcut servis katmanını çağıran REST controller'lar) doğru. Bu denetim o değerlendirmeyi teyit ediyor.</dd>
+        <dt>Ölçek</dt>
+        <dd>İş mantığının tamamı <code>service/</code> içinde ve controller'lar ince kabuk olduğu için REST katmanı domain'e dokunmadan yazılabilir. Asıl iş DTO tanımları, hata çevirisi ve <code>/api/v1/**</code> için ayrı güvenlik zinciri.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">M-02</span><span class="pill high">Yüksek</span>
+        <h3 class="f-title">Yerel durum sunucuyla ayrışıyor, geri alma yok</h3>
+      </div>
+      <dl>
+        <dt>Desen</dt>
+        <dd><span class="path">RemoteSync.kt:319-334</span> — <code>fire()</code> çağrıyı arka planda başlatıp sonucu beklemiyor. Çağıran taraf ise önce yerel durumu değiştiriyor: <span class="path">DemoStore.kt:415</span> (buluşma), <span class="path">:509</span> (gelmedi), <span class="path">:583</span> (şikâyet).</dd>
+        <dt>Sonuç</dt>
+        <dd>Sunucu isteği reddettiğinde yerel değişiklik <strong>geri alınmıyor</strong>. Kullanıcı ekranda ayarlanmış bir buluşma, iletilmiş bir şikâyet görüyor — sunucuda hiçbiri yok. <code>submitReport</code> ayrıca API sonucunu beklemeden "Şikâyetin iletildi" bildirimini ekliyor.</dd>
+        <dt>Çözüm</dt>
+        <dd>Yazma işlemlerinde <code>tryCall</code> deseni kullan, sonucu bekle, başarısızlıkta yerel değişikliği geri al veya hiç uygulama. <code>busy</code> tek global bayrak olduğu için eşzamanlı çağrılarda da yanlış sonuç veriyor — sayaç yap.</dd>
+      </dl>
+    </article>
+
+    <article class="f high">
+      <div class="f-head">
+        <span class="fid">M-03</span><span class="pill high">Yüksek</span>
+        <h3 class="f-title">Sahte demo kimliği gerçek kullanıcı gibi görünüyor</h3>
+      </div>
+      <p><span class="path">DemoStore.kt:24-47</span> — <code>Session</code> nesnesi varsayılan olarak "Elif Yılmaz", <code>docStatus = APPROVED</code>, gerçekçi bir İzmir adresi ve dolu kota ile başlıyor. Ağ isteği başarısız olduğunda veya <code>applyMe</code> hiç çalışmadığında kullanıcı kendini <em>onaylanmış öğrenci</em> olarak, başkasının adı ve adresiyle görüyor.</p>
+      <p><code>Session.clear()</code> ayrıca <code>features</code> alanını sıfırlamıyor — çıkış yapıldıktan sonra önceki hesabın özellik bayrakları kalıyor.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-04</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Oturum kalıcı değil</h3>
+      </div>
+      <p><span class="path">Api.kt:26</span> — çerezler yalnızca bellekteki bir <code>LinkedHashMap</code>'te. DataStore/EncryptedSharedPreferences ile kalıcılık yok. Kullanıcı uygulamayı her kapatıp açtığında yeniden giriş yapmak zorunda.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-05</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Her hata uygulamayı "çevrimdışı" moda düşürüyor</h3>
+      </div>
+      <p><code>tryCall</code> ve <code>fire</code> yakaladıkları <em>her</em> <code>Throwable</code> için <code>online.value = false</code> yapıyor. Sunucudan gelen 400 doğrulama hatası ("şifre en az 6 karakter") da bağlantı kopmuş gibi işleniyor. Yalnızca ağ katmanı hatalarında (<code>IOException</code>, timeout) çevrimdışına düşülmeli.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-06</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Çıkış işleminde yarış: sunucu oturumu kapanmıyor</h3>
+      </div>
+      <p><span class="path">RemoteSync.kt:453-459</span> — <code>fire { Api.service.logout() }</code> asenkron başlatılıyor, hemen ardından senkron olarak <code>Api.clearSession()</code> çerezleri siliyor. Çıkış isteği büyük olasılıkla çerezsiz gidiyor; sunucudaki oturum kapanmadan kalıyor ve 7 gün daha geçerli.</p>
+      <p>Çözüm: <code>logout()</code>'u <code>suspend</code> yap, isteğin tamamlanmasını bekle, sonra çerezleri temizle (istek başarısız olsa bile temizle).</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-07</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Yayın yapılandırması eksik</h3>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Eksik</th><th>Bugünkü durum</th><th>Sonuç</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">isMinifyEnabled</td><td>false</td><td>R8 yok; APK büyük, kod açık</td></tr>
+            <tr><td class="mono">signingConfig</td><td>tanımsız</td><td>Yayın imzası yok</td></tr>
+            <tr><td class="mono">buildConfig</td><td>kapalı</td><td><code>BASE_URL</code> sabit kodlu üretim adresi; emülatöre/yerele yönlendirilemiyor</td></tr>
+            <tr><td class="mono">HttpLoggingInterceptor</td><td>her zaman açık</td><td>Yayın derlemesinde de istek logları</td></tr>
+            <tr><td class="mono">gradlew</td><td>yalnızca .bat</td><td>Linux/CI'da derlenemez</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-08</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Mobil tarafta hiç test yok</h3>
+      </div>
+      <p><code>app/src/test</code> ve <code>app/src/androidTest</code> dizinleri mevcut değil; <code>build.gradle.kts</code> içinde tek bir test bağımlılığı yok. Backend'de 250 test varken mobilde sıfır — özellikle M-02'deki durum senkronizasyonu mantığı test edilmeden güvenilir hâle gelmez.</p>
+    </article>
+
+    <article class="f med">
+      <div class="f-head">
+        <span class="fid">M-09</span><span class="pill med">Orta</span>
+        <h3 class="f-title">Sözleşme uyuşmazlıkları</h3>
+      </div>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Konu</th><th>Mobilin beklediği</th><th>Backend'in sağladığı</th></tr></thead>
+          <tbody>
+            <tr>
+              <td>Özellik bayrakları</td>
+              <td class="mono">shipping, purchase, address, messaging, reports</td>
+              <td class="mono">shipping, purchase, address, handover</td>
+            </tr>
+            <tr>
+              <td>Öğrenci doğrulama</td>
+              <td><code>POST /me/student</code> ile <code>.edu.tr</code> adres bildirimi; belge yükleme yok</td>
+              <td><code>documentNo</code> <em>ve</em> belge dosyası zorunlu; e-posta alan adı doğrulaması yok</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <p style="margin-top:14px">REST katmanı yazılmadan önce bu iki nokta karara bağlanmalı — aksi hâlde katman yanlış sözleşmeye göre yazılır.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">M-10</span><span class="pill">Düşük</span>
+        <h3 class="f-title">Tanımlı ama hiç çağrılmayan uçlar</h3>
+      </div>
+      <p>Grafik analizi, <code>ApiService</code>'te tanımlanıp uygulamanın hiçbir yerinden çağrılmayan yedi uç buldu: <code>donation(id)</code>, <code>closeDonation</code>, <code>shipRequest</code>, <code>addSwapBook</code>, <code>removeSwapBook</code>, <code>cancelOffer</code>, <code>pendingDocs</code>. Karşılık gelen ekranlar ya yalnızca yerel duruma yazıyor ya da hiç bağlanmamış.</p>
+    </article>
+
+    <article class="f">
+      <div class="f-head">
+        <span class="fid">M-11</span><span class="pill">Düşük</span>
+        <h3 class="f-title">Manifest boşlukları</h3>
+      </div>
+      <p><code>allowBackup</code> ve veri çıkarma kuralları belirtilmemiş (varsayılan açık — oturum verisi yedeklere sızabilir). Şifre sıfırlama için derin bağlantı yok: <code>resetPassword(token)</code> uygulanmış ama e-postadaki bağlantıyı yakalayacak <code>intent-filter</code> bulunmadığı için akış mobilde tamamlanamıyor. Yerel geliştirme için ağ güvenliği yapılandırması da gerekecek (<code>10.0.2.2</code> cleartext).</p>
+    </article>
+
+  </div>
+</section>
+
+<!-- ================= SÜREÇ ================= -->
+<section>
+  <h2>Süreç</h2>
+  <p class="sec-title">Doğrulama altyapısı yok</p>
+  <div class="col">
+    <p><strong>Hiçbir depoda CI yok.</strong> Backend'de <code>.github/</code> klasörü var ama içinde yalnızca bir modernizasyon aracı duruyor — tek bir workflow tanımlı değil. Android tarafında <code>.github</code> hiç yok. 250 backend testi elle çalıştırılıyor ve bugün ikisi kırmızı; bu, CI olmadığı için fark edilmemiş.</p>
+    <p><strong><code>kitap-android</code> bir git deposu değil.</strong> Sürüm geçmişi, dallanma ve geri alma imkânı yok; <code>code-review-graph update</code> gibi artımlı araçlar da çalışmıyor (her seferinde tam yeniden tarama gerekiyor).</p>
+  </div>
+</section>
+
+<!-- ================= PLAN ================= -->
+<section>
+  <h2>Düzeltme planı</h2>
+  <p class="sec-title">Altı faz, bağımlılık sırasında</p>
+  <p class="lede">Fazlar keyfi değil: her biri kendinden sonrakinin ön koşulunu sağlıyor. Faz 0 olmadan hiçbir değişikliğin bir şeyi bozmadığını doğrulayamazsın; Faz 3 olmadan Faz 4'ün bağlanacağı bir şey yok. Süre tahminleri kabadır ve tek geliştirici varsayar.</p>
+
+  <div class="phases">
+
+    <div class="ph">
+      <div class="ph-n">0</div>
+      <div class="ph-body">
+        <h3>Canlı arızayı kapat, yapıyı yeşile döndür</h3>
+        <p class="cost">Yarım gün · Diğer her şeyin ön koşulu · P-01 bugün yapılmalı</p>
+        <ul>
+          <li><span class="ref">P-01</span> — <strong>Yapıldı.</strong> Kök neden bulundu, yerelde üretildi ve düzeltildi (<code>SemaOnarim</code> + 6 yeni test). Dağıtım bekliyor; siteyi hemen açmak için <span class="path">deploy/bakim/sema-onarim.sql</span> de var.</li>
+          <li><span class="ref">B-01</span> — 16 <code>toUpperCase()</code>/<code>toLowerCase()</code> çağrısına <code>Locale.ROOT</code> ekle. Kırık iki test bununla düzeliyor.</li>
+          <li><span class="ref">O-02</span> — <code>kitap-android</code>'i git deposu hâline getir.</li>
+          <li><span class="ref">O-01</span> — İki GitHub Actions workflow'u: backend için <code>mvnw test</code>, mobil için <code>assembleDebug</code>. Android'e POSIX <code>gradlew</code> ekle (M-07'nin bir parçası, ama CI için şimdi gerekli).</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Site tekrar tam çalışır durumda, 250/250 test yeşil ve her push'ta otomatik doğrulanıyor. Bundan sonraki her faz güvenli bir zeminde yürüyor.</p>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="ph-n">1</div>
+      <div class="ph-body">
+        <h3>Güvenlik açıklarını kapat</h3>
+        <p class="cost">1–2 gün · Faz 0'dan sonra, geri kalanından bağımsız</p>
+        <ul>
+          <li><span class="ref">B-02</span> — Dosya yüklemede uzantı beyaz listesi + sihirli bayt doğrulaması; belge sunumunda <code>attachment</code>, sabit content-type, <code>nosniff</code>.</li>
+          <li><span class="ref">B-03</span> — OpenGraph indiricisine IP kısıtı (loopback/özel/link-local reddi), yönlendirme doğrulaması, yanıt boyutu sınırı.</li>
+          <li><span class="ref">B-04</span> — Prod profilinde <code>seed.demo=false</code> sabitle; yer tutucu admin şifresiyle açılışta fail-fast.</li>
+          <li><span class="ref">B-05</span> — Giriş sayacını süreli önbelleğe taşı, senkronizasyonu düzelt, yalnız-IP sayacı ekle.</li>
+          <li><span class="ref">B-08</span> — <code>SessionRegistry</code> ile şifre değişiminde oturumları sonlandır.</li>
+          <li><span class="ref">B-12</span> — <code>frameOptions</code>'ı H2 yoluna daralt, CSP başlığı ekle.</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Yönetici hesabı devralma ve iç ağ erişimi yolları kapalı; üretimde bilinen şifreli hesap kalmıyor.</p>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="ph-n">2</div>
+      <div class="ph-body">
+        <h3>Alan mantığı düzeltmeleri</h3>
+        <p class="cost">1 gün · Faz 1 ile paralel yürütülebilir</p>
+        <ul>
+          <li><span class="ref">B-06</span> — <code>DonationService.noShow</code> bağışı yeniden açsın; regresyon testi yaz.</li>
+          <li><span class="ref">B-07</span> — <code>claim()</code> için pesimist kilit veya koşullu sayaç güncellemesi; eşzamanlılık testi ekle.</li>
+          <li><span class="ref">B-13</span> — <code>kitapla.service</code>'e <code>TZ</code> ekle ve zaman biçimlendirmesini sabit zaman dilimine bağla.</li>
+          <li><span class="ref">B-09</span> — "Gelmedi" akışına itiraz veya inceleme eşiği. <strong>Ürün kararı gerektiriyor</strong> — teknik düzeltme öncesinde ne olması gerektiğine karar verilmeli.</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Bağış kontenjanı doğru davranıyor, son kitap iki kişiye verilemiyor, buluşma saatleri doğru gösteriliyor.</p>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="ph-n">3</div>
+      <div class="ph-body">
+        <h3>REST API katmanı</h3>
+        <p class="cost">1–2 hafta · Projenin en büyük tek işi · Faz 4'ün ön koşulu</p>
+        <ul>
+          <li><span class="ref">M-09</span> — Önce sözleşme uyuşmazlıklarını karara bağla: <code>Features</code> alanları ve <code>/me/student</code> doğrulama biçimi.</li>
+          <li><span class="ref">B-14</span> — <code>@RestControllerAdvice</code>: domain istisnalarını <code>{"error":"mesaj"}</code> + doğru HTTP koduna çevir.</li>
+          <li><code>/api/v1/**</code> için ayrı <code>SecurityFilterChain</code>: CSRF kapalı, yönlendirme yerine 401 döndüren entry point.</li>
+          <li>Controller'ları <span class="path">ENDPOINT-HARITASI.md</span> sırasına göre yaz: auth → features/pickup-points → donations → requests → swap → messages → notifications → profile → admin. Her grup bittiğinde mobilden dumanı testi yapılabilir.</li>
+          <li>DTO'lar yeni; servis katmanı olduğu gibi kalıyor — domain mantığına dokunma.</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Mobil uygulamanın bağlanabileceği çalışan bir API. Web arayüzü etkilenmiyor.</p>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="ph-n">4</div>
+      <div class="ph-body">
+        <h3>Mobili gerçek API'ye bağla</h3>
+        <p class="cost">1 hafta · Faz 3'e bağımlı</p>
+        <ul>
+          <li><span class="ref">M-03</span> — Sahte demo kimliğini kaldır; <code>Session</code> boş başlasın, <code>clear()</code> her alanı sıfırlasın.</li>
+          <li><span class="ref">M-02</span> — <code>fire</code>/<code>tryCall</code> desenini düzelt: sonucu bekle, başarısızlıkta yerel değişikliği geri al, <code>busy</code>'yi sayaca çevir.</li>
+          <li><span class="ref">M-05</span> — <code>online</code>'ı yalnızca ağ katmanı hatalarında düşür.</li>
+          <li><span class="ref">M-06</span> — Çıkış sırasını düzelt: isteği bekle, sonra çerezleri temizle.</li>
+          <li><span class="ref">M-04</span> — Çerez kalıcılığı (EncryptedSharedPreferences veya DataStore).</li>
+          <li><span class="ref">M-10</span> — Bağlanmamış yedi akışı gerçek uçlara bağla.</li>
+          <li><span class="ref">M-07 · M-11</span> — Yayın yapılandırması, <code>BuildConfig</code> ile ortam bazlı BASE_URL, manifest sıkılaştırma, şifre sıfırlama derin bağlantısı.</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Uçtan uca çalışan, mağazaya yüklenebilir bir uygulama.</p>
+      </div>
+    </div>
+
+    <div class="ph">
+      <div class="ph-n">5</div>
+      <div class="ph-body">
+        <h3>Ölçek ve bakım</h3>
+        <p class="cost">Sürekli · B-11 sıranın başında: P-01 aynı kök nedenin ikinci kez oluşabileceğini gösterdi</p>
+        <ul>
+          <li><span class="ref">B-11</span> — PostgreSQL + Flyway'e geçiş. Veri hacmi küçükken yapmak en ucuzu.</li>
+          <li><span class="ref">B-10</span> — Sayfalama ve N+1 temizliği; web ve API aynı sorgu katmanını paylaşsın.</li>
+          <li><span class="ref">M-08</span> — Mobil test altyapısı; önce Faz 4'te düzeltilen senkronizasyon mantığını kapsa.</li>
+          <li><span class="ref">B-15 · B-16 · B-18</span> — Zamanlayıcı işlem sınırı, SSE bağlantı limiti, jeton temizliği.</li>
+          <li><span class="ref">B-17</span> — Ölü repository metotlarını sil.</li>
+        </ul>
+        <p class="out"><b>Çıktı:</b> Büyümeye hazır bir sistem.</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="closing">
+  <p><strong>Nereden başlamalı.</strong> Keşfet sayfası şu anda kapalı (P-01); sıranın başı orası. Faz 0'ın geri kalanı — locale düzeltmesi ve CI — yarım gün ve kırık testleri yeşile çeviriyor, böylece sonraki her adım doğrulanabilir hâle geliyor. Faz 1 ve 2 birbirinden bağımsız, istenirse paralel gidebilir.</p>
+  <p>Faz 3 projenin gerçek maliyeti. İyi haber, servis katmanının bu iş için hazır olması: iş kurallarının tamamı <code>service/</code> içinde ve controller'lar ince kabuk, dolayısıyla REST katmanı domain'e dokunmadan yazılabilir. Ekibin kendi devir notu da bu yolu öneriyor ve bu denetim onu teyit ediyor.</p>
+</div>
+
+<footer>
+  Analiz aracı: code-review-graph 2.3.8 · Backend grafiği 133 dosya / 1.238 düğüm / 14.411 kenar · Android grafiği 22 dosya / 442 düğüm / 6.175 kenar<br>
+  Doğrulanan bulgular: B-01 ve B-06 test koşumuyla · P-01, P-02 ve M-01 canlı siteye salt-okunur HTTP istekleriyle · Kalan bulgular kod okumasına dayanır, dinamik olarak sömürülmeye çalışılmamıştır<br>
+  Süre tahminleri kabadır ve tek geliştirici varsayar.
+</footer>
+
+</div>
+</body>
+</html>

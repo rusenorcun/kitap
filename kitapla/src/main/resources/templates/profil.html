@@ -53,15 +53,15 @@
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--sage-ink)" stroke-width="2.4"
          stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6 9 17l-5-5"/></svg>
     <div>
-      <div style="font-size:15px;font-weight:800;color:var(--sage-ink)">Öğrenci belgen onaylı</div>
+      <div style="font-size:15px;font-weight:800;color:var(--sage-ink)">Öğrenci olduğun doğrulandı!</div>
       <div class="muted" style="font-size:13px;font-weight:500">
-        <span th:text="${#strings.capitalize(#strings.toLowerCase(user.schoolLevel.name()))}">Lise</span>
+        <span th:text="${user.schoolLevel.name() == 'ORTAOKUL' ? 'Ortaokul' : (user.schoolLevel.name() == 'LISE' ? 'Lise' : 'Üniversite')}">Üniversite</span>
         · Bağışlarda 48 saat önceliğin var.
       </div>
     </div>
   </div>
   <div th:if="${user.studentStatus.name() == 'PENDING'}" class="card card-pad" style="margin-bottom:18px">
-    <b>Öğrenci belgen incelemede.</b>
+    <b>Öğrencilik doğrulaman beklemede.</b>
     <span class="muted">Yönetici onayladığında öncelik ve daha yüksek kota kazanacaksın.</span>
   </div>
   <div th:if="${user.studentStatus.name() == 'NONE' or user.studentStatus.name() == 'REJECTED'}"
@@ -79,14 +79,6 @@
     <div class="field">
       <label class="label" for="name">Ad soyad</label>
       <input class="input" id="name" name="name" th:value="${user.name}" required/>
-    </div>
-    <!--/* Teslim kampüste yüz yüze; adres yalnızca kargo modunda sorulur. */-->
-    <div class="field" th:if="${features.address}">
-      <label class="label" for="address">Teslimat adresi</label>
-      <textarea class="input" id="address" name="address" th:text="${user.address}"
-                placeholder="Kitap almak, istek oluşturmak ve takas için gerekli"></textarea>
-      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
-        Adresin yalnızca eşleştiğin karşı tarafa gösterilir.</p>
     </div>
     <div class="field">
       <label class="label" for="school">Okulun</label>

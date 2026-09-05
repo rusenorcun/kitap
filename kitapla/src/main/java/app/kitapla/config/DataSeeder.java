@@ -56,15 +56,38 @@ public class DataSeeder implements CommandLineRunner {
         }
 
         // 1) Admin garanti
-        users.findByEmail(adminEmail).ifPresentOrElse(u -> {
-            if (!u.isAdmin()) { u.setAdmin(true); users.save(u); }
+        String normalizedAdminEmail = (adminEmail == null || adminEmail.isBlank())
+                ? "admin@kitapla.app"
+                : adminEmail.trim().toLowerCase(java.util.Locale.ROOT);
+        String resolvedAdminName = (adminName == null || adminName.isBlank()) ? "Yönetici" : adminName.trim();
+        String resolvedAdminPassword = (adminPassword == null || adminPassword.isBlank()) ? "admin123" : adminPassword.trim();
+
+        users.findByEmail(normalizedAdminEmail).ifPresentOrElse(u -> {
+            boolean degisti = false;
+            if (!u.isAdmin()) {
+                u.setAdmin(true);
+                degisti = true;
+            }
+            if (!resolvedAdminName.equals(u.getName())) {
+                u.setName(resolvedAdminName);
+                degisti = true;
+            }
+            if (!encoder.matches(resolvedAdminPassword, u.getPasswordHash())) {
+                u.setPasswordHash(encoder.encode(resolvedAdminPassword));
+                degisti = true;
+                log.info("Yönetici ({}) şifresi yapılandırmadaki şifreyle güncellendi.", normalizedAdminEmail);
+            }
+            if (degisti) {
+                users.save(u);
+            }
         }, () -> {
             User a = new User();
-            a.setName(adminName);
-            a.setEmail(adminEmail);
-            a.setPasswordHash(encoder.encode(adminPassword));
+            a.setName(resolvedAdminName);
+            a.setEmail(normalizedAdminEmail);
+            a.setPasswordHash(encoder.encode(resolvedAdminPassword));
             a.setAdmin(true);
             users.save(a);
+            log.info("Yönetici hesabı oluşturuldu: {}", normalizedAdminEmail);
         });
 
         // 2) Örnek veri kapalıysa burada dur: yönetici hesabı yeterli.

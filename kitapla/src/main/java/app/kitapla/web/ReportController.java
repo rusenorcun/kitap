@@ -40,13 +40,14 @@ public class ReportController {
                          RedirectAttributes ra) {
         String hedef = (geri == null || geri.isBlank()) ? "/panom" : geri;
         try {
-            reports.create(principal.getUser(),
-                    ReportKind.valueOf(kind.toUpperCase()),
+            var r = reports.create(principal.getUser(),
+                    ReportKind.valueOf(kind.trim().toUpperCase(java.util.Locale.ROOT)),
                     refId,
-                    reason == null || reason.isBlank() ? null : ReportReason.valueOf(reason),
+                    reason == null || reason.isBlank() ? null : ReportReason.valueOf(reason.trim().toUpperCase(java.util.Locale.ROOT)),
                     note);
             ra.addFlashAttribute("basari",
                     "Şikâyetin yönetime iletildi. İncelendiğinde bildirim alacaksın.");
+            ra.addFlashAttribute("sikayetId", r.getId());
         } catch (IllegalArgumentException | IllegalStateException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());
         }

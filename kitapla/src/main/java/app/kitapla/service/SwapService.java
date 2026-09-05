@@ -2,6 +2,7 @@ package app.kitapla.service;
 
 import app.kitapla.config.Features;
 import app.kitapla.domain.*;
+import app.kitapla.repo.DonationRepository;
 import app.kitapla.repo.SwapBookRepository;
 import app.kitapla.repo.UserRepository;
 import app.kitapla.repo.SwapOfferRepository;
@@ -23,19 +24,24 @@ public class SwapService {
 
     private final Features features;
     private final MeetingService meetings;
+    private final PickupPointService points;
     private final UserRepository users;
     private final SwapBookRepository swapBooks;
     private final SwapOfferRepository offers;
+    private final DonationRepository donations;
     private final NotificationService notifications;
 
-    public SwapService(Features features, MeetingService meetings, UserRepository users,
-                       SwapBookRepository swapBooks, SwapOfferRepository offers,
+    public SwapService(Features features, MeetingService meetings, PickupPointService points,
+                       UserRepository users, SwapBookRepository swapBooks,
+                       SwapOfferRepository offers, DonationRepository donations,
                        NotificationService notifications) {
         this.features = features;
         this.meetings = meetings;
+        this.points = points;
         this.users = users;
         this.swapBooks = swapBooks;
         this.offers = offers;
+        this.donations = donations;
         this.notifications = notifications;
     }
 
@@ -59,12 +65,12 @@ public class SwapService {
 
     @Transactional(readOnly = true)
     public List<SwapBook> discover(User me, String query) {
-        String q = query == null ? null : query.trim().toLowerCase();
+        String q = query == null ? null : query.trim().toLowerCase(java.util.Locale.ROOT);
         return swapBooks.findOpenOfOthers(SwapBookStatus.OPEN, me).stream()
                 .filter(s -> {
                     if (q == null || q.isBlank()) return true;
-                    String t = s.getBook().getTitle() == null ? "" : s.getBook().getTitle().toLowerCase();
-                    String a = s.getBook().getAuthor() == null ? "" : s.getBook().getAuthor().toLowerCase();
+                    String t = s.getBook().getTitle() == null ? "" : s.getBook().getTitle().toLowerCase(java.util.Locale.ROOT);
+                    String a = s.getBook().getAuthor() == null ? "" : s.getBook().getAuthor().toLowerCase(java.util.Locale.ROOT);
                     return t.contains(q) || a.contains(q);
                 })
                 .toList();
@@ -102,6 +108,35 @@ public class SwapService {
         if (offers.countByBookAndStatuses(s, LIVE) > 0)
             throw new IllegalStateException("Bekleyen ya da kabul edilmiş teklifi olan kitap kaldırılamaz.");
         swapBooks.delete(s);
+    }
+
+    /** Takastaki kitabı bağışa aktarır ve takastan kaldırır. */
+    @Transactional
+    public Donation moveToDonation(Long swapBookId, User user, TargetLevel level, String description, Long pointId, String pointNote) {
+        SwapBook s = ownBook(swapBookId, user);
+        if (offers.countByBookAndStatuses(s, LIVE) > 0)
+            throw new IllegalStateException("Bekleyen ya da kabul edilmiş teklifi olan kitap bağışa aktarılamaz.");
+        if (features.isAddress() && (user.getAddress() == null || user.getAddress().isBlank()))
+            throw new IllegalStateException("Bağış yapmadan önce profilinden iletişim/teslimat adresi eklemelisin.");
+
+        Donation d = new Donation();
+        d.setDonor(user);
+        d.setBook(s.getBook());
+        d.setQuantity(1);
+        d.setTargetLevel(level == null ? TargetLevel.HEPSI : level);
+        d.setSource(DonationSource.OWN);
+        String desc = description != null && !description.isBlank() ? description : s.getNote();
+        d.setDescription(desc);
+
+        if (pointId != null) {
+            d.setPreferredPoint(points.findSelectable(pointId).orElse(null));
+        }
+        String not = pointNote == null ? null : pointNote.trim();
+        d.setPreferredPointNote(not == null || not.isEmpty() ? null : (not.length() > 300 ? not.substring(0, 300) : not));
+
+        d = donations.save(d);
+        swapBooks.delete(s);
+        return d;
     }
 
     private SwapBook ownBook(Long id, User user) {
@@ -220,6 +255,16 @@ public class SwapService {
                 .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
         if (o.getStatus() != OfferStatus.PENDING)
             throw new IllegalStateException("Bu teklif zaten yanıtlanmış.");
+        return o;
+    }
+
+    /** Teklifi getirir ve kullanıcının teklifin tarafı olduğunu doğrular. */
+    @Transactional(readOnly = true)
+    public SwapOffer requireOffer(Long offerId, User me) {
+        SwapOffer o = offers.findByIdWithDetails(offerId)
+                .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
+        if (!o.getFromUser().getId().equals(me.getId()) && !o.getToUser().getId().equals(me.getId()))
+            throw new IllegalStateException("Bu takas teklifi sana ait değil.");
         return o;
     }
 

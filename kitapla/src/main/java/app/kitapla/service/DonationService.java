@@ -3,6 +3,7 @@ package app.kitapla.service;
 import app.kitapla.config.Features;
 import app.kitapla.domain.*;
 import app.kitapla.repo.ClaimRepository;
+import app.kitapla.repo.SwapBookRepository;
 import app.kitapla.repo.UserRepository;
 import app.kitapla.repo.DonationRepository;
 import org.springframework.stereotype.Service;
@@ -26,12 +27,14 @@ public class DonationService {
     private final UserRepository users;
     private final DonationRepository donations;
     private final ClaimRepository claims;
+    private final SwapBookRepository swapBooks;
     private final QuotaService quotaService;
     private final NotificationService notifications;
 
     public DonationService(Features features, MeetingService meetings, PickupPointService points,
                            UserRepository users,
                            DonationRepository donations, ClaimRepository claims,
+                           SwapBookRepository swapBooks,
                            QuotaService quotaService, NotificationService notifications) {
         this.features = features;
         this.meetings = meetings;
@@ -39,6 +42,7 @@ public class DonationService {
         this.users = users;
         this.donations = donations;
         this.claims = claims;
+        this.swapBooks = swapBooks;
         this.quotaService = quotaService;
         this.notifications = notifications;
     }
@@ -56,7 +60,7 @@ public class DonationService {
     @Transactional(readOnly = true)
     public List<DonationView> openDonations(Filter filter) {
         Filter f = filter == null ? Filter.none() : filter;
-        String q = f.query() == null ? null : f.query().trim().toLowerCase();
+        String q = f.query() == null ? null : f.query().trim().toLowerCase(java.util.Locale.ROOT);
 
         return donations.findOpenWithDetails(DonationStatus.OPEN).stream()
                 .filter(d -> {
@@ -65,8 +69,8 @@ public class DonationService {
                             && d.getTargetLevel() != f.level()) return false;
                     if (f.bookId() != null && !f.bookId().equals(d.getBook().getId())) return false;
                     if (q != null && !q.isBlank()) {
-                        String title = d.getBook().getTitle() == null ? "" : d.getBook().getTitle().toLowerCase();
-                        String author = d.getBook().getAuthor() == null ? "" : d.getBook().getAuthor().toLowerCase();
+                        String title = d.getBook().getTitle() == null ? "" : d.getBook().getTitle().toLowerCase(java.util.Locale.ROOT);
+                        String author = d.getBook().getAuthor() == null ? "" : d.getBook().getAuthor().toLowerCase(java.util.Locale.ROOT);
                         if (!title.contains(q) && !author.contains(q)) return false;
                     }
                     return true;
@@ -127,7 +131,7 @@ public class DonationService {
      */
     @Transactional
     public Claim claim(Long donationId, User user) {
-        Donation d = donations.findByIdWithDetails(donationId)
+        Donation d = donations.findByIdWithDetailsForUpdate(donationId)
                 .orElseThrow(() -> new IllegalStateException("Bağış bulunamadı."));
 
         DonationView v = toView(d);
@@ -226,6 +230,37 @@ public class DonationService {
         donations.delete(d);
     }
 
+    /** Bağıştaki kitabı takasa aktarır ve bağıştan kaldırır. */
+    @Transactional
+    public SwapBook moveToSwap(Long donationId, User donor, String note) {
+        Donation d = ownDonation(donationId, donor);
+        if (claims.countByDonation(d) > 0)
+            throw new IllegalStateException("Talep alınmış bir bağış takasa aktarılamaz.");
+        if (features.isAddress() && (donor.getAddress() == null || donor.getAddress().isBlank()))
+            throw new IllegalStateException("Takas için profilinden teslimat adresi eklemelisin.");
+
+        var existing = swapBooks.findByUserAndBook_Id(donor, d.getBook().getId());
+        SwapBook sb;
+        if (existing.isPresent()) {
+            sb = existing.get();
+            sb.setStatus(SwapBookStatus.OPEN);
+            if (note != null && !note.isBlank()) {
+                sb.setNote(note);
+            }
+            sb = swapBooks.save(sb);
+        } else {
+            sb = new SwapBook();
+            sb.setUser(donor);
+            sb.setBook(d.getBook());
+            sb.setNote(note != null && !note.isBlank() ? note : d.getDescription());
+            sb.setStatus(SwapBookStatus.OPEN);
+            sb = swapBooks.save(sb);
+        }
+
+        donations.delete(d);
+        return sb;
+    }
+
     private Donation ownDonation(Long donationId, User donor) {
         Donation d = donations.findByIdWithDetails(donationId)
                 .orElseThrow(() -> new IllegalStateException("Bağış bulunamadı."));
@@ -304,6 +339,12 @@ public class DonationService {
 
         c.setStatus(ClaimStatus.NO_SHOW);
         claims.save(c);
+
+        Donation d = c.getDonation();
+        if (d.getStatus() == DonationStatus.CLOSED) {
+            d.setStatus(DonationStatus.OPEN);
+            donations.save(d);
+        }
 
         User gelmeyen = bagisci ? c.getStudent() : c.getDonation().getDonor();
         gelmeyen.setNoShowCount(gelmeyen.getNoShowCount() + 1);

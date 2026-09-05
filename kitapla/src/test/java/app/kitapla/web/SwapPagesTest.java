@@ -181,4 +181,67 @@ class SwapPagesTest {
         mvc.perform(get("/takas").with(user(as(yeni))))
                 .andExpect(content().string(containsString("önce kendi kitabını aç")));
     }
+
+    @Test
+    void takasOnizlemeVeBagisaAktarmaCalisir() throws Exception {
+        User ali = mk("onizle-ali", "İzmir");
+
+        // HTMX önizleme testi
+        mvc.perform(post("/takas/onizleme").with(user(as(ali))).with(csrf())
+                        .param("purchaseLink", "https://example.com/kitap"))
+                .andExpect(status().isOk());
+
+        // Kitap oluştur
+        SwapBook sb = open(ali, "Aktarılacak");
+
+        // Sayfada "Bağışa aktar" butonunu gör
+        mvc.perform(get("/takas/kitaplarim").with(user(as(ali))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/takas/kitaplarim/" + sb.getId() + "/bagisa-aktar")))
+                .andExpect(content().string(containsString("Bağışa aktar")));
+
+        // Bağışa aktar
+        mvc.perform(post("/takas/kitaplarim/" + sb.getId() + "/bagisa-aktar").with(user(as(ali))).with(csrf()))
+                .andExpect(redirectedUrl("/takas/kitaplarim"))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Takas listesinden kalktığını doğrula
+        assertThat(swapBooks.findById(sb.getId())).isEmpty();
+    }
+
+    @Test
+    void teklifDetayKiyaslamaVeSohbetSikayetSayfasiCalisir() throws Exception {
+        User ali = mk("detay-ali", "İzmir");
+        User veli = mk("detay-veli", "Ankara");
+        SwapBook hedef = open(ali, "Ali Roman");
+        SwapBook benim = open(veli, "Veli Tarih");
+        SwapOffer o = swapService.offer(hedef.getId(), benim.getId(), veli, "Takas edebilir miyiz?");
+
+        // 1. Takaslarım sayfasında "Teklifi İncele & Kıyasla", sohbet ve şikâyet linkleri görünmeli
+        mvc.perform(get("/takas/takaslarim").with(user(as(ali))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/takas/teklifler/" + o.getId())))
+                .andExpect(content().string(containsString("Teklifi İncele & Kıyasla")))
+                .andExpect(content().string(containsString("/mesajlar/ac/swap/" + o.getId())))
+                .andExpect(content().string(containsString("/sikayet/swap_offer/" + o.getId())));
+
+        // 2. Detaylı yan yana kıyaslama sayfası (/takas/teklifler/{id})
+        mvc.perform(get("/takas/teklifler/" + o.getId()).with(user(as(ali))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("takas-teklif-detay"))
+                .andExpect(content().string(containsString("ALACAĞIN KİTAP")))
+                .andExpect(content().string(containsString("VERECEĞİN KİTAP")))
+                .andExpect(content().string(containsString(hedef.getBook().getTitle())))
+                .andExpect(content().string(containsString(benim.getBook().getTitle())))
+                .andExpect(content().string(containsString("Takas edebilir miyiz?")))
+                .andExpect(content().string(containsString("/mesajlar/ac/swap/" + o.getId())))
+                .andExpect(content().string(containsString("/sikayet/swap_offer/" + o.getId())));
+
+        // Yabancı kullanıcı erişemez -> /takas/takaslarim sayfasına yönlenir
+        User yabanci = mk("detay-yabanci", "Bursa");
+        mvc.perform(get("/takas/teklifler/" + o.getId()).with(user(as(yabanci))))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/takas/takaslarim"))
+                .andExpect(flash().attributeExists("hata"));
+    }
 }

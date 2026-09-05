@@ -210,4 +210,27 @@ class DonationPagesTest {
                 .andExpect(content().string(containsString("Teslim aldım")))
                 .andExpect(content().string(containsString("Kütüphane girişi")));
     }
+
+    @Test
+    void bagisTakasaAktarilabilirVeBagislarimdaGorunur() throws Exception {
+        User donor = makeUser("aktar-sayfa", "İzmir");
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Takasa Geçecek Kitap " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI").param("source", "OWN"));
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+
+        // Sayfada "Takasa aktar" butonunu gör
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/bagis/" + d.getId() + "/takasa-aktar")))
+                .andExpect(content().string(containsString("Takasa aktar")));
+
+        // Takasa aktar
+        mvc.perform(post("/bagis/" + d.getId() + "/takasa-aktar").with(user(as(donor))).with(csrf()))
+                .andExpect(redirectedUrl("/bagislarim"))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Bağış listesinde kalmadığını doğrula
+        assertThat(donations.findById(d.getId())).isEmpty();
+    }
 }

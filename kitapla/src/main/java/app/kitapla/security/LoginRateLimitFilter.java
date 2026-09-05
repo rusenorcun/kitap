@@ -30,8 +30,9 @@ public class LoginRateLimitFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         if (LOGIN_POST.matches(request)) {
-            String key = LoginAttemptService.key(request.getParameter("email"), request.getRemoteAddr());
-            if (attempts.isBlocked(key)) {
+            String email = request.getParameter("email");
+            String ip = request.getRemoteAddr();
+            if (attempts.isBlocked(email, ip)) {
                 response.sendRedirect(request.getContextPath() + "/login?kilit");
                 return;
             }

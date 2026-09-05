@@ -23,13 +23,16 @@ public class PasswordResetService {
     private final TokenService tokens;
     private final MailService mail;
     private final PasswordEncoder encoder;
+    private final app.kitapla.security.UserSessionService userSessions;
 
     public PasswordResetService(UserRepository users, TokenService tokens, MailService mail,
-                                PasswordEncoder encoder) {
+                                PasswordEncoder encoder,
+                                app.kitapla.security.UserSessionService userSessions) {
         this.users = users;
         this.tokens = tokens;
         this.mail = mail;
         this.encoder = encoder;
+        this.userSessions = userSessions;
     }
 
     /**
@@ -77,6 +80,7 @@ public class PasswordResetService {
         user.setPasswordHash(encoder.encode(newPassword));
         users.save(user);
         tokens.consume(t);
+        userSessions.expireUserSessions(user.getId());
 
         mail.send(user.getEmail(), "KİTAPLA — Şifren değiştirildi", "sifre-degisti",
                 Map.of("ad", user.getName()));

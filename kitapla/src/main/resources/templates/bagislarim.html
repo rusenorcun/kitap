@@ -33,7 +33,7 @@
           <div class="muted" style="font-size:13px;font-weight:500" th:text="${d.book.author}">Yazar</div>
           <div class="row gap-8" style="flex-wrap:wrap;margin-top:8px">
             <span class="badge badge-sage"
-                  th:text="${d.targetLevel.name() == 'HEPSI'} ? 'Herkese' : ${#strings.capitalize(#strings.toLowerCase(d.targetLevel.name()))}">Seviye</span>
+                  th:text="${d.targetLevel.name() == 'HEPSI' ? 'Herkese' : (d.targetLevel.name() == 'LISE' ? 'Lise' : 'Üniversite')}">Seviye</span>
             <span class="badge badge-muted"><span th:text="${d.claimed}">0</span>/<span th:text="${d.quantity}">1</span> alındı</span>
             <span th:if="${d.priorityActive}" class="badge badge-accent">Öncelik: <span th:text="${d.priorityLeft}">1g</span></span>
             <span th:if="${d.donation.status.name() == 'CLOSED'}" class="badge badge-muted">Kapalı</span>
@@ -43,7 +43,10 @@
           </div>
         </div>
 
-        <div class="row gap-8">
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <form th:if="${d.claimed == 0}" th:action="@{'/bagis/' + ${d.id} + '/takasa-aktar'}" method="post">
+            <button class="btn btn-soft btn-sm" type="submit" title="Bağıştan kaldırıp takas listene ekle">Takasa aktar</button>
+          </form>
           <form th:if="${d.donation.status.name() == 'OPEN'}" th:action="@{'/bagis/' + ${d.id} + '/kapat'}" method="post">
             <button class="btn btn-soft btn-sm" type="submit">Kapat</button>
           </form>
@@ -57,7 +60,7 @@
         </div>
       </div>
 
-      <!-- Alanlar: adres yalnızca bağışçıya görünür -->
+      <!-- Alanlar ve buluşma düzeni -->
       <th:block th:with="list=${claimers.get(d.id)}">
       <div th:if="${list != null and !#lists.isEmpty(list)}"
            style="margin-top:16px; border-top:1px solid var(--line); padding-top:14px">
@@ -84,8 +87,10 @@
               <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
             </form>
             <div th:if="${features.handover}" style="flex-basis:100%">
-              <div class="row gap-8" style="justify-content:flex-end">
+              <div class="row gap-8" style="justify-content:flex-end;align-items:center;flex-wrap:wrap">
                 <a th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
+                <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/claim/' + ${c.id}(geri='/bagislarim')}"
+                   style="color:inherit">Şikâyet et</a>
               </div>
               <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
               <div th:if="${c.status.name() != 'DELIVERED'}"

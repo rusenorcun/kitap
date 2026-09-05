@@ -17,7 +17,7 @@ public class AppUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        return users.findByEmail(email.trim().toLowerCase())
+        return users.findByEmail(email.trim().toLowerCase(java.util.Locale.ROOT))
                 .map(AppUserDetails::new)
                 .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı"));
     }

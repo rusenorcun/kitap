@@ -23,7 +23,7 @@ public enum School {
     public static School of(String name) {
         if (name == null || name.isBlank()) return null;
         try {
-            return School.valueOf(name.trim().toUpperCase());
+            return School.valueOf(name.trim().toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return null;
         }

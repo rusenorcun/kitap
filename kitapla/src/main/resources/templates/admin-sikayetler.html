@@ -34,8 +34,10 @@
           <span class="badge badge-muted"
                 th:text="${s.kind.name() == 'CONVERSATION'} ? 'Sohbet'
                        : (${s.kind.name() == 'DONATION'} ? 'Bağış'
-                       : (${s.kind.name() == 'REQUEST'} ? 'İstek'
-                       : (${s.kind.name() == 'SWAP_BOOK'} ? 'Takas' : 'Üye')))">Tür</span>
+                       : (${s.kind.name() == 'REQUEST'} ? 'İstek / Teslimat'
+                       : (${s.kind.name() == 'CLAIM'} ? 'Teslimat'
+                       : (${s.kind.name() == 'SWAP_BOOK'} ? 'Takas İlanı'
+                       : (${s.kind.name() == 'SWAP_OFFER'} ? 'Takas Süreci' : 'Üye')))))">Tür</span>
           <span th:if="${s.status.name() == 'ACTIONED'}" class="badge badge-sage">İşlem yapıldı</span>
           <span th:if="${s.status.name() == 'DISMISSED'}" class="badge badge-muted">İşlem gerekmedi</span>
         </div>

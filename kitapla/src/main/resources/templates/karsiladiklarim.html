@@ -30,7 +30,7 @@
           <div style="font-size:16px;font-weight:800" th:text="${r.book.title}">Kitap</div>
           <div class="muted" style="font-size:13px;font-weight:500">
             <span th:text="${r.book.author}">Yazar</span> ·
-            <span th:text="${r.source != null and r.source.name() == 'OWN'} ? 'Elimdeki kopya' : 'Satın alıp göndereceğim'">Kaynak</span>
+            <span th:text="${r.source != null and r.source.name() == 'OWN'} ? 'Elimdeki kopya' : 'Satın alıp elden teslim edeceğim'">Kaynak</span>
           </div>
         </div>
         <span class="badge"
@@ -65,8 +65,10 @@
 
         <!-- Kampüs içi buluşma -->
         <th:block th:if="${features.handover}">
-          <div class="row gap-8" style="justify-content:flex-end;margin-top:10px">
+          <div class="row gap-8" style="justify-content:flex-end;align-items:center;margin-top:10px;flex-wrap:wrap">
             <a th:replace="~{bulusma-fragments :: mesajBaglantisi('request', ${r.id})}"></a>
+            <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/request/' + ${r.id}(geri='/karsiladiklarim')}"
+               style="color:inherit">Şikâyet et</a>
           </div>
           <div th:replace="~{bulusma-fragments :: bulusmaKarti(${r.meeting})}"></div>
           <div th:if="${r.status.name() != 'DELIVERED'}"

@@ -191,17 +191,18 @@ curl -I https://alanadin.com
 
 ## Yedekleme
 
-Tüm durum iki birimde: veritabanı ve yüklenen dosyalar.
+PostgreSQL veritabanı yedeği `pg_dump` ile, yüklenen dosyalar ise birimden alınır:
 
 ```bash
-docker run --rm \
-  -v kitap_kitapla-veri:/veri -v kitap_kitapla-dosya:/dosya \
-  -v "$PWD":/yedek alpine \
-  tar czf /yedek/kitapla-$(date +%F).tar.gz /veri /dosya
-```
+# Veritabanı yedeği
+docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U kitapla -d kitapla | gzip > kitapla-db-$(date +%F).sql.gz
 
-> Birim adlarının başındaki `kitap_` öneki, projenin bulunduğu klasörün adından
-> gelir. `docker volume ls` ile gerçek adları görebilirsin.
+# Dosya yedeği
+docker run --rm \
+  -v kitap_kitapla-dosya:/dosya \
+  -v "$PWD":/yedek alpine \
+  tar czf /yedek/kitapla-dosyalar-$(date +%F).tar.gz /dosya
+```
 
 ## Sık karşılaşılanlar
 

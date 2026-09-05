@@ -16,17 +16,20 @@ public final class LoginAttemptHandlers {
 
     public static AuthenticationFailureHandler failure(LoginAttemptService attempts) {
         return (HttpServletRequest request, HttpServletResponse response, AuthenticationException ex) -> {
-            String key = LoginAttemptService.key(request.getParameter("email"), request.getRemoteAddr());
-            attempts.recordFailure(key);
+            String email = request.getParameter("email");
+            String ip = request.getRemoteAddr();
+            attempts.recordFailure(email, ip);
             // Bu deneme sınırı doldurduysa kullanıcıya doğrudan kilit mesajı göster
-            String target = attempts.isBlocked(key) ? "/login?kilit" : "/login?error";
+            String target = attempts.isBlocked(email, ip) ? "/login?kilit" : "/login?error";
             response.sendRedirect(request.getContextPath() + target);
         };
     }
 
     public static AuthenticationSuccessHandler success(LoginAttemptService attempts) {
         return (HttpServletRequest request, HttpServletResponse response, Authentication auth) -> {
-            attempts.reset(LoginAttemptService.key(request.getParameter("email"), request.getRemoteAddr()));
+            String email = request.getParameter("email");
+            String ip = request.getRemoteAddr();
+            attempts.reset(email, ip);
             redirect(request, response, "/panom");
         };
     }

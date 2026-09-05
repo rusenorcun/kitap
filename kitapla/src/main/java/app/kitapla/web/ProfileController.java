@@ -26,14 +26,14 @@ public class ProfileController {
     private final UserService userService;
     private final QuotaService quotaService;
     private final Features features;
-    private final Path documentDir;
+    private final app.kitapla.service.DocumentService documentService;
 
     public ProfileController(UserService userService, QuotaService quotaService, Features features,
-                             @Value("${kitapla.upload-dir}") String uploadDir) {
+                             app.kitapla.service.DocumentService documentService) {
         this.userService = userService;
         this.quotaService = quotaService;
         this.features = features;
-        this.documentDir = Path.of(uploadDir, "documents");
+        this.documentService = documentService;
     }
 
     @GetMapping
@@ -113,37 +113,22 @@ public class ProfileController {
         String savedPath = null;
         try {
             if (document != null && !document.isEmpty()) {
-                Files.createDirectories(documentDir);
-                String safe = document.getOriginalFilename() == null ? "belge"
-                        : document.getOriginalFilename().replaceAll("[^a-zA-Z0-9._-]", "_");
-                String fileName = System.currentTimeMillis() + "-" + safe;
-                document.transferTo(documentDir.resolve(fileName));
-                savedPath = fileName;
+                savedPath = documentService.save(document);
             }
             SchoolLevel level = (schoolLevel == null || schoolLevel.isBlank())
-                    ? null : SchoolLevel.valueOf(schoolLevel);
+                    ? null : SchoolLevel.valueOf(schoolLevel.trim().toUpperCase(java.util.Locale.ROOT));
             userService.applyForStudent(principal.getUser(), level, documentNo, savedPath);
             ra.addFlashAttribute("basari",
                     "Belgen incelemeye alındı. Onaylandığında bağışlarda 48 saat öncelik kazanacaksın.");
             return "redirect:/profil";
         } catch (IllegalStateException | IllegalArgumentException ex) {
-            discard(savedPath);
+            documentService.discard(savedPath);
             ra.addFlashAttribute("hata", ex.getMessage());
             return "redirect:/profil/ogrenci";
         } catch (Exception ex) {
-            discard(savedPath);
+            documentService.discard(savedPath);
             ra.addFlashAttribute("hata", "Belge yüklenirken bir sorun oldu: " + ex.getMessage());
             return "redirect:/profil/ogrenci";
-        }
-    }
-
-    /** Başvuru kaydedilemediyse diske yazılan belgeyi geride bırakma. */
-    private void discard(String fileName) {
-        if (fileName == null) return;
-        try {
-            Files.deleteIfExists(documentDir.resolve(fileName));
-        } catch (Exception ignored) {
-            // temizlik başarısız olsa da kullanıcıya dönen hata mesajı önemli
         }
     }
 }

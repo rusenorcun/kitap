@@ -10,10 +10,29 @@
 #   docker compose -f docker-compose.sunucu.yml up -d --build
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kitapla-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${KITAPLA_DB_NAME:-kitapla}
+      POSTGRES_USER: ${KITAPLA_DB_USER:-kitapla}
+      POSTGRES_PASSWORD: ${KITAPLA_DB_PASSWORD:?KITAPLA_DB_PASSWORD .env dosyasinda tanimli olmali}
+    volumes:
+      - kitapla-db-veri:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   kitapla:
     build: ./kitapla
     container_name: kitapla
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     # ports YOK: ana makineye yayınlanmaz, yalnızca Caddy erişir
     expose:
@@ -22,11 +41,15 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       KITAPLA_BIND: "0.0.0.0"
+      KITAPLA_DB_HOST: postgres
+      KITAPLA_DB_PORT: "5432"
+      KITAPLA_DB_NAME: ${KITAPLA_DB_NAME:-kitapla}
+      KITAPLA_DB_USER: ${KITAPLA_DB_USER:-kitapla}
+      KITAPLA_DB_PASSWORD: ${KITAPLA_DB_PASSWORD}
     env_file:
       - .env
 
     volumes:
-      - kitapla-veri:/uygulama/data
       - kitapla-dosya:/uygulama/uploads
 
   caddy:
@@ -55,7 +78,7 @@ services:
       - caddy-ayar:/config
 
 volumes:
-  kitapla-veri:
+  kitapla-db-veri:
   kitapla-dosya:
   caddy-veri:
   caddy-ayar:

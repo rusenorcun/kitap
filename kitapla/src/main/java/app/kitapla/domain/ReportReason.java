@@ -7,6 +7,8 @@ public enum ReportReason {
     SPAM("Spam ya da reklam"),
     SAHTE("Sahte ilan ya da yanıltıcı bilgi"),
     GELMEDI("Buluşmaya gelmedi"),
+    HASARLI("Kitap hasarlı, eksik veya ilandakinden farklı"),
+    TESLIMAT_SORUNU("Teslimat gerçekleşmedi veya teslimat sorunu"),
     TICARET("Satış ya da ticari amaç"),
     DIGER("Diğer");
 

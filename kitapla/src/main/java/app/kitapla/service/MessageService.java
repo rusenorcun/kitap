@@ -26,17 +26,22 @@ public class MessageService {
     private final ClaimRepository claims;
     private final BookRequestRepository requests;
     private final SwapOfferRepository offers;
+    private final ReportRepository reports;
+    private final UserRepository users;
     private final NotificationService notifications;
     private final SseHub sse;
 
     public MessageService(ConversationRepository conversations, MessageRepository messages,
                           ClaimRepository claims, BookRequestRepository requests,
-                          SwapOfferRepository offers, NotificationService notifications, SseHub sse) {
+                          SwapOfferRepository offers, ReportRepository reports,
+                          UserRepository users, NotificationService notifications, SseHub sse) {
         this.conversations = conversations;
         this.messages = messages;
         this.claims = claims;
         this.requests = requests;
         this.offers = offers;
+        this.reports = reports;
+        this.users = users;
         this.notifications = notifications;
         this.sse = sse;
     }
@@ -61,9 +66,19 @@ public class MessageService {
             case SWAP -> {
                 SwapOffer o = offers.findByIdWithDetails(refId)
                         .orElseThrow(() -> new IllegalStateException("Teklif bulunamadı."));
-                if (o.getStatus() != OfferStatus.ACCEPTED && o.getStatus() != OfferStatus.COMPLETED)
-                    throw new IllegalStateException("Takas kabul edilmeden mesajlaşma açılmaz.");
+                if (o.getStatus() == OfferStatus.CANCELLED || o.getStatus() == OfferStatus.REJECTED)
+                    throw new IllegalStateException("İptal edilmiş veya reddedilmiş takas için mesajlaşma açılamaz.");
                 return dogrula(o.getFromUser(), o.getToUser(), me);
+            }
+            case REPORT -> {
+                Report r = reports.findByIdWithUsers(refId)
+                        .orElseThrow(() -> new IllegalStateException("Şikâyet bulunamadı."));
+                User reporter = r.getReporter();
+                if (!me.isAdmin() && !reporter.getId().equals(me.getId()))
+                    throw new IllegalStateException("Bu şikâyet sana ait değil.");
+                User adminUser = r.getReviewedBy() != null ? r.getReviewedBy()
+                        : (me.isAdmin() ? me : users.findAll().stream().filter(User::isAdmin).findFirst().orElse(me));
+                return new User[]{reporter, adminUser};
             }
             default -> throw new IllegalStateException("Bilinmeyen sohbet türü.");
         }
@@ -89,11 +104,12 @@ public class MessageService {
         });
     }
 
-    /** Kimlikten sohbeti getirir; yalnızca tarafları erişebilir. */
+    /** Kimlikten sohbeti getirir; yalnızca tarafları erişebilir (veya REPORT için yöneticiler). */
     public Conversation require(Long conversationId, User me) {
         Conversation c = conversations.findByIdWithUsers(conversationId)
                 .orElseThrow(() -> new IllegalStateException("Sohbet bulunamadı."));
-        if (!c.has(me)) throw new IllegalStateException("Bu sohbet sana ait değil.");
+        if (!c.has(me) && !(c.getKind() == ConversationKind.REPORT && me.isAdmin()))
+            throw new IllegalStateException("Bu sohbet sana ait değil.");
         return c;
     }
 
@@ -109,6 +125,9 @@ public class MessageService {
 
     public long unread(Conversation c, User me) {
         Instant son = c.lastReadOf(me);
+        if (son == null && c.getKind() == ConversationKind.REPORT && me.isAdmin() && !c.has(me)) {
+            son = c.getUserB().getId().equals(me.getId()) ? c.getLastReadB() : c.getLastReadA();
+        }
         return son == null
                 ? messages.countByConversationAndSenderNot(c, me)
                 : messages.countByConversationAndSenderNotAndCreatedAtAfter(c, me, son);
@@ -121,7 +140,11 @@ public class MessageService {
 
     @Transactional
     public void markRead(Conversation c, User me) {
-        c.markRead(me, Instant.now());
+        if (c.has(me)) {
+            c.markRead(me, Instant.now());
+        } else if (c.getKind() == ConversationKind.REPORT && me.isAdmin()) {
+            c.setLastReadB(Instant.now());
+        }
         conversations.save(c);
     }
 
@@ -145,13 +168,26 @@ public class MessageService {
 
         c.setLastMessage(metin.length() > 200 ? metin.substring(0, 200) : metin);
         c.setLastMessageAt(m.getCreatedAt());
-        c.markRead(me, m.getCreatedAt());   // kendi mesajın okunmuş sayılır
+        if (c.has(me)) {
+            c.markRead(me, m.getCreatedAt());   // kendi mesajın okunmuş sayılır
+        } else if (c.getKind() == ConversationKind.REPORT && me.isAdmin()) {
+            c.setLastReadB(m.getCreatedAt());
+        }
         conversations.save(c);
 
         // Karşı tarafa hem canlı akış hem bildirim
         sse.publish(c.getId());
-        notifications.notify(c.other(me), "mesaj",
-                me.getName() + " sana mesaj gönderdi: \"" + kisalt(metin) + "\"");
+        User recipient;
+        String senderName;
+        if (c.getKind() == ConversationKind.REPORT) {
+            recipient = me.isAdmin() ? c.getUserA() : (c.has(me) ? c.other(me) : c.getUserB());
+            senderName = me.isAdmin() ? "Kitapla Destek / Yönetim" : me.getName();
+        } else {
+            recipient = c.other(me);
+            senderName = me.getName();
+        }
+        notifications.notify(recipient, "mesaj",
+                senderName + " sana mesaj gönderdi: \"" + kisalt(metin) + "\"");
         return m;
     }
 

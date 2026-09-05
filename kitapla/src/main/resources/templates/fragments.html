@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
   <title th:text="${title}">KİTAPLA</title>
+  <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg(v=1)}"/>
   <meta name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
   <link rel="stylesheet" th:href="@{/css/kitapla.css}"/>
@@ -64,18 +65,57 @@
   <div class="nav-spacer"></div>
   <div class="row gap-16">
     <a class="btn btn-primary btn-sm" th:href="@{/bagis/yeni}">Bağış yap</a>
-    <a th:href="@{/bildirimler}" title="Bildirimler"
+    <a id="nav-bildirim-link" th:href="@{/bildirimler}" title="Bildirimler"
        th:aria-label="${unreadCount > 0} ? 'Bildirimler, ' + ${unreadCount} + ' okunmamış' : 'Bildirimler'"
        style="position:relative;width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:var(--ink)">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
-           stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
-      <span th:if="${unreadCount > 0}" th:text="${unreadCount}" aria-hidden="true"
-            style="position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px">3</span>
+      <svg id="nav-bildirim-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"
+           stroke-linecap="round" stroke-linejoin="round" style="transition:transform 0.35s ease"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      <span id="nav-bildirim-sayac" th:text="${unreadCount}" aria-hidden="true"
+            th:style="${unreadCount > 0} ? 'position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;padding:0 4px;transition:all 0.3s ease' : 'position:absolute;top:2px;right:2px;min-width:16px;height:16px;border-radius:999px;background:var(--accent);color:#fff;font-size:10px;font-weight:800;display:none;align-items:center;justify-content:center;padding:0 4px;transition:all 0.3s ease'">3</span>
     </a>
     <form th:action="@{/logout}" method="post" style="margin:0"><button class="btn btn-soft btn-sm" type="submit">Çıkış</button></form>
     <a class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}"
        th:title="${currentUser?.name}" aria-label="Profilim">EY</a>
   </div>
+  <script th:inline="javascript">
+  /*<![CDATA[*/
+  (function () {
+    if (window.__kitapla_notif_stream_active) return;
+    window.__kitapla_notif_stream_active = true;
+    if (!window.EventSource) return;
+
+    var akis = new EventSource('/bildirimler/akis');
+    akis.addEventListener('bildirim', function (e) {
+      try {
+        var veri = JSON.parse(e.data);
+        var sayi = typeof veri.unread === 'number' ? veri.unread : parseInt(veri.unread, 10);
+        var sayac = document.getElementById('nav-bildirim-sayac');
+        var icon = document.getElementById('nav-bildirim-icon');
+        var link = document.getElementById('nav-bildirim-link');
+        if (sayac) {
+          var eskiSayi = parseInt(sayac.textContent, 10) || 0;
+          sayac.textContent = sayi;
+          if (sayi > 0) {
+            sayac.style.display = 'flex';
+            if (sayi > eskiSayi && icon) {
+              icon.style.transform = 'rotate(18deg) scale(1.2)';
+              setTimeout(function () { icon.style.transform = 'rotate(-18deg) scale(1.2)'; }, 140);
+              setTimeout(function () { icon.style.transform = 'rotate(10deg) scale(1.1)'; }, 280);
+              setTimeout(function () { icon.style.transform = 'rotate(0deg) scale(1)'; }, 420);
+            }
+          } else {
+            sayac.style.display = 'none';
+          }
+          if (link) {
+            link.setAttribute('aria-label', sayi > 0 ? 'Bildirimler, ' + sayi + ' okunmamış' : 'Bildirimler');
+          }
+        }
+      } catch (err) {}
+    });
+    window.addEventListener('beforeunload', function () { akis.close(); });
+  })();
+  /*]]>*/
+  </script>
 </div>
 
 <!-- Yönetim alt navigasyonu -->

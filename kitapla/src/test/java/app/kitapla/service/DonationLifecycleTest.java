@@ -25,6 +25,7 @@ class DonationLifecycleTest {
     @Autowired BookService bookService;
     @Autowired UserRepository users;
     @Autowired ClaimRepository claims;
+    @Autowired SwapBookRepository swapBooks;
     @Autowired NotificationRepository notifications;
     @Autowired JdbcTemplate jdbc;
 
@@ -214,5 +215,80 @@ class DonationLifecycleTest {
 
         donationService.cancelClaim(c.getId(), uye);
         assertThat(donationService.eligibility(donationService.view(d2.getId()).orElseThrow(), uye).allowed()).isTrue();
+    }
+
+    @Test
+    void esZamanliTaleplerdeAsiriDagitimOlmaz() throws Exception {
+        User donor = user("donor-race", false, "İzmir");
+        int toplamAdet = 2;
+        Donation d = newDonation(donor, toplamAdet);
+        backdate(d, 3);
+
+        int threadSayisi = 10;
+        java.util.List<User> ogrenciler = new java.util.ArrayList<>();
+        for (int i = 0; i < threadSayisi; i++) {
+            ogrenciler.add(user("race-ogrenci-" + i, true, "Ankara"));
+        }
+
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(threadSayisi);
+        java.util.concurrent.CountDownLatch startLatch = new java.util.concurrent.CountDownLatch(1);
+        java.util.concurrent.atomic.AtomicInteger basariliSayisi = new java.util.concurrent.atomic.AtomicInteger(0);
+        java.util.concurrent.atomic.AtomicInteger hataSayisi = new java.util.concurrent.atomic.AtomicInteger(0);
+
+        java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>();
+        for (User ogr : ogrenciler) {
+            futures.add(executor.submit(() -> {
+                try {
+                    startLatch.await();
+                    donationService.claim(d.getId(), ogr);
+                    basariliSayisi.incrementAndGet();
+                } catch (Exception ex) {
+                    hataSayisi.incrementAndGet();
+                }
+            }));
+        }
+
+        startLatch.countDown();
+        for (java.util.concurrent.Future<?> f : futures) {
+            f.get();
+        }
+        executor.shutdown();
+
+        assertThat(basariliSayisi.get()).isEqualTo(toplamAdet);
+        assertThat(hataSayisi.get()).isEqualTo(threadSayisi - toplamAdet);
+
+        DonationView v = donationService.view(d.getId()).orElseThrow();
+        assertThat(v.getRemaining()).isZero();
+        assertThat(v.donation().getStatus()).isEqualTo(DonationStatus.CLOSED);
+        assertThat(claims.countByDonation(d)).isEqualTo(toplamAdet);
+    }
+
+    @Test
+    void bagisTakasaAktarilirVeBagistanSilinir() {
+        User donor = user("aktar-donor", false, "İzmir");
+        Donation d = newDonation(donor, 1);
+
+        SwapBook sb = donationService.moveToSwap(d.getId(), donor, "Takas için roman tercih ederim");
+
+        assertThat(sb).isNotNull();
+        assertThat(sb.getBook().getId()).isEqualTo(d.getBook().getId());
+        assertThat(sb.getUser().getId()).isEqualTo(donor.getId());
+        assertThat(sb.getStatus()).isEqualTo(SwapBookStatus.OPEN);
+        assertThat(sb.getNote()).isEqualTo("Takas için roman tercih ederim");
+
+        // Bağış listesinden silindiğini doğrula
+        assertThat(donationService.view(d.getId())).isEmpty();
+    }
+
+    @Test
+    void talepAlinmisBagisTakasaAktarilamaz() {
+        User donor = user("dolu-donor", false, "İzmir");
+        User ogrenci = user("dolu-ogrenci", true, "Ankara");
+        Donation d = newDonation(donor, 1);
+        donationService.claim(d.getId(), ogrenci);
+
+        assertThatThrownBy(() -> donationService.moveToSwap(d.getId(), donor, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("takasa aktarılamaz");
     }
 }

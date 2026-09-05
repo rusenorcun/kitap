@@ -8,12 +8,14 @@
   <div class="row gap-12" style="margin-bottom:18px">
     <a class="btn btn-soft btn-sm" th:href="@{/mesajlar}">← Mesajlar</a>
     <div class="avatar" style="width:34px;height:34px;font-size:12px"
-         th:text="${karsiTaraf.initials}">EY</div>
+         th:text="${sohbet.kind.name() == 'REPORT' and !ben.admin} ? 'KD' : ${karsiTaraf.initials}">EY</div>
     <div>
-      <div style="font-size:16px;font-weight:800" th:text="${karsiTaraf.name}">Ad</div>
+      <div style="font-size:16px;font-weight:800"
+           th:text="${sohbet.kind.name() == 'REPORT'} ? (${ben.admin} ? ${karsiTaraf.name} + ' (Şikâyet Eden)' : 'Kitapla Destek / Yönetim') : ${karsiTaraf.name}">Ad</div>
       <div class="muted" style="font-size:12px;font-weight:600"
            th:text="${sohbet.kind.name() == 'CLAIM'} ? 'Bağış teslimi'
-                  : (${sohbet.kind.name() == 'REQUEST'} ? 'Karşılanan istek' : 'Takas')">Tür</div>
+                  : (${sohbet.kind.name() == 'REQUEST'} ? 'Karşılanan istek'
+                  : (${sohbet.kind.name() == 'SWAP'} ? 'Takas' : 'Şikâyet Destek (Talep #' + ${sohbet.refId} + ')'))">Tür</div>
     </div>
   </div>
 
@@ -23,8 +25,9 @@
   <div id="mesajlar" th:fragment="liste"
        style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding:4px">
     <p th:if="${#lists.isEmpty(mesajlar)}" class="muted"
-       style="text-align:center;font-weight:500;padding:40px 0;margin:0">
-      Henüz mesaj yok. Buluşma yerini ve saatini konuşarak başlayabilirsin.
+       style="text-align:center;font-weight:500;padding:40px 0;margin:0"
+       th:text="${sohbet.kind.name() == 'REPORT'} ? 'Henüz mesaj yok. Şikâyetinizle ilgili bilgi veya soru ileterek başlayabilirsiniz.' : 'Henüz mesaj yok. Buluşma yerini ve saatini konuşarak başlayabilirsin.'">
+      Henüz mesaj yok.
     </p>
     <div th:each="m : ${mesajlar}"
          th:style="${m.sender.id == ben.id}
@@ -45,12 +48,16 @@
   </form>
 
   <div class="row gap-8" style="justify-content:space-between;margin-top:14px;flex-wrap:wrap">
-    <p class="muted" style="font-size:12px;font-weight:500;margin:0;flex:1;min-width:220px">
+    <p class="muted" style="font-size:12px;font-weight:500;margin:0;flex:1;min-width:220px"
+       th:text="${sohbet.kind.name() == 'REPORT'} ? 'Bu sohbet şikâyetinizle ilgili yönetim ekibiyle doğrudan destek görüşmesidir.' : 'Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.'">
       Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.
     </p>
-    <a class="btn btn-soft btn-sm"
+    <a th:if="${sohbet.kind.name() != 'REPORT'}" class="btn btn-soft btn-sm"
        th:href="@{'/sikayet/conversation/' + ${sohbet.id}(geri='/mesajlar/' + ${sohbet.id})}">
       Bu sohbeti şikâyet et</a>
+    <a th:if="${sohbet.kind.name() == 'REPORT' and ben.admin}" class="btn btn-soft btn-sm"
+       th:href="@{'/admin/sikayetler/' + ${sohbet.refId}}">
+      Şikâyet detayına git →</a>
   </div>
 </div>
 

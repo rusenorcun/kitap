@@ -7,24 +7,21 @@
 <div class="container" style="padding-top:28px; padding-bottom:48px; max-width:900px">
   <div class="row" style="justify-content:space-between; margin-bottom:20px">
     <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">İsteklerim</h1>
-    <div class="row gap-8">
-      <a class="btn btn-soft btn-sm" th:href="@{/istekler}">Açık istekler</a>
-      <a class="btn btn-primary btn-sm" th:href="@{/istek/yeni}">Yeni istek</a>
-    </div>
+    <a class="btn btn-primary" th:href="@{/istek/yeni}">Yeni istek aç</a>
   </div>
 
   <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
   <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
 
   <div th:if="${#lists.isEmpty(requests)}" class="card card-pad" style="text-align:center; padding:56px 24px">
-    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz isteğin yok</div>
-    <p class="muted" style="font-weight:500;margin:0 0 20px">İhtiyacın olan kitabı listele; bir bağışçı görünce karşılayabilir.</p>
-    <a class="btn btn-primary" th:href="@{/istek/yeni}">İlk isteğini oluştur</a>
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz açık isteğin yok</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">İhtiyacın olan bir ders kitabı ya da okumak istediğin bir klasik varsa istek aç.</p>
+    <a class="btn btn-primary" th:href="@{/istek/yeni}">İstek aç</a>
   </div>
 
   <div class="stack gap-14" th:unless="${#lists.isEmpty(requests)}">
     <div th:each="r : ${requests}" class="card card-pad">
-      <div class="row gap-16">
+      <div class="row gap-16" style="align-items:flex-start">
         <div th:if="${!r.book.hasCover()}" class="cover"
              th:style="'width:50px;height:70px;flex-shrink:0;padding:0;background:' + ${r.book.coverColor}"></div>
         <img th:if="${r.book.hasCover()}" th:src="${r.book.coverUrl}" alt=""
@@ -39,50 +36,51 @@
         <span class="badge"
               th:classappend="${r.status.name() == 'OPEN'} ? 'badge-muted' : (${r.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent')"
               th:text="${r.status.name() == 'OPEN'} ? 'Açık · bağışçı bekleniyor'
-                     : (${r.status.name() == 'FULFILLED'} ? 'Karşılandı · kargo bekleniyor'
-                     : (${r.status.name() == 'SHIPPED'} ? 'Kargoda'
-                     : (${r.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı' : 'Teslim edildi')))">Durum</span>
+                     : (${r.status.name() == 'FULFILLED'} ? 'Karşılandı · buluşma bekleniyor'
+                     : (${r.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı' : 'Teslim edildi'))">Durum</span>
       </div>
 
       <!-- Teslimat adımları (karşılandıysa) -->
       <th:block th:if="${r.status.name() != 'OPEN'}">
         <div class="row gap-8" style="margin:16px 4px 6px">
           <span style="width:20px;height:20px;border-radius:50%;background:var(--sage);flex-shrink:0"></span>
-          <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
-          <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+          <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
+          <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'ARRANGED' or r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
           <span th:style="'flex:1;height:3px;background:' + (${r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
           <span th:style="'width:20px;height:20px;border-radius:50%;flex-shrink:0;background:' + (${r.status.name() == 'DELIVERED'} ? 'var(--sage)' : 'var(--line)')"></span>
         </div>
         <div class="row muted" style="justify-content:space-between;font-size:11px;font-weight:600;margin:0 0 14px">
           <span>Karşılandı</span>
-          <span th:text="${features.shipping} ? 'Kargoda' : 'Buluşma'">Buluşma</span>
+          <span>Buluşma</span>
           <span>Teslim</span>
         </div>
       </th:block>
 
-      <th:block th:if="${features.handover and r.status.name() != 'OPEN'}">
+      <!-- Buluşma bölümü (karşılandıysa) -->
+      <div th:if="${r.status.name() != 'OPEN'}"
+           style="margin-top:14px;border-top:1px solid var(--line);padding-top:14px">
+        <div class="label" style="margin-bottom:8px">Buluşma</div>
+        <div class="row gap-8" style="justify-content:flex-end;align-items:center;margin-top:10px;flex-wrap:wrap">
+          <a th:replace="~{bulusma-fragments :: mesajBaglantisi('request', ${r.id})}"></a>
+          <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/request/' + ${r.id}(geri='/isteklerim')}"
+             style="color:inherit">Şikâyet et</a>
+        </div>
         <div th:replace="~{bulusma-fragments :: bulusmaKarti(${r.meeting})}"></div>
         <div th:if="${r.status.name() != 'DELIVERED'}"
              th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/istek/' + ${r.id}, ${r.meeting}, ${noktalar})}"></div>
-      </th:block>
+      </div>
 
       <div class="row gap-8" style="justify-content:flex-end;margin-top:12px">
-        <a th:if="${features.handover and r.status.name() != 'OPEN'}"
-           th:replace="~{bulusma-fragments :: mesajBaglantisi('request', ${r.id})}"></a>
-        <form th:if="${features.handover and r.status.name() == 'ARRANGED'}"
-              th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/istek/' + ${r.id}, ${r.meeting})}"></form>
-        <form th:if="${r.status.name() == 'OPEN'}" th:action="@{'/istek/' + ${r.id} + '/sil'}" method="post">
-          <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Kaldır</button>
+        <form th:if="${r.status.name() == 'OPEN'}" th:action="@{'/istek/' + ${r.id} + '/kapat'}" method="post">
+          <button class="btn btn-soft btn-sm" type="submit">İsteği kapat</button>
         </form>
-        <form th:if="${r.status.name() == 'SHIPPED' or r.status.name() == 'ARRANGED'
-                       or (features.shipping and r.status.name() == 'FULFILLED')}"
+        <form th:if="${r.status.name() == 'CLOSED'}" th:action="@{'/istek/' + ${r.id} + '/ac'}" method="post">
+          <button class="btn btn-soft btn-sm" type="submit">Yeniden aç</button>
+        </form>
+        <!-- Karşılanan istekte alıcı teslim aldığını onaylar -->
+        <form th:if="${r.status.name() == 'ARRANGED' or r.status.name() == 'FULFILLED'}"
               th:action="@{'/istek/' + ${r.id} + '/teslim-aldim'}" method="post">
-          <button class="btn btn-sage btn-sm" type="submit">Teslim aldım</button>
-        </form>
-        <form th:if="${r.status.name() == 'DELIVERED'}" th:action="@{'/istek/' + ${r.id} + '/tesekkur'}" method="post" class="row gap-8">
-          <input class="input" name="message" placeholder="Teşekkür notun (isteğe bağlı)"
-                 style="padding:9px 12px;font-size:13px;width:250px"/>
-          <button class="btn btn-primary btn-sm" type="submit">Teşekkür et</button>
+          <button class="btn btn-primary btn-sm" type="submit">Teslim aldım</button>
         </form>
       </div>
     </div>

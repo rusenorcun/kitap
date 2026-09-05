@@ -20,15 +20,18 @@ public class UserService {
     private final Features features;
     private final UserRepository users;
     private final PasswordEncoder encoder;
+    private final app.kitapla.security.UserSessionService userSessions;
 
-    public UserService(Features features, UserRepository users, PasswordEncoder encoder) {
+    public UserService(Features features, UserRepository users, PasswordEncoder encoder,
+                       app.kitapla.security.UserSessionService userSessions) {
         this.features = features;
         this.users = users;
         this.encoder = encoder;
+        this.userSessions = userSessions;
     }
 
     public static String normalizeEmail(String e) {
-        return e == null ? null : e.trim().toLowerCase();
+        return e == null ? null : e.trim().toLowerCase(java.util.Locale.ROOT);
     }
 
     /**
@@ -141,6 +144,7 @@ public class UserService {
 
         u.setPasswordHash(encoder.encode(newPassword));
         users.save(u);
+        userSessions.expireUserSessions(u.getId());
     }
 
     /**

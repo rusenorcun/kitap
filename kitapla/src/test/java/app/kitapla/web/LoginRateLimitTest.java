@@ -43,6 +43,7 @@ class LoginRateLimitTest {
         u.setPasswordHash(encoder.encode("dogrusifre1"));
         users.save(u);
         attempts.reset(LoginAttemptService.key(email, "127.0.0.1"));
+        attempts.resetIp("127.0.0.1");
     }
 
     private void dene(String sifre, String beklenenHedef) throws Exception {
@@ -93,5 +94,67 @@ class LoginRateLimitTest {
 
         mvc.perform(post("/login").with(csrf()).param("email", digeri).param("password", "dogrusifre1"))
                 .andExpect(redirectedUrl("/panom"));
+    }
+
+    @Test
+    void passwordSprayingAyniIpdenYapildigindaIpKilitlenir() throws Exception {
+        String testIp = "198.51.100.50";
+        attempts.resetIp(testIp);
+
+        // Tek bir IP'den farklı farklı kullanıcılara 1'er kez hatalı şifre denenmesi
+        for (int i = 0; i < attempts.maxAttemptsIp(); i++) {
+            String sprayedEmail = "spray-" + i + "-" + UUID.randomUUID() + "@test.local";
+            mvc.perform(post("/login").with(csrf())
+                            .with(request -> {
+                                request.setRemoteAddr(testIp);
+                                return request;
+                            })
+                            .param("email", sprayedEmail)
+                            .param("password", "ortaksifre"))
+                    .andExpect(redirectedUrl(i < attempts.maxAttemptsIp() - 1 ? "/login?error" : "/login?kilit"));
+        }
+
+        // IP sınırını aştıktan sonra hiç denenmemiş yeni bir kullanıcı bile bu IP'den engellenir
+        String yeniEmail = "yeni-" + UUID.randomUUID() + "@test.local";
+        mvc.perform(post("/login").with(csrf())
+                        .with(request -> {
+                            request.setRemoteAddr(testIp);
+                            return request;
+                        })
+                        .param("email", yeniEmail)
+                        .param("password", "herhangisifre"))
+                .andExpect(redirectedUrl("/login?kilit"));
+
+        assertThat(attempts.isIpBlocked(testIp)).isTrue();
+        assertThat(attempts.isBlocked(yeniEmail, testIp)).isTrue();
+    }
+
+    @Test
+    void isBlockedSadeceSorgulamaylaBellekteYeniGirdiOlusturmaz() {
+        String rasgeleEmail = "hic-yok-" + UUID.randomUUID() + "@test.local";
+        String rasgeleIp = "192.0.2.100";
+
+        assertThat(attempts.isBlocked(rasgeleEmail, rasgeleIp)).isFalse();
+        assertThat(attempts.isBlocked(LoginAttemptService.key(rasgeleEmail, rasgeleIp))).isFalse();
+    }
+
+    @Test
+    void eszamanliHataliGirislerdeVeriYapisiBozulmaz() throws Exception {
+        String testEmail = "concurrent-" + UUID.randomUUID() + "@test.local";
+        String testIp = "192.0.2.200";
+
+        java.util.concurrent.ExecutorService executor = java.util.concurrent.Executors.newFixedThreadPool(10);
+        java.util.List<java.util.concurrent.Future<?>> futures = new java.util.ArrayList<>();
+
+        for (int i = 0; i < 50; i++) {
+            futures.add(executor.submit(() -> attempts.recordFailure(testEmail, testIp)));
+        }
+
+        for (java.util.concurrent.Future<?> f : futures) {
+            f.get();
+        }
+        executor.shutdown();
+
+        assertThat(attempts.isBlocked(testEmail, testIp)).isTrue();
     }
 }

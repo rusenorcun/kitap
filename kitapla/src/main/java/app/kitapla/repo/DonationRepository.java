@@ -35,6 +35,16 @@ public interface DonationRepository extends JpaRepository<Donation, Long> {
            """)
     Optional<Donation> findByIdWithDetails(@Param("id") Long id);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+           select d from Donation d
+           join fetch d.book
+           join fetch d.donor
+           left join fetch d.preferredPoint
+           where d.id = :id
+           """)
+    Optional<Donation> findByIdWithDetailsForUpdate(@Param("id") Long id);
+
     @Query("""
            select d from Donation d
            join fetch d.book

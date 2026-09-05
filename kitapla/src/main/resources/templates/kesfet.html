@@ -24,9 +24,6 @@
             <input type="radio" name="level" value="hepsi" th:checked="${level == 'hepsi'}" style="accent-color:var(--accent)"/> Hepsi
           </label>
           <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
-            <input type="radio" name="level" value="ORTAOKUL" th:checked="${level == 'ORTAOKUL'}" style="accent-color:var(--accent)"/> Ortaokul
-          </label>
-          <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
             <input type="radio" name="level" value="LISE" th:checked="${level == 'LISE'}" style="accent-color:var(--accent)"/> Lise
           </label>
           <label class="row gap-8" style="cursor:pointer; padding:8px 10px; border-radius:9px; font-size:14px; font-weight:600">
@@ -74,7 +71,7 @@
 
             <div class="row gap-8" style="flex-wrap:wrap; margin-bottom:12px">
               <span class="badge badge-sage"
-                    th:text="${d.targetLevel.name() == 'HEPSI'} ? 'Herkese' : ${#strings.capitalize(#strings.toLowerCase(d.targetLevel.name()))}">Seviye</span>
+                    th:text="${d.targetLevel.name() == 'HEPSI' ? 'Herkese' : (d.targetLevel.name() == 'LISE' ? 'Lise' : 'Üniversite')}">Seviye</span>
               <span th:if="${d.priorityActive}" class="badge badge-accent">Öğrenciye öncelikli</span>
             </div>
 

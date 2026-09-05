@@ -57,7 +57,6 @@
           <label class="label" for="targetLevel">Kime uygun</label>
           <select class="input" id="targetLevel" name="targetLevel">
             <option value="HEPSI" th:selected="${form == null or form.targetLevel == 'HEPSI'}">Herkese açık</option>
-            <option value="ORTAOKUL" th:selected="${form?.targetLevel == 'ORTAOKUL'}">Ortaokul</option>
             <option value="LISE" th:selected="${form?.targetLevel == 'LISE'}">Lise</option>
             <option value="UNIVERSITE" th:selected="${form?.targetLevel == 'UNIVERSITE'}">Üniversite</option>
           </select>

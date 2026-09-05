@@ -152,4 +152,63 @@ class ReportPagesTest {
                 .andExpect(content().string(not(containsString("gizli kalacak ileti"))))
                 .andExpect(content().string(containsString("yönetime kapalıdır")));
     }
+
+    @Test
+    void claimTeslimatSikayetFormuVeGonderim() throws Exception {
+        User donor = mk("ctest-donor", false, false);
+        User alici = mk("ctest-alici", false, true);
+        Book b = new Book();
+        b.setTitle("Teslimat Kitabı " + UUID.randomUUID());
+        books.save(b);
+        Donation d = donationService.create(donor, b, 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        Claim c = donationService.claim(d.getId(), alici);
+
+        // Teslimat şikâyet formunu aç
+        mvc.perform(get("/sikayet/claim/" + c.getId()).with(user(as(alici)))
+                        .param("geri", "/aldiklarim"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kitap hasarlı, eksik veya ilandakinden farklı")))
+                .andExpect(content().string(containsString("Teslimat gerçekleşmedi veya teslimat sorunu")));
+
+        // Teslimat şikâyeti gönder
+        mvc.perform(post("/sikayet/claim/" + c.getId()).with(user(as(alici))).with(csrf())
+                        .param("reason", "HASARLI").param("note", "Kapak yırtık ve sayfalar eksik")
+                        .param("geri", "/aldiklarim"))
+                .andExpect(redirectedUrl("/aldiklarim"))
+                .andExpect(flash().attributeExists("basari"))
+                .andExpect(flash().attributeExists("sikayetId"));
+    }
+
+    @Test
+    void aldiklarimSayfasindaSikayetBaglantisiVar() throws Exception {
+        User donor = mk("aldik-donor", false, false);
+        User alici = mk("aldik-alici", false, true);
+        Book b = new Book();
+        b.setTitle("Aldığım Kitap " + UUID.randomUUID());
+        books.save(b);
+        Donation d = donationService.create(donor, b, 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        Claim c = donationService.claim(d.getId(), alici);
+
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/sikayet/claim/" + c.getId())));
+    }
+
+    @Test
+    void adminSikayetDetayindaDestekMesajiGonderilebilir() throws Exception {
+        User yonetici = mk("admin-chat", true, false);
+        User member = mk("member-chat", false, true);
+        User reported = mk("reported-user", false, false);
+        Report r = reports.create(member, ReportKind.USER, reported.getId(), ReportReason.TACIZ, "Şikâyet açıklaması");
+
+        mvc.perform(post("/admin/sikayetler/" + r.getId() + "/mesaj")
+                        .with(user(as(yonetici))).with(csrf())
+                        .param("body", "Merhaba, durumla ilgileniyoruz."))
+                .andExpect(redirectedUrl("/admin/sikayetler/" + r.getId()))
+                .andExpect(flash().attributeExists("basari"));
+
+        mvc.perform(get("/admin/sikayetler/" + r.getId()).with(user(as(yonetici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Merhaba, durumla ilgileniyoruz.")));
+    }
 }

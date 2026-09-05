@@ -156,19 +156,24 @@ class MessageServiceTest {
     }
 
     @Test
-    void kabulEdilmemisTakasIcinSohbetAcilmaz() {
+    void bekleyenVeKabulEdilmisTakasIcinSohbetAcilirIptaldeAcilmaz() {
         User ali = mk("takas1", false);
         User veli = mk("takas2", false);
         SwapBook a = swapService.open(ali, book("A"), null);
         SwapBook v = swapService.open(veli, book("V"), null);
         SwapOffer o = swapService.offer(a.getId(), v.getId(), veli, null);
 
+        // Bekleyen teklif için sohbet açılabilir
+        Conversation s = messages.open(ConversationKind.SWAP, o.getId(), veli);
+        assertThat(s).isNotNull();
+        messages.send(s.getId(), veli, "Kitabın baskı durumu nasıl?");
+        assertThat(messages.messagesOf(s)).hasSize(1);
+
+        // İptal edildikten sonra yeni sohbet açılması engellenir
+        swapService.cancel(o.getId(), veli);
         assertThatThrownBy(() -> messages.open(ConversationKind.SWAP, o.getId(), veli))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("kabul edilmeden");
-
-        swapService.accept(o.getId(), ali);
-        assertThat(messages.open(ConversationKind.SWAP, o.getId(), veli)).isNotNull();
+                .hasMessageContaining("İptal edilmiş veya reddedilmiş");
     }
 
     @Test
@@ -181,16 +186,44 @@ class MessageServiceTest {
         assertThat(m.getBody()).hasSize(2000);
     }
 
+    @Autowired ReportService reports;
+
     @Test
-    void sonMesajOnizlemesiGuncellenir() {
-        User donor = mk("onizleme1", false);
-        User alici = mk("onizleme2", true);
-        Conversation s = messages.open(ConversationKind.CLAIM, talep(donor, alici).getId(), alici);
+    void sikayetUzerindenYoneticiIleDestekSohbetiAcilirVeMesajlasilir() {
+        User admin = mk("yonetici-destek", false);
+        admin.setAdmin(true);
+        users.save(admin);
 
-        messages.send(s.getId(), alici, "son söz");
+        User member = mk("uye-sikayetci", true);
+        User reported = mk("uye-sikayet-edilen", false);
 
-        Conversation guncel = messages.require(s.getId(), donor);
-        assertThat(guncel.getLastMessage()).isEqualTo("son söz");
-        assertThat(guncel.getLastMessageAt()).isNotNull();
+        Report r = reports.create(member, ReportKind.USER, reported.getId(), ReportReason.TACIZ, "Rahatsız edici davranış");
+
+        // Üye şikâyet üzerinden destek sohbeti açar
+        Conversation c = messages.open(ConversationKind.REPORT, r.getId(), member);
+        assertThat(c.getKind()).isEqualTo(ConversationKind.REPORT);
+        assertThat(c.getUserA().getId()).isEqualTo(member.getId());
+
+        // Üye mesaj gönderir
+        messages.send(c.getId(), member, "Merhaba, şikâyetime ek ekran görüntüsü eklemek istiyorum.");
+
+        // Yönetici mesajı görür ve yanıtlar
+        Conversation adminConv = messages.require(c.getId(), admin);
+        assertThat(messages.messagesOf(adminConv)).hasSize(1);
+
+        messages.send(c.getId(), admin, "Merhaba, konuyu inceliyoruz. Ek bilgileri buradan paylaşabilirsiniz.");
+
+        assertThat(messages.messagesOf(c)).hasSize(2)
+                .extracting(Message::getBody)
+                .containsExactly(
+                        "Merhaba, şikâyetime ek ekran görüntüsü eklemek istiyorum.",
+                        "Merhaba, konuyu inceliyoruz. Ek bilgileri buradan paylaşabilirsiniz."
+                );
+
+        // Yabancı üye erişemez
+        User yabanci = mk("yabanci-destek", false);
+        assertThatThrownBy(() -> messages.require(c.getId(), yabanci))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sana ait değil");
     }
 }

@@ -206,4 +206,16 @@ class AccountPagesTest {
         mvc.perform(get("/panom").with(user(as(u))))
                 .andExpect(content().string(containsString("/bildirimler")));
     }
+
+    @Test
+    void panomdaTakasBaglantilariGorunur() throws Exception {
+        User u = mk("pano-takas", "İzmir");
+
+        mvc.perform(get("/panom").with(user(as(u))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/takas/takaslarim")))
+                .andExpect(content().string(containsString("Takaslarım")))
+                .andExpect(content().string(containsString("/takas/kitaplarim")))
+                .andExpect(content().string(containsString("Takas Kitaplarım")));
+    }
 }

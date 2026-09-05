@@ -30,7 +30,7 @@ public class CatalogController {
     private static TargetLevel parseLevel(String level) {
         if (level == null || level.isBlank() || "hepsi".equalsIgnoreCase(level)) return null;
         try {
-            return TargetLevel.valueOf(level.toUpperCase());
+            return TargetLevel.valueOf(level.trim().toUpperCase(java.util.Locale.ROOT));
         } catch (IllegalArgumentException e) {
             return null;
         }

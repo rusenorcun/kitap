@@ -201,6 +201,9 @@ class ReportServiceTest {
                 .hasMessageContaining("zaten sonuçlandırılmış");
     }
 
+    @Autowired RequestService requestService;
+    @Autowired SwapService swapService;
+
     @Test
     void bagisVeUyeDeSikayetEdilebilir() {
         User donor = mk("ilan", false);
@@ -212,5 +215,63 @@ class ReportServiceTest {
 
         Report r2 = reports.create(sikayetci, ReportKind.USER, donor.getId(), ReportReason.TICARET, null);
         assertThat(r2.getReportedUser().getId()).isEqualTo(donor.getId());
+    }
+
+    @Test
+    void claimTeslimatSonrasiSikayetEdilebilir() {
+        User donor = mk("cdonor", false);
+        User student = mk("cstudent", true);
+        Donation d = donationService.create(donor, book(), 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        Claim c = donationService.claim(d.getId(), student);
+
+        // Alıcı öğrenci teslimatı şikâyet eder
+        Report r = reports.create(student, ReportKind.CLAIM, c.getId(), ReportReason.HASARLI, "Kitabın sayfaları eksik");
+        assertThat(r.getReportedUser().getId()).isEqualTo(donor.getId());
+        assertThat(r.getReason()).isEqualTo(ReportReason.HASARLI);
+
+        // Bağışçı da şikâyet edebilir
+        User donor2 = mk("cdonor2", false);
+        User student2 = mk("cstudent2", true);
+        Donation d2 = donationService.create(donor2, book(), 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        Claim c2 = donationService.claim(d2.getId(), student2);
+        Report r2 = reports.create(donor2, ReportKind.CLAIM, c2.getId(), ReportReason.TESLIMAT_SORUNU, "Gelmeyi reddetti");
+        assertThat(r2.getReportedUser().getId()).isEqualTo(student2.getId());
+
+        // Yabancı şikâyet edemez
+        User yabanci = mk("cyabanci", false);
+        assertThatThrownBy(() -> reports.create(yabanci, ReportKind.CLAIM, c.getId(), ReportReason.HASARLI, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sana ait değil");
+    }
+
+    @Test
+    void karsilananIstekTeslimatiSikayetEdilebilir() {
+        User student = mk("rstudent", true);
+        User fulfiller = mk("rfulfiller", false);
+        BookRequest req = requestService.create(student, book(), "İhtiyaç");
+        requestService.fulfill(req.getId(), fulfiller, DonationSource.OWN);
+
+        // İsteyen öğrenci karşılayanı şikâyet eder
+        Report r = reports.create(student, ReportKind.REQUEST, req.getId(), ReportReason.HASARLI, "Yanlış baskı geldi");
+        assertThat(r.getReportedUser().getId()).isEqualTo(fulfiller.getId());
+    }
+
+    @Test
+    void takasSureciSikayetEdilebilir() {
+        User ali = mk("tali", false);
+        User veli = mk("tveli", false);
+        SwapBook b1 = swapService.open(ali, book(), "Takaslık");
+        SwapBook b2 = swapService.open(veli, book(), "Takaslık");
+        SwapOffer offer = swapService.offer(b2.getId(), b1.getId(), ali, "Takas edelim");
+
+        // Teklifin tarafı şikâyet edebilir
+        Report r = reports.create(ali, ReportKind.SWAP_OFFER, offer.getId(), ReportReason.TESLIMAT_SORUNU, "İletişim koptu");
+        assertThat(r.getReportedUser().getId()).isEqualTo(veli.getId());
+
+        // Yabancı şikâyet edemez
+        User yabanci = mk("tyabanci", false);
+        assertThatThrownBy(() -> reports.create(yabanci, ReportKind.SWAP_OFFER, offer.getId(), ReportReason.SPAM, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("sana ait değil");
     }
 }

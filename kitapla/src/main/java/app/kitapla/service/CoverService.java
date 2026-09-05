@@ -90,34 +90,66 @@ public class CoverService {
         if (!url.matches("(?i)^https?://.+")) return null;
 
         try {
-            HttpURLConnection c = (HttpURLConnection) URI.create(url).toURL().openConnection();
-            c.setRequestProperty("User-Agent", UA);
-            c.setConnectTimeout(TIMEOUT_MS);
-            c.setReadTimeout(TIMEOUT_MS);
-            c.setInstanceFollowRedirects(true);
+            URI currentUri = URI.create(url.trim());
+            java.util.Set<String> visited = new java.util.HashSet<>();
 
-            String type = c.getContentType() == null ? "" : c.getContentType().toLowerCase(Locale.ROOT);
-            int noktaliVirgul = type.indexOf(';');
-            if (noktaliVirgul > 0) type = type.substring(0, noktaliVirgul).trim();
-            if (c.getResponseCode() != 200 || !UZANTI.containsKey(type)) {
-                c.disconnect();
-                return url;
-            }
+            for (int redirect = 0; redirect <= 3; redirect++) {
+                if (!SsrfValidator.isSafeUri(currentUri)) {
+                    return url;
+                }
 
-            Files.createDirectories(dir);
-            String name = UUID.randomUUID() + UZANTI.get(type);
-            Path hedef = dir.resolve(name);
-            long yazilan;
-            try (InputStream in = c.getInputStream()) {
-                yazilan = Files.copy(sinirli(in), hedef);
-            } finally {
-                c.disconnect();
+                HttpURLConnection c = (HttpURLConnection) currentUri.toURL().openConnection();
+                c.setRequestProperty("User-Agent", UA);
+                c.setConnectTimeout(TIMEOUT_MS);
+                c.setReadTimeout(TIMEOUT_MS);
+                c.setInstanceFollowRedirects(false);
+
+                int code;
+                try {
+                    code = c.getResponseCode();
+                } catch (Exception e) {
+                    c.disconnect();
+                    return url;
+                }
+
+                if (code == 301 || code == 302 || code == 303 || code == 307 || code == 308) {
+                    String location = c.getHeaderField("Location");
+                    c.disconnect();
+                    if (location == null || location.isBlank()) {
+                        return url;
+                    }
+                    URI nextUri = currentUri.resolve(location.trim());
+                    if (!visited.add(nextUri.toString())) {
+                        return url;
+                    }
+                    currentUri = nextUri;
+                    continue;
+                }
+
+                String type = c.getContentType() == null ? "" : c.getContentType().toLowerCase(Locale.ROOT);
+                int noktaliVirgul = type.indexOf(';');
+                if (noktaliVirgul > 0) type = type.substring(0, noktaliVirgul).trim();
+                if (code != 200 || !UZANTI.containsKey(type)) {
+                    c.disconnect();
+                    return url;
+                }
+
+                Files.createDirectories(dir);
+                String name = UUID.randomUUID() + UZANTI.get(type);
+                Path hedef = dir.resolve(name);
+                long yazilan;
+                try (InputStream in = c.getInputStream()) {
+                    yazilan = Files.copy(sinirli(in), hedef);
+                } finally {
+                    c.disconnect();
+                }
+                if (yazilan <= 0 || yazilan >= MAX_BYTES) {
+                    Files.deleteIfExists(hedef);
+                    return url;
+                }
+                return "/uploads/covers/" + name;
             }
-            if (yazilan <= 0 || yazilan >= MAX_BYTES) {
-                Files.deleteIfExists(hedef);
-                return url;
-            }
-            return "/uploads/covers/" + name;
+            return url;
         } catch (Exception e) {
             log.debug("Kapak indirilemedi: {}", url, e);
             return url;

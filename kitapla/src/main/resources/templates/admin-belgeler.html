@@ -31,8 +31,6 @@
             <span class="badge badge-sage" th:text="${u.schoolLevel}">LISE</span>
             <span class="badge badge-muted" th:text="'Belge no: ' + ${u.documentNo}">Belge no: 123</span>
           </div>
-          <div class="muted" style="font-size:13px;font-weight:500;margin-top:8px"
-               th:text="'Teslimat adresi: ' + (${u.address} ?: '—')">Teslimat adresi: İzmir</div>
         </div>
         <a class="btn btn-soft btn-sm" th:href="@{'/admin/belge/' + ${u.id}}" target="_blank"
            th:if="${u.documentPath != null}">Belgeyi aç</a>

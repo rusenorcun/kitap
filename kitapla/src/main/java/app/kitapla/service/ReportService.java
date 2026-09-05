@@ -27,18 +27,23 @@ public class ReportService {
     private final DonationRepository donations;
     private final BookRequestRepository requests;
     private final SwapBookRepository swapBooks;
+    private final ClaimRepository claims;
+    private final SwapOfferRepository offers;
     private final UserRepository users;
     private final NotificationService notifications;
 
     public ReportService(ReportRepository reports, ConversationRepository conversations,
                          DonationRepository donations, BookRequestRepository requests,
-                         SwapBookRepository swapBooks, UserRepository users,
+                         SwapBookRepository swapBooks, ClaimRepository claims,
+                         SwapOfferRepository offers, UserRepository users,
                          NotificationService notifications) {
         this.reports = reports;
         this.conversations = conversations;
         this.donations = donations;
         this.requests = requests;
         this.swapBooks = swapBooks;
+        this.claims = claims;
+        this.offers = offers;
         this.users = users;
         this.notifications = notifications;
     }
@@ -98,12 +103,43 @@ public class ReportService {
             case REQUEST -> {
                 BookRequest r = requests.findByIdWithDetails(refId)
                         .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
+                if (r.getFulfilledBy() != null) {
+                    if (reporter.getId().equals(r.getStudent().getId())) {
+                        return r.getFulfilledBy();
+                    } else if (reporter.getId().equals(r.getFulfilledBy().getId())) {
+                        return r.getStudent();
+                    }
+                }
                 return r.getStudent();
+            }
+            case CLAIM -> {
+                Claim c = claims.findByIdWithDetails(refId)
+                        .orElseThrow(() -> new IllegalStateException("Teslimat kaydı bulunamadı."));
+                User donor = c.getDonation().getDonor();
+                User student = c.getStudent();
+                if (reporter.getId().equals(student.getId())) {
+                    return donor;
+                } else if (reporter.getId().equals(donor.getId())) {
+                    return student;
+                } else {
+                    throw new IllegalStateException("Bu teslimat kaydı sana ait değil.");
+                }
             }
             case SWAP_BOOK -> {
                 SwapBook s = swapBooks.findByIdWithDetails(refId)
                         .orElseThrow(() -> new IllegalStateException("Takas ilanı bulunamadı."));
                 return s.getUser();
+            }
+            case SWAP_OFFER -> {
+                SwapOffer o = offers.findByIdWithDetails(refId)
+                        .orElseThrow(() -> new IllegalStateException("Takas teklifi bulunamadı."));
+                if (reporter.getId().equals(o.getFromUser().getId())) {
+                    return o.getToUser();
+                } else if (reporter.getId().equals(o.getToUser().getId())) {
+                    return o.getFromUser();
+                } else {
+                    throw new IllegalStateException("Bu takas süreci sana ait değil.");
+                }
             }
             case USER -> {
                 return users.findById(refId)
@@ -117,8 +153,10 @@ public class ReportService {
         return switch (k) {
             case CONVERSATION -> "sohbeti";
             case DONATION -> "bağış ilanını";
-            case REQUEST -> "isteği";
+            case REQUEST -> "isteği / teslimatı";
+            case CLAIM -> "teslimatı";
             case SWAP_BOOK -> "takas ilanını";
+            case SWAP_OFFER -> "takas sürecini";
             case USER -> "üyeyi";
         };
     }

@@ -50,7 +50,10 @@ public class Conversation {
     private Instant lastMessageAt;
 
     /** Okunmamış sayısı bu iki damgaya göre hesaplanır. */
+    @Column(name = "last_read_a")
     private Instant lastReadA;
+
+    @Column(name = "last_read_b")
     private Instant lastReadB;
 
     @Column(nullable = false, updatable = false)

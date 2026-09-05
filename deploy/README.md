@@ -110,21 +110,19 @@ sudo chown kitapla:kitapla /opt/kitapla/kitapla.jar
 sudo systemctl start kitapla
 ```
 
-Veritabanı şeması `ddl-auto=update` ile kendini günceller.
+Veritabanı şeması Flyway ile sürüm kontrollü olarak otomatik yükseltilir (`db/migration/V*.sql`).
 
 ## Yedekleme
 
-Tüm durum iki yerde: `/opt/kitapla/data` (veritabanı) ve `/opt/kitapla/uploads`
-(kapaklar ve öğrenci belgeleri).
+PostgreSQL veritabanı yedeği `pg_dump` ile, yüklenen dosyalar ise `tar` ile alınır:
 
 ```bash
-sudo systemctl stop kitapla
-sudo tar czf /root/kitapla-$(date +%F).tar.gz -C /opt/kitapla data uploads
-sudo systemctl start kitapla
-```
+# Veritabanı yedeği
+docker compose -f docker-compose.prod.yml exec -T postgres pg_dump -U kitapla -d kitapla | gzip > /root/kitapla-db-$(date +%F).sql.gz
 
-> H2 dosya veritabanı tek süreç içindir. Servis dururken yedek almak en
-> güvenlisidir. Trafik arttığında PostgreSQL'e geçmek gerekir.
+# Dosya yedeği
+sudo tar czf /root/kitapla-uploads-$(date +%F).tar.gz -C /opt/kitapla uploads
+```
 
 ## Doğrulananlar
 
@@ -141,12 +139,11 @@ uçtan uca denendi:
 | `Server` başlığı | gizlendi |
 | Statik varlık önbelleği | `public, max-age=604800` (tek başlık) |
 | HTML sayfaları | `no-store` korunuyor |
-| H2 konsolu (yönetici oturumuyla bile) | 404 |
 | Öğrenci belgeleri doğrudan URL ile | erişilemiyor |
+| Veritabanı ve Şema | PostgreSQL 16 + Flyway sürüm kontrollü |
 
 ## Bilinen sınırlar
 
 - **E-posta yok.** Şifre sıfırlama e-postası gönderilmez; şifresini unutan
   kullanıcının parolasını yönetici yeniler. `/iletisim` sayfası bunu açıkça yazar.
-- **H2 dosya veritabanı.** Küçük ölçek için yeterli; yoğunlaşırsa PostgreSQL'e taşınmalı.
 - **Tek sunucu.** Oturumlar bellekte tutulur; birden fazla kopya çalıştırılamaz.

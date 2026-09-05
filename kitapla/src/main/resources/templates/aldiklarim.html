@@ -34,9 +34,8 @@
               th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
               th:text="${c.status.name() == 'NO_SHOW'} ? 'Gelinmedi'
                      : (${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
-                     : (${c.status.name() == 'SHIPPED'} ? 'Kargoda'
                      : (${c.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
-                     : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor'))))">Durum</span>
+                     : 'Buluşma bekleniyor'))">Durum</span>
       </div>
 
       <!-- Teslimat adımları -->
@@ -51,28 +50,28 @@
       </div>
       <div class="row muted" style="justify-content:space-between;font-size:11px;font-weight:600;margin:0 0 14px">
         <span>Eşleşti</span>
-        <span th:text="${features.shipping} ? 'Kargoda' : 'Buluşma'">Buluşma</span>
+        <span>Buluşma</span>
         <span>Teslim</span>
       </div>
 
       <!-- Kampüs içi yüz yüze teslim: buluşma bilgisi ve ayarlama -->
-      <th:block th:if="${features.handover and c.status.name() != 'DELIVERED'}">
+      <th:block th:if="${c.status.name() != 'DELIVERED'}">
         <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
         <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar})}"></div>
       </th:block>
-      <div th:if="${features.handover and c.status.name() == 'DELIVERED'}"
+      <div th:if="${c.status.name() == 'DELIVERED'}"
            th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
 
-      <div class="row gap-8" style="justify-content:flex-end;margin-top:14px">
-        <a th:if="${features.handover}"
-           th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
-        <form th:if="${features.handover and c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW'}"
+      <div class="row gap-8" style="justify-content:flex-end;align-items:center;margin-top:14px;flex-wrap:wrap">
+        <a th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
+        <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/claim/' + ${c.id}(geri='/aldiklarim')}"
+           style="color:inherit">Şikâyet et</a>
+        <form th:if="${c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW'}"
               th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/bagis/' + ${c.id}, ${c.meeting})}"></form>
         <form th:if="${c.status.name() == 'MATCHED'}" th:action="@{'/teslimat/' + ${c.id} + '/iptal'}" method="post">
           <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">İptal et</button>
         </form>
-        <form th:if="${c.status.name() != 'DELIVERED'
-                       and (features.shipping or c.status.name() == 'ARRANGED')}"
+        <form th:if="${c.status.name() == 'ARRANGED'}"
               th:action="@{'/teslimat/' + ${c.id} + '/teslim-aldim'}" method="post">
           <button class="btn btn-sage btn-sm" type="submit">Teslim aldım</button>
         </form>

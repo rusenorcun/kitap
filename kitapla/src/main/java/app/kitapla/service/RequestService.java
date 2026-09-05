@@ -43,12 +43,12 @@ public class RequestService {
 
     @Transactional(readOnly = true)
     public List<BookRequest> openRequests(String query) {
-        String q = query == null ? null : query.trim().toLowerCase();
+        String q = query == null ? null : query.trim().toLowerCase(java.util.Locale.ROOT);
         return requests.findByStatusWithDetails(RequestStatus.OPEN).stream()
                 .filter(r -> {
                     if (q == null || q.isBlank()) return true;
-                    String t = r.getBook().getTitle() == null ? "" : r.getBook().getTitle().toLowerCase();
-                    String a = r.getBook().getAuthor() == null ? "" : r.getBook().getAuthor().toLowerCase();
+                    String t = r.getBook().getTitle() == null ? "" : r.getBook().getTitle().toLowerCase(java.util.Locale.ROOT);
+                    String a = r.getBook().getAuthor() == null ? "" : r.getBook().getAuthor().toLowerCase(java.util.Locale.ROOT);
                     return t.contains(q) || a.contains(q);
                 })
                 .toList();
@@ -97,7 +97,7 @@ public class RequestService {
     /** İsteği karşıla. Kota, isteği OLUŞTURAN kişiye göre kontrol edilir. */
     @Transactional
     public BookRequest fulfill(Long requestId, User fulfiller, DonationSource source) {
-        BookRequest r = requests.findByIdWithDetails(requestId)
+        BookRequest r = requests.findByIdWithDetailsForUpdate(requestId)
                 .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
 
         if (r.getStatus() != RequestStatus.OPEN)

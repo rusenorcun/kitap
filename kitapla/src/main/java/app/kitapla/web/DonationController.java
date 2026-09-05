@@ -76,11 +76,11 @@ public class DonationController {
             String kapak = coverService.resolve(coverFile, coverUrl);
             Book book = bookService.findOrCreate(title, author, purchaseLink, kapak, null, donor.getId());
             TargetLevel level = (targetLevel == null || targetLevel.isBlank())
-                    ? TargetLevel.HEPSI : TargetLevel.valueOf(targetLevel);
+                    ? TargetLevel.HEPSI : TargetLevel.valueOf(targetLevel.trim().toUpperCase(java.util.Locale.ROOT));
             // Satın alma kapalıyken kaynak sorulmaz; elindeki kopya varsayılır
             DonationSource src = (source == null || source.isBlank())
                     ? (features.isPurchase() ? DonationSource.PURCHASE : DonationSource.OWN)
-                    : DonationSource.valueOf(source);
+                    : DonationSource.valueOf(source.trim().toUpperCase(java.util.Locale.ROOT));
             donationService.create(donor, book, quantity, level, src, description, pointId, pointNote);
             ra.addFlashAttribute("basari", "Bağışın yayınlandı. İlk 48 saat öğrencilere öncelikli gösterilecek.");
             return "redirect:/bagislarim";
@@ -133,6 +133,13 @@ public class DonationController {
     @PostMapping("/bagis/{id}/sil")
     public String sil(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id, RedirectAttributes ra) {
         return run(ra, () -> donationService.delete(id, principal.getUser()), "Bağış silindi.");
+    }
+
+    @PostMapping("/bagis/{id}/takasa-aktar")
+    public String takasaAktar(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id,
+                              @RequestParam(required = false) String note, RedirectAttributes ra) {
+        return run(ra, () -> donationService.moveToSwap(id, principal.getUser(), note),
+                "Kitap bağıştan kaldırıldı ve takasa açıldı.");
     }
 
     @PostMapping("/teslimat/{claimId}/kargola")

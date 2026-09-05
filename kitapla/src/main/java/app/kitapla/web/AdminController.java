@@ -7,6 +7,12 @@ import app.kitapla.domain.ReportKind;
 import app.kitapla.service.MessageService;
 import app.kitapla.service.PickupPointService;
 import app.kitapla.service.ReportService;
+import app.kitapla.domain.ConversationKind;
+import app.kitapla.repo.BookRequestRepository;
+import app.kitapla.repo.ClaimRepository;
+import app.kitapla.repo.DonationRepository;
+import app.kitapla.repo.SwapBookRepository;
+import app.kitapla.repo.SwapOfferRepository;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
@@ -33,13 +39,26 @@ public class AdminController {
     private final PickupPointService points;
     private final ReportService reports;
     private final MessageService messages;
+    private final ClaimRepository claims;
+    private final BookRequestRepository requests;
+    private final SwapOfferRepository offers;
+    private final DonationRepository donations;
+    private final SwapBookRepository swapBooks;
 
     public AdminController(AdminService admin, PickupPointService points,
-                           ReportService reports, MessageService messages) {
+                           ReportService reports, MessageService messages,
+                           ClaimRepository claims, BookRequestRepository requests,
+                           SwapOfferRepository offers, DonationRepository donations,
+                           SwapBookRepository swapBooks) {
         this.admin = admin;
         this.points = points;
         this.reports = reports;
         this.messages = messages;
+        this.claims = claims;
+        this.requests = requests;
+        this.offers = offers;
+        this.donations = donations;
+        this.swapBooks = swapBooks;
     }
 
     /** Alt navigasyondaki bekleyen belge rozeti her yönetim sayfasında görünür. */
@@ -98,10 +117,12 @@ public class AdminController {
     public ResponseEntity<?> belge(@PathVariable Long id) {
         try {
             Path file = admin.documentPathOf(id);
-            String type = URLConnection.guessContentTypeFromName(file.getFileName().toString());
-            if (type == null) type = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+            String type = app.kitapla.service.DocumentService.resolveContentType(file);
             return ResponseEntity.ok()
                     .header(HttpHeaders.CONTENT_TYPE, type)
+                    .header("X-Content-Type-Options", "nosniff")
+                    .header("Content-Security-Policy", "sandbox; default-src 'none'; style-src 'unsafe-inline'")
+                    .header(HttpHeaders.CACHE_CONTROL, "private, no-cache, no-store, must-revalidate")
                     .header(HttpHeaders.CONTENT_DISPOSITION,
                             "inline; filename=\"belge-" + id + resolveExt(file) + "\"")
                     .contentLength(Files.size(file))
@@ -255,8 +276,40 @@ public class AdminController {
             } catch (IllegalStateException ex) {
                 model.addAttribute("sohbetHatasi", ex.getMessage());
             }
+        } else if (r.getKind() == ReportKind.CLAIM) {
+            claims.findByIdWithDetails(r.getRefId()).ifPresent(c -> model.addAttribute("claim", c));
+        } else if (r.getKind() == ReportKind.REQUEST) {
+            requests.findByIdWithDetails(r.getRefId()).ifPresent(req -> model.addAttribute("request", req));
+        } else if (r.getKind() == ReportKind.SWAP_OFFER) {
+            offers.findByIdWithDetails(r.getRefId()).ifPresent(o -> model.addAttribute("offer", o));
+        } else if (r.getKind() == ReportKind.DONATION) {
+            donations.findByIdWithDetails(r.getRefId()).ifPresent(d -> model.addAttribute("donation", d));
+        } else if (r.getKind() == ReportKind.SWAP_BOOK) {
+            swapBooks.findByIdWithDetails(r.getRefId()).ifPresent(sb -> model.addAttribute("swapBook", sb));
         }
+
+        // Şikâyet destek sohbeti (yönetici ile üye arasındaki irtibat)
+        messages.find(ConversationKind.REPORT, r.getId()).ifPresent(destekSohbeti -> {
+            model.addAttribute("destekSohbeti", destekSohbeti);
+            model.addAttribute("destekMesajlari", messages.messagesOf(destekSohbeti));
+        });
+
         return "admin-sikayet";
+    }
+
+    @PostMapping("/sikayetler/{id}/mesaj")
+    public String sikayetMesajGonder(@AuthenticationPrincipal AppUserDetails principal,
+                                     @PathVariable Long id,
+                                     @RequestParam(required = false) String body,
+                                     RedirectAttributes ra) {
+        try {
+            var c = messages.open(ConversationKind.REPORT, id, principal.getUser());
+            messages.send(c.getId(), principal.getUser(), body);
+            ra.addFlashAttribute("basari", "Mesajınız kullanıcıya iletildi.");
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+        }
+        return "redirect:/admin/sikayetler/" + id;
     }
 
     @PostMapping("/sikayetler/{id}/sonuclandir")

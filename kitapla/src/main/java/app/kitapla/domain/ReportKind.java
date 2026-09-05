@@ -6,10 +6,14 @@ public enum ReportKind {
     CONVERSATION,
     /** Bağış ilanı */
     DONATION,
-    /** Kitap isteği */
+    /** Kitap isteği (veya karşılanan istek teslimatı) */
     REQUEST,
+    /** Bağış talebi / teslimatı (Claim) */
+    CLAIM,
     /** Takas ilanı */
     SWAP_BOOK,
+    /** Takas teklifi / süreci (SwapOffer) */
+    SWAP_OFFER,
     /** Üyenin kendisi */
     USER
 }

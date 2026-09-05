@@ -26,12 +26,6 @@
         <input class="input" type="password" id="password" name="password" required placeholder="en az 6 karakter"/>
       </div>
     </div>
-    <!--/* Teslim kampüste yüz yüze yapıldığı için adres istenmez.
-           Alan silinmedi: kitapla.features.address=true ile geri gelir. */-->
-    <div class="field" th:if="${features.address}">
-      <label class="label" for="address">Teslimat adresi <span class="muted" style="font-weight:500">(kargo için)</span></label>
-      <textarea class="input" id="address" name="address" th:text="${form?.address}"></textarea>
-    </div>
 
     <div class="duo">
       <div class="field">

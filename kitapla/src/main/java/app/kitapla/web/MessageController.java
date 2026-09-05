@@ -52,7 +52,7 @@ public class MessageController {
                      @PathVariable String kind, @PathVariable Long refId,
                      RedirectAttributes ra) {
         try {
-            ConversationKind tur = ConversationKind.valueOf(kind.toUpperCase());
+            ConversationKind tur = ConversationKind.valueOf(kind.trim().toUpperCase(java.util.Locale.ROOT));
             Conversation c = messages.open(tur, refId, principal.getUser());
             return "redirect:/mesajlar/" + c.getId();
         } catch (IllegalArgumentException | IllegalStateException ex) {
@@ -110,9 +110,11 @@ public class MessageController {
      */
     @GetMapping(value = "/{id}/akis", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     @ResponseBody
-    public SseEmitter akis(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id) {
+    public SseEmitter akis(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id, jakarta.servlet.http.HttpServletResponse response) {
         // Abone olmadan önce erişim denetimi: başkasının sohbetini dinleyemezsin
         erisimDenetimi(id, principal.getUser());
+        response.setHeader("Cache-Control", "no-cache, no-transform");
+        response.setHeader("X-Accel-Buffering", "no");
         return sse.subscribe(id);
     }
 

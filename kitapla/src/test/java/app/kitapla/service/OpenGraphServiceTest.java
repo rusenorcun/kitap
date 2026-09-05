@@ -58,4 +58,15 @@ class OpenGraphServiceTest {
         BookMetadata m = og.parse("<html><head><meta property=\"og:title\" content=\"Sefiller &amp; Devamı\"/></head></html>");
         assertThat(m.title()).isEqualTo("Sefiller & Devamı");
     }
+
+    @Test
+    void ssrfAdresleriFetchIleEngellenirVeBosDoner() {
+        assertThat(og.fetch("http://localhost:8080/h2").isEmpty()).isTrue();
+        assertThat(og.fetch("http://127.0.0.1:8080").isEmpty()).isTrue();
+        assertThat(og.fetch("http://169.254.169.254/latest/meta-data/").isEmpty()).isTrue();
+        assertThat(og.fetch("http://10.0.0.1/admin").isEmpty()).isTrue();
+        assertThat(og.fetch("http://192.168.1.1").isEmpty()).isTrue();
+        assertThat(og.fetch("http://[::1]:8080").isEmpty()).isTrue();
+        assertThat(og.fetch("file:///etc/passwd").isEmpty()).isTrue();
+    }
 }

@@ -9,29 +9,57 @@
 # Yayına almak için bu dosya yerine docker-compose.prod.yml kullanılır.
 
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: kitapla-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${KITAPLA_DB_NAME:-kitapla}
+      POSTGRES_USER: ${KITAPLA_DB_USER:-kitapla}
+      POSTGRES_PASSWORD: ${KITAPLA_DB_PASSWORD:-kitapla_local_secret}
+    volumes:
+      - kitapla-db-veri:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   kitapla:
     build: ./kitapla
     container_name: kitapla
     restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     ports:
-      - "8080:8080"
+      - "${SERVER_PORT:-8080}:8080"
 
     environment:
-      # Yerelde HTTPS yok, bu yüzden prod profili kullanılmaz.
-      KITAPLA_ADMIN_EMAIL: admin@kitapla.local
-      KITAPLA_ADMIN_PASSWORD: admin123
-      KITAPLA_CONTACT_EMAIL: destek@kitapla.local
-      KITAPLA_BASE_URL: http://localhost:8080
+      # Yerelde HTTPS yok, bu yüzden prod profili kullanılmaz; ancak PostgreSQL + Flyway kullanılır.
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${KITAPLA_DB_NAME:-kitapla}
+      SPRING_DATASOURCE_USERNAME: ${KITAPLA_DB_USER:-kitapla}
+      SPRING_DATASOURCE_PASSWORD: ${KITAPLA_DB_PASSWORD:-kitapla_local_secret}
+      SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.postgresql.Driver
+      SPRING_FLYWAY_ENABLED: "true"
+      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
+      KITAPLA_ADMIN_EMAIL: ${KITAPLA_ADMIN_EMAIL:-admin@kitapla.app}
+      KITAPLA_ADMIN_PASSWORD: ${KITAPLA_ADMIN_PASSWORD:-admin123}
+      KITAPLA_ADMIN_NAME: ${KITAPLA_ADMIN_NAME:-Yönetici}
+      KITAPLA_SEED_DEMO: ${KITAPLA_SEED_DEMO:-true}
+      KITAPLA_CONTACT_EMAIL: ${KITAPLA_CONTACT_EMAIL:-destek@kitapla.app}
+      KITAPLA_BASE_URL: ${KITAPLA_BASE_URL:-http://localhost:8080}
       # Posta kapalı: gönderilecek iletiler günlüğe yazılır.
       # docker compose logs -f kitapla ile şifre sıfırlama bağlantısını görebilirsin.
-      KITAPLA_MAIL_ENABLED: "false"
+      KITAPLA_MAIL_ENABLED: ${KITAPLA_MAIL_ENABLED:-false}
+    env_file:
+      - .env
 
     volumes:
-      # Veriler konteynerin DIŞINDA durur; konteyneri silsen de kaybolmaz.
-      - kitapla-veri:/uygulama/data
       - kitapla-dosya:/uygulama/uploads
 
+
 volumes:
-  kitapla-veri:
+  kitapla-db-veri:
   kitapla-dosya:

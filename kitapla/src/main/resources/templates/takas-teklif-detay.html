@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('KİTAPLA — Takas Teklifi İncele')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('takas')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:920px">
+  <div class="row gap-12" style="justify-content:space-between; align-items:center; margin-bottom:20px; flex-wrap:wrap">
+    <a class="btn btn-soft btn-sm" th:href="@{/takas/takaslarim}">← Takaslarıma dön</a>
+    <div class="row gap-8" style="align-items:center">
+      <span class="badge"
+            th:classappend="${offer.status.name() == 'COMPLETED'} ? 'badge-sage'
+                          : (${offer.status.name() == 'ACCEPTED'} ? 'badge-accent' : 'badge-muted')"
+            th:text="${offer.status.name() == 'PENDING'} ? 'Yanıt bekliyor'
+                   : (${offer.status.name() == 'ACCEPTED'} ? 'Kabul edildi'
+                   : (${offer.status.name() == 'COMPLETED'} ? 'Tamamlandı'
+                   : (${offer.status.name() == 'REJECTED'} ? 'Reddedildi' : 'Geri çekildi')))">Durum</span>
+      <span class="muted" style="font-size:12px;font-weight:600" th:text="${offer.createdAtText}">tarih</span>
+    </div>
+  </div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <!-- Başlık & Karşı Taraf -->
+  <div class="card card-pad" style="margin-bottom:20px">
+    <div class="row gap-12" style="align-items:center;justify-content:space-between;flex-wrap:wrap">
+      <div class="row gap-10" style="align-items:center">
+        <span class="avatar" style="width:38px;height:38px;font-size:13px"
+              th:text="${svc.counterpart(offer, me).initials}">MC</span>
+        <div>
+          <div style="font-size:17px;font-weight:800">
+            <span th:text="${svc.counterpart(offer, me).name}">Kişi</span>
+            <span class="muted" style="font-size:13px;font-weight:500"
+                  th:text="${gelen} ? '(Sana teklif yaptı)' : '(Teklif gönderdin)'"></span>
+          </div>
+          <div class="muted" style="font-size:12px;font-weight:500"
+               th:text="${svc.counterpart(offer, me).student} ? 'Doğrulanmış Öğrenci' : 'Kitapla Üyesi'">Üye</div>
+        </div>
+      </div>
+      <div class="row gap-8" style="align-items:center;flex-wrap:wrap">
+        <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${offer.id})}"></a>
+        <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/swap_offer/' + ${offer.id}(geri='/takas/teklifler/' + ${offer.id})}"
+           style="color:inherit">Şikâyet et</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Yan Yana Kitap Kıyaslama Alanı (Side by Side) -->
+  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:20px; align-items:stretch; margin-bottom:22px">
+    
+    <!-- ALACAĞIN KİTAP (Sol Kart) -->
+    <div class="card card-pad" style="background:var(--surface); border:2px solid var(--sage-soft); border-radius:18px; display:flex; flex-direction:column; justify-content:space-between; position:relative">
+      <div>
+        <div class="row" style="justify-content:space-between; margin-bottom:14px; align-items:center">
+          <span class="badge badge-sage" style="font-size:12px; font-weight:800; padding:6px 12px">ALACAĞIN KİTAP</span>
+          <span class="muted" style="font-size:11px; font-weight:600">Karşı tarafın kitabı</span>
+        </div>
+
+        <div style="text-align:center; padding:12px 0 16px">
+          <div th:if="${!svc.theirBookIn(offer, me).book.hasCover()}" class="cover"
+               th:style="'width:120px;height:170px;margin:0 auto 14px;border-radius:10px;box-shadow:var(--shadow);background:' + ${svc.theirBookIn(offer, me).book.coverColor}"></div>
+          <img th:if="${svc.theirBookIn(offer, me).book.hasCover()}" th:src="${svc.theirBookIn(offer, me).book.coverUrl}" alt=""
+               style="width:120px;height:170px;object-fit:cover;border-radius:10px;box-shadow:var(--shadow);margin:0 auto 14px;display:block"/>
+
+          <h2 style="font-size:19px;font-weight:800;margin:0 0 4px" th:text="${svc.theirBookIn(offer, me).book.title}">Kitap Başlığı</h2>
+          <div class="muted" style="font-size:14px;font-weight:600" th:text="${svc.theirBookIn(offer, me).book.author}">Yazar</div>
+        </div>
+
+        <div th:if="${svc.theirBookIn(offer, me).note}"
+             style="background:var(--surface2);border-radius:12px;padding:12px;margin-top:10px">
+          <div class="muted" style="font-size:11px;font-weight:700;margin-bottom:2px">KİTAP / TAKAS NOTU</div>
+          <p style="font-size:13px;font-weight:500;line-height:1.5;margin:0" th:text="${svc.theirBookIn(offer, me).note}">Not</p>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; border-top:1px solid var(--line); padding-top:10px; font-size:12px" class="muted">
+        Sahibi: <strong th:text="${svc.counterpart(offer, me).name}">Kişi</strong>
+      </div>
+    </div>
+
+    <!-- VERECEĞİN KİTAP (Sağ Kart) -->
+    <div class="card card-pad" style="background:var(--surface); border:2px solid var(--accent-soft); border-radius:18px; display:flex; flex-direction:column; justify-content:space-between; position:relative">
+      <div>
+        <div class="row" style="justify-content:space-between; margin-bottom:14px; align-items:center">
+          <span class="badge badge-accent" style="font-size:12px; font-weight:800; padding:6px 12px">VERECEĞİN KİTAP</span>
+          <span class="muted" style="font-size:11px; font-weight:600">Senin teklif ettiğin</span>
+        </div>
+
+        <div style="text-align:center; padding:12px 0 16px">
+          <div th:if="${!svc.myBookIn(offer, me).book.hasCover()}" class="cover"
+               th:style="'width:120px;height:170px;margin:0 auto 14px;border-radius:10px;box-shadow:var(--shadow);background:' + ${svc.myBookIn(offer, me).book.coverColor}"></div>
+          <img th:if="${svc.myBookIn(offer, me).book.hasCover()}" th:src="${svc.myBookIn(offer, me).book.coverUrl}" alt=""
+               style="width:120px;height:170px;object-fit:cover;border-radius:10px;box-shadow:var(--shadow);margin:0 auto 14px;display:block"/>
+
+          <h2 style="font-size:19px;font-weight:800;margin:0 0 4px" th:text="${svc.myBookIn(offer, me).book.title}">Kitap Başlığı</h2>
+          <div class="muted" style="font-size:14px;font-weight:600" th:text="${svc.myBookIn(offer, me).book.author}">Yazar</div>
+        </div>
+
+        <div th:if="${svc.myBookIn(offer, me).note}"
+             style="background:var(--surface2);border-radius:12px;padding:12px;margin-top:10px">
+          <div class="muted" style="font-size:11px;font-weight:700;margin-bottom:2px">KİTAP / TAKAS NOTU</div>
+          <p style="font-size:13px;font-weight:500;line-height:1.5;margin:0" th:text="${svc.myBookIn(offer, me).note}">Not</p>
+        </div>
+      </div>
+
+      <div style="margin-top:16px; border-top:1px solid var(--line); padding-top:10px; font-size:12px" class="muted">
+        Sahibi: <strong>Sen</strong>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teklif Mesajı (Varsa) -->
+  <div th:if="${offer.message}" class="card card-pad" style="margin-bottom:20px; background:var(--surface2)">
+    <div class="label" style="margin-bottom:4px">Teklif Mesajı</div>
+    <p style="font-size:14px;font-weight:600;line-height:1.6;margin:0" th:text="${offer.message}">Mesaj</p>
+  </div>
+
+  <!-- Kampüs İçi Buluşma & Teslim Bölümü (Kabul Edildiyse) -->
+  <div th:if="${offer.status.name() == 'ACCEPTED'}" class="card card-pad" style="margin-bottom:20px">
+    <div class="label" style="margin-bottom:12px">Kampüs İçi Buluşma & Teslimat</div>
+    <div th:replace="~{bulusma-fragments :: bulusmaKarti(${offer.meeting})}"></div>
+    <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${offer.id}, ${offer.meeting}, ${noktalar})}"></div>
+    <div class="row gap-8" style="justify-content:flex-end;margin-top:12px">
+      <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/takas/' + ${offer.id}, ${offer.meeting})}"></form>
+    </div>
+  </div>
+
+  <div th:if="${offer.status.name() == 'COMPLETED'}" class="card card-pad" style="margin-bottom:20px">
+    <div class="label" style="margin-bottom:8px">Tamamlanan Takas Buluşması</div>
+    <div th:replace="~{bulusma-fragments :: bulusmaKarti(${offer.meeting})}"></div>
+  </div>
+
+  <!-- Aksiyon Butonları Alanı -->
+  <div class="card card-pad">
+    <div class="row gap-12" style="justify-content:space-between; align-items:center; flex-wrap:wrap">
+      <div>
+        <div style="font-size:14px;font-weight:700">İşlem ve Kararlar</div>
+        <div class="muted" style="font-size:12px;font-weight:500">Bu takas teklifini onaylayabilir, reddedebilir veya mesajlaşabilirsiniz.</div>
+      </div>
+
+      <div class="row gap-8" style="align-items:center; flex-wrap:wrap">
+        <th:block th:if="${offer.status.name() == 'PENDING'}">
+          <form th:if="${gelen}" th:action="@{'/takas/teklif/' + ${offer.id} + '/reddet'}" method="post">
+            <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Reddet</button>
+          </form>
+          <form th:if="${gelen}" th:action="@{'/takas/teklif/' + ${offer.id} + '/kabul'}" method="post">
+            <button class="btn btn-sage btn-sm" type="submit">Kabul et</button>
+          </form>
+          <form th:unless="${gelen}" th:action="@{'/takas/teklif/' + ${offer.id} + '/geri-cek'}" method="post">
+            <button class="btn btn-soft btn-sm" type="submit">Geri çek</button>
+          </form>
+        </th:block>
+
+        <th:block th:if="${offer.status.name() == 'ACCEPTED'}">
+          <span th:if="${svc.hasShipped(offer, me)}" class="badge badge-sage">Teslimi onayladın · karşı taraf bekleniyor</span>
+          <form th:if="${!svc.hasShipped(offer, me) and offer.meeting.arranged}"
+                th:action="@{'/takas/teklif/' + ${offer.id} + '/kargola'}" method="post">
+            <button class="btn btn-primary btn-sm" type="submit">Kitabı teslim ettim</button>
+          </form>
+        </th:block>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

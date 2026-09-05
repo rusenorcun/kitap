@@ -27,10 +27,14 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
            select c from Conversation c
            join fetch c.userA
            join fetch c.userB
-           where c.userA = :user or c.userB = :user
+           where c.userA = :user or c.userB = :user or (:isAdmin = true and c.kind = app.kitapla.domain.ConversationKind.REPORT)
            order by c.lastMessageAt desc nulls last, c.createdAt desc
            """)
-    List<Conversation> findMine(@Param("user") User user);
+    List<Conversation> findMineCustom(@Param("user") User user, @Param("isAdmin") boolean isAdmin);
+
+    default List<Conversation> findMine(User user) {
+        return findMineCustom(user, user != null && user.isAdmin());
+    }
 
     void deleteByUserAOrUserB(User a, User b);
 }

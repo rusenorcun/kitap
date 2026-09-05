@@ -7,5 +7,7 @@ public enum ConversationKind {
     /** Karşılanan istek (BookRequest) */
     REQUEST,
     /** Kabul edilen takas teklifi (SwapOffer) */
-    SWAP
+    SWAP,
+    /** Şikâyet destek / yönetici irtibat görüşmesi (Report) */
+    REPORT
 }

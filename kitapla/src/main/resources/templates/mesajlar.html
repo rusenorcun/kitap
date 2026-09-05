@@ -24,13 +24,17 @@
   <div class="stack gap-10" th:unless="${#lists.isEmpty(sohbetler)}">
     <a th:each="c : ${sohbetler}" th:href="@{'/mesajlar/' + ${c.id}}"
        class="card card-pad row gap-14" style="color:inherit">
-      <div class="avatar" style="flex-shrink:0" th:text="${c.other(currentUser).initials}">EY</div>
+      <div class="avatar" style="flex-shrink:0"
+           th:text="${c.kind.name() == 'REPORT' and !currentUser.admin} ? 'KD' : ${c.other(currentUser).initials}">EY</div>
       <div style="flex:1;min-width:0">
         <div class="row gap-8">
-          <span style="font-size:15px;font-weight:800" th:text="${c.other(currentUser).name}">Ad</span>
-          <span class="badge badge-muted" style="font-size:10px"
+          <span style="font-size:15px;font-weight:800"
+                th:text="${c.kind.name() == 'REPORT'} ? (${currentUser.admin} ? ${c.other(currentUser).name} + ' (Şikâyet)' : 'Kitapla Destek') : ${c.other(currentUser).name}">Ad</span>
+          <span class="badge" style="font-size:10px"
+                th:classappend="${c.kind.name() == 'REPORT'} ? 'badge-accent' : 'badge-muted'"
                 th:text="${c.kind.name() == 'CLAIM'} ? 'Bağış'
-                       : (${c.kind.name() == 'REQUEST'} ? 'İstek' : 'Takas')">Tür</span>
+                       : (${c.kind.name() == 'REQUEST'} ? 'İstek'
+                       : (${c.kind.name() == 'SWAP'} ? 'Takas' : 'Destek / Şikâyet'))">Tür</span>
         </div>
         <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px;
                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap"

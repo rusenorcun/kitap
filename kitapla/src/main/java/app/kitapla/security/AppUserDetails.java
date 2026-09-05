@@ -36,4 +36,31 @@ public class AppUserDetails implements UserDetails {
     @Override public boolean isAccountNonLocked() { return !user.isBlocked(); }
     @Override public boolean isCredentialsNonExpired() { return true; }
     @Override public boolean isEnabled() { return !user.isBlocked(); }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AppUserDetails that = (AppUserDetails) o;
+        if (user != null && that.user != null) {
+            if (user.getId() != null && that.user.getId() != null) {
+                return user.getId().equals(that.user.getId());
+            }
+            if (user.getEmail() != null && that.user.getEmail() != null) {
+                return user.getEmail().equalsIgnoreCase(that.user.getEmail());
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        if (user != null && user.getId() != null) {
+            return user.getId().hashCode();
+        }
+        if (user != null && user.getEmail() != null) {
+            return user.getEmail().toLowerCase(java.util.Locale.ROOT).hashCode();
+        }
+        return 0;
+    }
 }

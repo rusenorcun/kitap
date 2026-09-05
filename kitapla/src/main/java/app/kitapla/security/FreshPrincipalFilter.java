@@ -38,7 +38,10 @@ public class FreshPrincipalFilter extends OncePerRequestFilter {
         if (auth != null && auth.getPrincipal() instanceof AppUserDetails details) {
             User fresh = users.findById(details.getUser().getId()).orElse(null);
 
-            if (fresh == null || fresh.isBlocked()) {
+            String oldHash = details.getUser().getPasswordHash();
+            boolean passwordChanged = oldHash != null && fresh != null && !oldHash.equals(fresh.getPasswordHash());
+
+            if (fresh == null || fresh.isBlocked() || passwordChanged) {
                 dropSession(request);
             } else {
                 AppUserDetails refreshed = new AppUserDetails(fresh);

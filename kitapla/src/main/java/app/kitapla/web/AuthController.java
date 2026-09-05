@@ -24,14 +24,14 @@ public class AuthController {
     private final UserService userService;
     private final LoginAttemptService attempts;
     private final Features features;
-    private final Path uploadDir;
+    private final app.kitapla.service.DocumentService documentService;
 
     public AuthController(UserService userService, LoginAttemptService attempts, Features features,
-                          @Value("${kitapla.upload-dir}") String uploadDir) {
+                          app.kitapla.service.DocumentService documentService) {
         this.userService = userService;
         this.attempts = attempts;
         this.features = features;
-        this.uploadDir = Path.of(uploadDir, "documents");
+        this.documentService = documentService;
     }
 
     @GetMapping("/login")
@@ -64,19 +64,14 @@ public class AuthController {
         String documentPath = null;
         try {
             if (wantsStudent && document != null && !document.isEmpty()) {
-                Files.createDirectories(uploadDir);
-                String safe = document.getOriginalFilename() == null ? "belge"
-                        : document.getOriginalFilename().replaceAll("[^a-zA-Z0-9._-]", "_");
-                String fname = System.currentTimeMillis() + "-" + safe;
-                document.transferTo(uploadDir.resolve(fname));
-                documentPath = fname;
+                documentPath = documentService.save(document);
             }
-            SchoolLevel level = (schoolLevel == null || schoolLevel.isBlank()) ? null : SchoolLevel.valueOf(schoolLevel);
+            SchoolLevel level = (schoolLevel == null || schoolLevel.isBlank()) ? null : SchoolLevel.valueOf(schoolLevel.trim().toUpperCase(java.util.Locale.ROOT));
             userService.register(name, email, password, address, phone, School.of(school),
                     wantsStudent, level, documentNo, documentPath);
             return "redirect:/login?kayit";
         } catch (IllegalArgumentException ex) {
-            discard(documentPath);
+            documentService.discard(documentPath);
             model.addAttribute("error", ex.getMessage());
             Map<String, String> form = new HashMap<>();
             form.put("name", name);
@@ -87,19 +82,9 @@ public class AuthController {
             model.addAttribute("form", form);
             return "register";
         } catch (Exception ex) {
-            discard(documentPath);
+            documentService.discard(documentPath);
             model.addAttribute("error", "Kayıt sırasında bir hata oluştu: " + ex.getMessage());
             return "register";
-        }
-    }
-
-    /** Kayıt tamamlanamadıysa diske yazılan belgeyi geride bırakma. */
-    private void discard(String fileName) {
-        if (fileName == null) return;
-        try {
-            Files.deleteIfExists(uploadDir.resolve(fileName));
-        } catch (Exception ignored) {
-            // temizlik başarısız olsa da kullanıcıya dönen hata mesajı önemli
         }
     }
 }

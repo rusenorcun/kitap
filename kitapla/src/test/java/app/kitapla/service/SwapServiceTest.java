@@ -284,4 +284,32 @@ class SwapServiceTest {
         assertThat(swapService.discover(veli, "Takas Arama")).isNotEmpty();
         assertThat(swapService.discover(veli, "boyle-kitap-yok")).isEmpty();
     }
+
+    @Test
+    void kitapBagisaAktarilirVeTakastanSilinir() {
+        User ali = user("aktar-ali", "İzmir");
+        SwapBook s = openBook(ali, "Aktarılacak Takas Kitabı");
+
+        Donation d = swapService.moveToDonation(s.getId(), ali, TargetLevel.HEPSI, "Bağış notu", null, null);
+
+        assertThat(d).isNotNull();
+        assertThat(d.getBook().getId()).isEqualTo(s.getBook().getId());
+        assertThat(d.getStatus()).isEqualTo(DonationStatus.OPEN);
+        assertThat(d.getDonor().getId()).isEqualTo(ali.getId());
+
+        // Takas listesinden silindiğini doğrula
+        assertThat(swapBooks.findById(s.getId())).isEmpty();
+    }
+
+    @Test
+    void canliTeklifiOlanKitapBagisaAktarilamaz() {
+        User ali = user("canli-ali", "İzmir");
+        User veli = user("canli-veli", "Ankara");
+        SwapBook hedef = openBook(ali, "Teklifli Kitap");
+        swapService.offer(hedef.getId(), openBook(veli, "Veli Kitap").getId(), veli, "Teklif");
+
+        assertThatThrownBy(() -> swapService.moveToDonation(hedef.getId(), ali, TargetLevel.HEPSI, null, null, null))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("bağışa aktarılamaz");
+    }
 }

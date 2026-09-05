@@ -90,7 +90,7 @@ public class RequestController {
                           @RequestParam(required = false) String source, RedirectAttributes ra) {
         try {
             DonationSource src = (source == null || source.isBlank())
-                    ? DonationSource.PURCHASE : DonationSource.valueOf(source);
+                    ? DonationSource.PURCHASE : DonationSource.valueOf(source.trim().toUpperCase(java.util.Locale.ROOT));
             requestService.fulfill(id, principal.getUser(), src);
             ra.addFlashAttribute("basari", "İsteği karşıladın. Teslimat adresi aşağıda; kargoladığında işaretle.");
             return "redirect:/karsiladiklarim";

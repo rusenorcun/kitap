@@ -57,6 +57,17 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            """)
     Optional<BookRequest> findByIdWithDetails(@Param("id") Long id);
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @Query("""
+           select r from BookRequest r
+           join fetch r.book
+           join fetch r.student
+           left join fetch r.fulfilledBy
+           left join fetch r.meeting.point
+           where r.id = :id
+           """)
+    Optional<BookRequest> findByIdWithDetailsForUpdate(@Param("id") Long id);
+
     @Query("""
            select r from BookRequest r
            join fetch r.book

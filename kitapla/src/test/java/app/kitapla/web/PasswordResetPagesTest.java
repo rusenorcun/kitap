@@ -116,4 +116,37 @@ class PasswordResetPagesTest {
 
         assertThat(a).isEqualTo(b);
     }
+
+    @Test
+    void sifreSifirlandigindaEskiOturumGecersizlesir() throws Exception {
+        User u = mk("oturum-dusur");
+
+        // 1. Kullanıcı eski şifresiyle giriş yapar ve oturum alır
+        var loginResult = mvc.perform(post("/login").with(csrf())
+                        .param("email", u.getEmail()).param("password", "eskisifre1"))
+                .andExpect(redirectedUrl("/panom"))
+                .andReturn();
+
+        var session = (org.springframework.mock.web.MockHttpSession) loginResult.getRequest().getSession();
+        assertThat(session).isNotNull();
+
+        // Oturumla korumalı sayfaya erişilebilir
+        mvc.perform(get("/panom").session(session))
+                .andExpect(status().isOk());
+
+        // 2. Şifre sıfırlama talebi ve yeni şifre belirleme
+        mvc.perform(post("/sifremi-unuttum").with(csrf()).param("email", u.getEmail()))
+                .andExpect(redirectedUrl("/sifremi-unuttum"));
+
+        String jeton = sonJeton();
+        mvc.perform(post("/sifre-sifirla").with(csrf())
+                        .param("token", jeton)
+                        .param("newPassword", "tamamiyenisifre1")
+                        .param("confirmPassword", "tamamiyenisifre1"))
+                .andExpect(redirectedUrl("/login"));
+
+        // 3. Eski oturum artık korumalı sayfaya erişemez, login sayfasına yönlendirilir
+        mvc.perform(get("/panom").session(session))
+                .andExpect(redirectedUrl("/login?oturum-doldu"));
+    }
 }

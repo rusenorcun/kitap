@@ -34,9 +34,9 @@
 
       <div class="row gap-8" style="flex-wrap:wrap; margin-bottom:22px">
         <span class="badge badge-sage" style="font-size:12px;padding:6px 12px"
-              th:text="${d.targetLevel.name() == 'HEPSI'} ? 'Herkese açık' : ${#strings.capitalize(#strings.toLowerCase(d.targetLevel.name()))}">Seviye</span>
+              th:text="${d.targetLevel.name() == 'HEPSI' ? 'Herkese açık' : (d.targetLevel.name() == 'LISE' ? 'Lise' : 'Üniversite')}">Seviye</span>
         <span class="badge badge-accent" style="font-size:12px;padding:6px 12px"
-              th:text="${d.source.name() == 'PURCHASE'} ? 'Satın alınıp gönderilecek' : 'Bağışçının kendi kopyası'">Kaynak</span>
+              th:text="${d.source.name() == 'PURCHASE'} ? 'Satın alınıp elden teslim edilecek' : 'Bağışçının kendi kopyası'">Kaynak</span>
       </div>
 
       <p th:if="${d.description}" class="muted" style="font-size:16px;font-weight:500;line-height:1.7;margin:0 0 26px;max-width:60ch"
@@ -95,8 +95,6 @@
            th:text="${eligibility.reason}">Sebep</p>
         <a th:if="${eligibility.code == 'LOGIN_REQUIRED'}" class="btn btn-soft btn-block btn-sm" style="margin-top:10px"
            th:href="@{/login}">Giriş yap</a>
-        <a th:if="${eligibility.code == 'ADDRESS_REQUIRED'}" class="btn btn-soft btn-block btn-sm" style="margin-top:10px"
-           th:href="@{/profil}">Adres ekle</a>
         <a th:if="${eligibility.code == 'PRIORITY_WINDOW'}" class="btn btn-soft btn-block btn-sm" style="margin-top:10px"
            th:href="@{/profil/ogrenci}">Öğrenci ol</a>
       </div>
@@ -104,7 +102,9 @@
       <div class="muted row gap-8" style="font-size:12px;font-weight:500;margin-top:14px">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0">
           <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
-        Adresine kargolanır · haftalık hakkından düşer
+        <span th:text="${d.donation.preferredPlaceText != null ? d.donation.preferredPlaceText + ' · Haftalık hakkından düşer' : 'Teslim noktası eşleşmeden sonra belirlenecek · Haftalık hakkından düşer'}">
+          Teslim noktası · Haftalık hakkından düşer
+        </span>
       </div>
     </aside>
   </div>
