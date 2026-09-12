@@ -72,6 +72,8 @@ services:
 
     volumes:
       - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Uygulama kapalıyken gösterilen bakım sayfası (salt okunur).
+      - ${BAKIM_KLASORU:-./bakim}:/bakim:ro
       - caddy-veri:/data      # sertifikalar burada; silinirse yeniden alınır
       - caddy-ayar:/config
 

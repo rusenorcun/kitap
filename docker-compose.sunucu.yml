@@ -72,8 +72,9 @@ services:
 
     volumes:
       - ./deploy/Caddyfile.sunucu:/etc/caddy/Caddyfile:ro
-      # Bakım sayfasının bulunduğu klasör (Windows yolu .env'den gelir)
-      - ${BAKIM_KLASORU:-./deploy/bakim}:/bakim:ro
+      # Bakım sayfası klasörü. Varsayılan depodaki bakim/ dizinidir;
+      # başka bir yerden sunmak istersen .env'de BAKIM_KLASORU ile değiştir.
+      - ${BAKIM_KLASORU:-./bakim}:/bakim:ro
       - caddy-veri:/data      # sertifikalar; silinirse yeniden alınır
       - caddy-ayar:/config
 

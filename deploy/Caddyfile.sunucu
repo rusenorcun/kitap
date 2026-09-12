@@ -48,11 +48,15 @@ rorcun.com, www.rorcun.com {
 	}
 
 	# Backend kapalıyken ham 502 yerine bakım sayfası.
-	# Klasör compose'da salt okunur olarak bağlanır.
+	# Klasör compose'da salt okunur olarak bağlanır (depodaki bakim/).
+	# "rewrite *" her yolu index.html'e çevirir; klasörde başka dosya olsa
+	# bile dışarı sızmaz.
 	handle_errors 502 503 504 {
 		root * /bakim
-		rewrite * /bakım.html
-		file_server
+		rewrite * /index.html
+		file_server {
+			status 503
+		}
 	}
 }
 

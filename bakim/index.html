@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#F3EAD3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#211B17" media="(prefers-color-scheme: dark)">
+<title>Bakımda — KİTAPLA</title>
+
+<!--
+  Bu sayfa uygulama kapalıyken sunulur; bu yüzden tamamen kendi kendine
+  yeter: dış CSS, dış betik ve görsel dosyası yoktur. Yazı tipi uzaktan
+  denenir ama gelmezse sistem yazı tipine düşer, sayfa yine doğru görünür.
+
+  Renkler kitapla.css'teki tasarım sistemiyle birebir aynıdır; kopya
+  değerler değil, aynı paletin tekrarıdır (dosya tek başına durmalı).
+-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;700;800&display=swap">
+
+<style>
+  :root{
+    color-scheme: light dark;
+    --bg:#F3EAD3; --surface:#FCF8EE; --line:#E6D8BC;
+    --ink:#3E2723; --muted:#8C7B6B; --faint:#B4A594;
+    --accent:#C65D47; --accent-soft:#F4DCD3;
+    --sage:#8FA89B; --sage-soft:#E1E9E2; --sage-ink:#48594F;
+    --shadow:0 14px 30px rgba(62,39,35,.10);
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#211B17; --surface:#2A231D; --line:#3A2F27;
+      --ink:#ECE3D4; --muted:#A99C88; --faint:#8A7C6A;
+      --accent:#D6785F; --accent-soft:#3A2A23;
+      --sage-soft:#26312B; --sage-ink:#B7C9BD;
+      --shadow:0 14px 30px rgba(0,0,0,.4);
+    }
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    padding:24px; background:var(--bg); color:var(--ink);
+    font-family:'Plus Jakarta Sans',system-ui,-apple-system,sans-serif;
+  }
+
+  .card{
+    width:100%; max-width:480px; text-align:center;
+    background:var(--surface); border:1px solid var(--line);
+    border-radius:18px; padding:44px 38px; box-shadow:var(--shadow);
+    animation:gir .5s cubic-bezier(.22,1,.36,1);
+  }
+  @keyframes gir{ from{ opacity:0; transform:translateY(14px); } }
+
+  .marka{
+    display:flex; align-items:center; justify-content:center; gap:10px;
+    margin-bottom:26px; font-weight:800; letter-spacing:.4px; font-size:20px;
+  }
+  .marka svg{ display:block; animation:nefes 2.6s ease-in-out infinite; }
+  @keyframes nefes{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
+
+  h1{ font-size:24px; font-weight:800; letter-spacing:-.6px; margin:0 0 10px; text-wrap:balance; }
+  p{ color:var(--muted); font-size:14px; font-weight:500; line-height:1.65; margin:0; }
+  p + p{ margin-top:10px; }
+
+  .rozet{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:700; border-radius:8px; padding:5px 10px;
+    color:var(--accent); background:var(--accent-soft); margin-bottom:16px;
+  }
+
+  .durum{
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    margin-top:24px; padding-top:18px; border-top:1px solid var(--line);
+    font-size:12px; font-weight:700; color:var(--faint);
+  }
+  .nokta{
+    flex:0 0 auto; width:7px; height:7px; border-radius:50%;
+    background:var(--sage); animation:yanip 1.4s ease-in-out infinite;
+  }
+  @keyframes yanip{ 0%,100%{ opacity:.3; } 50%{ opacity:1; } }
+  .durum.dondu{ color:var(--sage-ink); }
+  .durum.dondu .nokta{ animation:none; opacity:1; }
+
+  @media (max-width:480px){ .card{ padding:34px 22px; } h1{ font-size:21px; } }
+  @media (prefers-reduced-motion: reduce){
+    .card, .marka svg, .nokta{ animation:none; }
+  }
+</style>
+</head>
+<body>
+  <main class="card">
+    <div class="marka">
+      <!-- kitapla.css / fragments.html içindeki logoyla aynı -->
+      <svg width="30" height="30" viewBox="0 0 120 120" aria-hidden="true">
+        <g transform="rotate(-9 45 62)"><rect x="34" y="34" width="20" height="58" rx="5" fill="#8FA89B"/></g>
+        <rect x="52" y="24" width="21" height="70" rx="5" fill="#C65D47"/>
+        <g transform="rotate(9 78 60)"><rect x="72" y="30" width="20" height="62" rx="5" fill="#7A2E2A"/></g>
+      </svg>
+      <span>KİTAPLA</span>
+    </div>
+
+    <div class="rozet">Kısa bir bakım</div>
+
+    <h1>Şu anda bakımdayız</h1>
+
+    <p>Bağış, istek ve takas işlemleri geçici olarak duraklatıldı.
+       Bakım kısa sürecek; birazdan tekrar deneyebilirsin.</p>
+
+    <p>Bu sayfayı görüyorsan alan adı ve güvenli bağlantı çalışıyor,
+       yalnızca uygulama sunucusu kapalı demektir. Verilerine bir şey olmaz.</p>
+
+    <p class="durum" id="durum">
+      <span class="nokta" aria-hidden="true"></span>
+      <span id="durum-metni">sunucu düzenli aralıklarla yoklanıyor</span>
+    </p>
+  </main>
+
+<script>
+  // Sunucu geri geldiğinde sayfayı kendiliğinden tazeler.
+  // Bakım sayfası 503 ile sunulduğu için, 5xx dışında bir yanıt gelmesi
+  // uygulamanın yeniden ayağa kalktığı anlamına gelir.
+  (function () {
+    var kutu  = document.getElementById('durum');
+    var metin = document.getElementById('durum-metni');
+    var aralik = 15;            // saniye
+    var kalan  = aralik;
+
+    function yokla() {
+      fetch(location.pathname + '?yoklama=' + Date.now(), {
+        method: 'HEAD',
+        cache: 'no-store'
+      }).then(function (yanit) {
+        if (yanit.status < 500) {
+          kutu.className = 'durum dondu';
+          metin.textContent = 'sunucu döndü — sayfa yenileniyor';
+          location.reload();
+        }
+      }).catch(function () {
+        /* ağ hatası: hâlâ kapalı, sessizce bekle */
+      });
+    }
+
+    setInterval(function () {
+      kalan -= 1;
+      if (kalan <= 0) { kalan = aralik; yokla(); }
+      metin.textContent = 'sunucu yoklanıyor — ' + kalan + ' sn';
+    }, 1000);
+  })();
+</script>
+</body>
+</html>

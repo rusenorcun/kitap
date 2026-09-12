@@ -53,6 +53,17 @@
 	@belge path /admin/belge/*
 	header @belge Cache-Control "no-store"
 
+	# Uygulama kapalıyken ziyaretçi çıplak 502 değil bakım sayfası görür.
+	# Klasör compose'da /bakim olarak bağlanır; doğrudan kurulumda
+	# root satırını deponun sunucudaki yoluna göre değiştir.
+	handle_errors 502 503 504 {
+		root * /bakim
+		rewrite * /index.html
+		file_server {
+			status 503
+		}
+	}
+
 	log {
 		output file /var/log/caddy/kitapla.log {
 			roll_size 20mb

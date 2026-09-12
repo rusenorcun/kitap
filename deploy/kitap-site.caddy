@@ -30,6 +30,16 @@ kitap.rorcun.com {
 	@statik path /css/* /js/* /webjars/* /uploads/covers/*
 	header @statik >Cache-Control "public, max-age=604800"
 
+	# Konteyner kapalıyken çıplak 502 yerine bakım sayfası.
+	# root, deponun BU sunucudaki yolu olmalı (örn. /srv/kitap/kitap/bakim).
+	handle_errors 502 503 504 {
+		root * /srv/kitap/kitap/bakim
+		rewrite * /index.html
+		file_server {
+			status 503
+		}
+	}
+
 	log {
 		output file /var/log/caddy/kitap.log {
 			roll_size 20mb
