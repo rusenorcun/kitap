@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.core.annotation.Order;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
@@ -19,6 +20,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 @Component
+@Order(1)   // SemaOnarim(0) sonrasi, DemoSenaryosu(2) oncesi
 public class DataSeeder implements CommandLineRunner {
 
     private final UserRepository users;

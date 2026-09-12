@@ -29,12 +29,7 @@
           <div class="row gap-8" style="align-items:center;flex-wrap:wrap">
             <span style="font-size:16px;font-weight:800" th:text="${r.reason.etiket}">Gerekçe</span>
             <span class="badge badge-muted" style="font-size:10px"
-                  th:text="${r.kind.name() == 'CONVERSATION'} ? 'Sohbet'
-                         : (${r.kind.name() == 'DONATION'} ? 'Bağış ilanı'
-                         : (${r.kind.name() == 'CLAIM'} ? 'Bağış teslimatı'
-                         : (${r.kind.name() == 'REQUEST'} ? 'İstek'
-                         : (${r.kind.name() == 'SWAP_BOOK'} ? 'Takas ilanı'
-                         : (${r.kind.name() == 'SWAP_OFFER'} ? 'Takas süreci' : 'Üye')))))">Tür</span>
+                  th:text="${r.kind.etiket}">Tür</span>
           </div>
           <div class="muted" style="font-size:12px;font-weight:600;margin-top:3px">
             <span th:text="'#' + ${r.id}">#1</span> · <span th:text="${r.createdAtText}">tarih</span>

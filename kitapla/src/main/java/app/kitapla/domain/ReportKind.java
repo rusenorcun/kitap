@@ -1,19 +1,35 @@
 package app.kitapla.domain;
 
-/** Neyin şikâyet edildiği. */
+/**
+ * Neyin şikâyet edildiği.
+ * <p>
+ * {@code etiket} listelerde ve rozetlerde gösterilen yalın addır. Bildirim
+ * cümlesindeki çekimli biçim ("... bir takas sürecini şikâyet etti") ayrıdır;
+ * bkz. {@code ReportService.turAdi}.
+ */
 public enum ReportKind {
     /** Sohbet (mesajlaşma) */
-    CONVERSATION,
+    CONVERSATION("Sohbet"),
     /** Bağış ilanı */
-    DONATION,
+    DONATION("Bağış ilanı"),
     /** Kitap isteği (veya karşılanan istek teslimatı) */
-    REQUEST,
+    REQUEST("İstek"),
     /** Bağış talebi / teslimatı (Claim) */
-    CLAIM,
+    CLAIM("Bağış teslimatı"),
     /** Takas ilanı */
-    SWAP_BOOK,
+    SWAP_BOOK("Takas ilanı"),
     /** Takas teklifi / süreci (SwapOffer) */
-    SWAP_OFFER,
+    SWAP_OFFER("Takas süreci"),
     /** Üyenin kendisi */
-    USER
+    USER("Üye");
+
+    private final String etiket;
+
+    ReportKind(String etiket) {
+        this.etiket = etiket;
+    }
+
+    public String getEtiket() {
+        return etiket;
+    }
 }

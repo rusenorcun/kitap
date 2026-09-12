@@ -10,13 +10,7 @@
   <div class="card card-pad" style="margin-bottom:18px">
     <div class="row gap-8" style="flex-wrap:wrap;margin-bottom:12px">
       <span class="badge badge-accent" th:text="${sikayet.reason.etiket}">Gerekçe</span>
-      <span class="badge badge-muted"
-            th:text="${sikayet.kind.name() == 'CONVERSATION'} ? 'Sohbet'
-                   : (${sikayet.kind.name() == 'DONATION'} ? 'Bağış'
-                   : (${sikayet.kind.name() == 'REQUEST'} ? 'İstek / Teslimat'
-                   : (${sikayet.kind.name() == 'CLAIM'} ? 'Teslimat (Bağış)'
-                   : (${sikayet.kind.name() == 'SWAP_BOOK'} ? 'Takas İlanı'
-                   : (${sikayet.kind.name() == 'SWAP_OFFER'} ? 'Takas Süreci' : 'Üye')))))">Tür</span>
+      <span class="badge badge-muted" th:text="${sikayet.kind.etiket}">Tür</span>
       <span th:if="${sikayet.status.name() == 'ACTIONED'}" class="badge badge-sage">İşlem yapıldı</span>
       <span th:if="${sikayet.status.name() == 'DISMISSED'}" class="badge badge-muted">İşlem gerekmedi</span>
       <div class="nav-spacer"></div>

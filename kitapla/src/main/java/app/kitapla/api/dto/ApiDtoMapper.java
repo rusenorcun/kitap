@@ -276,7 +276,7 @@ public final class ApiDtoMapper {
         return new MyReportDto(
                 report.getId(),
                 report.getKind() != null ? report.getKind().name() : null,
-                report.getKind() != null ? ReportService.turAdi(report.getKind()) : null,
+                report.getKind() != null ? report.getKind().getEtiket() : null,
                 report.getRefId(),
                 report.getReason() != null ? report.getReason().name() : null,
                 report.getReason() != null ? report.getReason().getEtiket() : null,

@@ -149,8 +149,8 @@ public class ReportService {
         }
     }
 
-    /** Şablonların da kullanabilmesi için açık; "bir <tür> şikâyet etti" metni buradan gelir. */
-    public static String turAdi(ReportKind k) {
+    /** Bildirim cümlesindeki çekimli biçim: "bir <tür> şikâyet etti". */
+    private static String turAdi(ReportKind k) {
         return switch (k) {
             case CONVERSATION -> "sohbeti";
             case DONATION -> "bağış ilanını";
