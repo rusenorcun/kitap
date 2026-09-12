@@ -270,6 +270,25 @@ public final class ApiDtoMapper {
         );
     }
 
+    /** Kullanıcının kendi şikâyeti. Şikâyet edilen kişi taşınmaz. */
+    public static MyReportDto toMyReportDto(Report report, Long conversationId) {
+        if (report == null) return null;
+        return new MyReportDto(
+                report.getId(),
+                report.getKind() != null ? report.getKind().name() : null,
+                report.getKind() != null ? ReportService.turAdi(report.getKind()) : null,
+                report.getRefId(),
+                report.getReason() != null ? report.getReason().name() : null,
+                report.getReason() != null ? report.getReason().getEtiket() : null,
+                report.getNote(),
+                report.getStatus() != null ? report.getStatus().name() : null,
+                report.getAdminNote(),
+                conversationId,
+                toIso(report.getCreatedAt()),
+                toIso(report.getReviewedAt())
+        );
+    }
+
     public static ChatMessageDto toChatMessageDto(Message message, User me) {
         if (message == null) return null;
         boolean mine = message.getSender() != null && message.getSender().getId().equals(me.getId());

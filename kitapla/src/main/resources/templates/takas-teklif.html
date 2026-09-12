@@ -23,6 +23,10 @@
       </div>
       <p th:if="${target.note}" class="muted" style="font-size:12px;font-weight:600;margin:8px 0 0"
          th:text="'İster: ' + ${target.note}">İster</p>
+      <div class="row" style="margin-top:10px">
+        <a class="btn btn-soft btn-sm" style="color:inherit;font-size:12px"
+           th:href="@{'/sikayet/swap_book/' + ${target.id}(geri='/takas')}">Bu ilanı şikâyet et</a>
+      </div>
     </div>
   </div>
 

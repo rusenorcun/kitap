@@ -41,6 +41,17 @@ public interface ReportRepository extends JpaRepository<Report, Long> {
            """)
     java.util.Optional<Report> findByIdWithUsers(@Param("id") Long id);
 
+    /** Şikâyet edenin kendi kayıtları; "Şikâyetlerim" sayfası bunu gösterir. */
+    @Query("""
+           select r from Report r
+           join fetch r.reporter
+           left join fetch r.reportedUser
+           left join fetch r.reviewedBy
+           where r.reporter = :reporter
+           order by r.createdAt desc
+           """)
+    List<Report> findByReporterWithUsers(@Param("reporter") User reporter);
+
     /** Aynı kişi aynı şeyi ikinci kez şikâyet etmesin. */
     boolean existsByReporterAndKindAndRefIdAndStatus(User reporter, ReportKind kind, Long refId,
                                                      ReportStatus status);

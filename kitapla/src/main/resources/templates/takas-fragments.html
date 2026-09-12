@@ -47,28 +47,30 @@
       <div th:if="${o.status.name() == 'PENDING'}" class="row gap-8"
            style="justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap">
         <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
-        <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/swap_offer/' + ${o.id}(geri='/takas/takaslarim')}"
-           style="color:inherit">Şikâyet et</a>
+        <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
       </div>
 
       <!-- Kampüs içi takas buluşması -->
       <th:block th:if="${o.status.name() == 'ACCEPTED'}">
         <div class="row gap-8" style="justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap">
           <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
-          <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/swap_offer/' + ${o.id}(geri='/takas/takaslarim')}"
-             style="color:inherit">Şikâyet et</a>
-          <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/takas/' + ${o.id}, ${o.meeting})}"></form>
+          <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
+          <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/takas/' + ${o.id}, ${o.meeting}, '/takas/takaslarim')}"></form>
         </div>
         <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
-        <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${o.id}, ${o.meeting}, ${noktalar})}"></div>
+        <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${o.id}, ${o.meeting}, ${noktalar}, '/takas/takaslarim')}"></div>
       </th:block>
       <div th:if="${o.status.name() == 'COMPLETED'}">
         <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
         <div class="row gap-8" style="justify-content:flex-end;margin-top:10px">
           <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
-          <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/swap_offer/' + ${o.id}(geri='/takas/takaslarim')}"
-             style="color:inherit">Şikâyet et</a>
+          <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
         </div>
+      </div>
+
+      <div th:if="${o.status.name() == 'REJECTED' or o.status.name() == 'CANCELLED'}"
+           class="row gap-8" style="justify-content:flex-end;margin-top:10px">
+        <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
       </div>
 
       <!-- Aksiyonlar ve Detaylı Kıyaslama Bağlantısı -->
@@ -94,7 +96,9 @@
             <span th:if="${svc.hasShipped(o, me)}" class="badge badge-sage">Teslimi onayladın · karşı taraf bekleniyor</span>
             <form th:if="${!svc.hasShipped(o, me) and o.meeting.arranged}"
                   th:action="@{'/takas/teklif/' + ${o.id} + '/kargola'}" method="post">
-              <button class="btn btn-primary btn-sm" type="submit">Kitabı teslim ettim</button>
+              <input type="hidden" name="geri" value="/takas/takaslarim"/>
+              <button class="btn btn-primary btn-sm" type="submit"
+                      th:text="${features.shipping} ? 'Kargoya verdim' : 'Kitabı teslim ettim'">Kitabı teslim ettim</button>
             </form>
           </th:block>
         </div>

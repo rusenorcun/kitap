@@ -149,7 +149,8 @@ public class ReportService {
         }
     }
 
-    private static String turAdi(ReportKind k) {
+    /** Şablonların da kullanabilmesi için açık; "bir <tür> şikâyet etti" metni buradan gelir. */
+    public static String turAdi(ReportKind k) {
         return switch (k) {
             case CONVERSATION -> "sohbeti";
             case DONATION -> "bağış ilanını";
@@ -159,6 +160,11 @@ public class ReportService {
             case SWAP_OFFER -> "takas sürecini";
             case USER -> "üyeyi";
         };
+    }
+
+    /** Şikâyet edenin kendi kayıtları (en yeni önce). */
+    public List<Report> mine(User reporter) {
+        return reports.findByReporterWithUsers(reporter);
     }
 
     // ---------- Yönetim ----------

@@ -22,9 +22,11 @@ import java.util.List;
 public class CatalogController {
 
     private final DonationService donationService;
+    private final app.kitapla.config.Features features;
 
-    public CatalogController(DonationService donationService) {
+    public CatalogController(DonationService donationService, app.kitapla.config.Features features) {
         this.donationService = donationService;
+        this.features = features;
     }
 
     private static TargetLevel parseLevel(String level) {
@@ -87,7 +89,9 @@ public class CatalogController {
         if (user == null) return "redirect:/login";
         try {
             donationService.claim(id, user);
-            ra.addFlashAttribute("basari", "Kitap senin! Bağışçı kargoya verdiğinde haber vereceğiz.");
+            ra.addFlashAttribute("basari", features.isShipping()
+                    ? "Kitap senin! Bağışçı kargoya verdiğinde haber vereceğiz."
+                    : "Kitap senin! Bağışçıyla mesajlaşıp kampüste bir buluşma ayarlayabilirsin.");
             return "redirect:/aldiklarim";
         } catch (IllegalStateException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());

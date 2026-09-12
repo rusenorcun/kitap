@@ -134,16 +134,16 @@ class RequestServiceTest {
     }
 
     @Test
-    void teslimatAkisiKargolaTeslimTesekkur() {
+    void teslimatAkisiBulusmaTeslimTesekkur() {
         User isteyen = user("isteyen", true, "Ankara");
         User karsilayan = user("karsilayan", false, "İzmir");
         BookRequest r = requestService.create(isteyen, book(), null);
         requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
 
-        requestService.ship(r.getId(), karsilayan);
-        assertThat(requests.findById(r.getId()).orElseThrow().getStatus()).isEqualTo(RequestStatus.SHIPPED);
-        assertThat(notifications.findTop50ByUserOrderByCreatedAtDesc(isteyen))
-                .extracting(Notification::getType).contains("request_shipped");
+        // Kampüs teslimi: kargo adımı yok, önce buluşma ayarlanır
+        requestService.arrange(r.getId(), karsilayan, new MeetingRequest(
+                null, "Kütüphane girişi", java.time.Instant.now().plusSeconds(86400)));
+        assertThat(requests.findById(r.getId()).orElseThrow().getStatus()).isEqualTo(RequestStatus.ARRANGED);
 
         requestService.deliver(r.getId(), isteyen);
         assertThat(requests.findById(r.getId()).orElseThrow().getStatus()).isEqualTo(RequestStatus.DELIVERED);
@@ -162,6 +162,9 @@ class RequestServiceTest {
         requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
 
         assertThatThrownBy(() -> requestService.ship(r.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> requestService.ship(r.getId(), karsilayan))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Kargo akışı kapalı");
         assertThatThrownBy(() -> requestService.deliver(r.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
         assertThatThrownBy(() -> requestService.delete(r.getId(), yabanci)).isInstanceOf(IllegalStateException.class);
     }

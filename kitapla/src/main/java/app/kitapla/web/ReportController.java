@@ -10,9 +10,14 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** Üyelerin şikâyet göndermesi. */
+/**
+ * Üyelerin şikâyet göndermesi ve kendi şikâyetlerini takip etmesi.
+ * <p>
+ * Şikâyet gönderildikten sonra iş bitmez: kullanıcı durumu görebilmeli ve
+ * gerekirse yönetimle aynı şikâyet üzerinden yazışabilmelidir. Bu yüzden
+ * "Şikâyetlerim" listesi ve oradan açılan destek sohbeti bu sınıfta durur.
+ */
 @Controller
-@RequestMapping("/sikayet")
 public class ReportController {
 
     private final ReportService reports;
@@ -21,24 +26,44 @@ public class ReportController {
         this.reports = reports;
     }
 
-    @GetMapping("/{kind}/{refId}")
+    /** Kullanıcının gönderdiği şikâyetler ve sonuçları. */
+    @GetMapping("/sikayetlerim")
+    public String sikayetlerim(@AuthenticationPrincipal AppUserDetails principal, Model model) {
+        model.addAttribute("sikayetler", reports.mine(principal.getUser()));
+        return "sikayetlerim";
+    }
+
+    @GetMapping("/sikayet/{kind}/{refId}")
     public String form(@PathVariable String kind, @PathVariable Long refId,
                        @RequestParam(required = false) String geri, Model model) {
         model.addAttribute("tur", kind);
         model.addAttribute("refId", refId);
         model.addAttribute("gerekceler", ReportReason.values());
-        model.addAttribute("geri", geri == null || geri.isBlank() ? "/panom" : geri);
+        model.addAttribute("geri", icAdres(geri));
         return "sikayet";
     }
 
-    @PostMapping("/{kind}/{refId}")
+    /**
+     * {@code geri} bağlantıdan gelir; doğrulanmadan yönlendirilirse dış siteye
+     * taşınabilir. Yalnızca tek eğik çizgiyle başlayan, şema içermeyen uygulama
+     * içi yollar kabul edilir ({@code //evil.example} ve {@code https://…} elenir).
+     */
+    private static String icAdres(String geri) {
+        if (geri == null) return "/panom";
+        String g = geri.trim();
+        if (g.isEmpty() || !g.startsWith("/") || g.startsWith("//")
+                || g.contains(":") || g.contains("\\")) return "/panom";
+        return g;
+    }
+
+    @PostMapping("/sikayet/{kind}/{refId}")
     public String gonder(@AuthenticationPrincipal AppUserDetails principal,
                          @PathVariable String kind, @PathVariable Long refId,
                          @RequestParam(required = false) String reason,
                          @RequestParam(required = false) String note,
                          @RequestParam(required = false) String geri,
                          RedirectAttributes ra) {
-        String hedef = (geri == null || geri.isBlank()) ? "/panom" : geri;
+        String hedef = icAdres(geri);
         try {
             var r = reports.create(principal.getUser(),
                     ReportKind.valueOf(kind.trim().toUpperCase(java.util.Locale.ROOT)),
@@ -46,8 +71,8 @@ public class ReportController {
                     reason == null || reason.isBlank() ? null : ReportReason.valueOf(reason.trim().toUpperCase(java.util.Locale.ROOT)),
                     note);
             ra.addFlashAttribute("basari",
-                    "Şikâyetin yönetime iletildi. İncelendiğinde bildirim alacaksın.");
-            ra.addFlashAttribute("sikayetId", r.getId());
+                    "Şikâyetin yönetime iletildi (#" + r.getId() + "). İncelendiğinde bildirim alacaksın; "
+                            + "durumunu Şikâyetlerim sayfasından takip edebilirsin.");
         } catch (IllegalArgumentException | IllegalStateException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());
         }

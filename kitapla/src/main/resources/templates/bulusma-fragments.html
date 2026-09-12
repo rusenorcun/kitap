@@ -16,10 +16,6 @@
   </div>
 </div>
 
-<!--/* Buluşma ayarlama / güncelleme formu.
-       action  : gönderilecek uç
-       meeting : mevcut buluşma (null olabilir)
-       noktalar: seçilebilir teslim noktaları */-->
 <!--/* Sohbete gitme bağlantısı. kind: claim|request|swap */-->
 <a th:fragment="mesajBaglantisi(kind, refId)" class="btn btn-soft btn-sm"
    th:href="@{'/mesajlar/ac/' + ${kind} + '/' + ${refId}}">
@@ -28,21 +24,36 @@
   Mesaj gönder
 </a>
 
-<!--/* Buluşma saati geçtiyse "gelmedi" bildirimi. action: gönderilecek uç */-->
-<form th:fragment="gelmediFormu(action, meeting)" th:action="${action}" method="post" style="margin:0"
+<!--/* Şikâyet bağlantısı. kind: donation|claim|request|swap_book|swap_offer|conversation|user
+       Teslim/takas bittikten sonra da görünür: sorun çoğu zaman teslimden sonra fark edilir. */-->
+<a th:fragment="sikayetBaglantisi(kind, refId, geri)" class="btn btn-soft btn-sm" style="color:inherit"
+   th:href="@{'/sikayet/' + ${kind} + '/' + ${refId}(geri=${geri})}"
+   th:title="'Bu ' + (${kind} == 'swap_book' ? 'takas ilanını' : (${kind} == 'donation' ? 'ilanı' : 'süreci')) + ' yönetime bildir'">
+  Şikâyet et</a>
+
+<!--/* Buluşma saati geçtiyse "gelmedi" bildirimi.
+       action: gönderilecek uç, geri: işlem sonrası dönülecek sayfa */-->
+<form th:fragment="gelmediFormu(action, meeting, geri)" th:action="${action}" method="post" style="margin:0"
       th:if="${meeting != null and meeting.arranged and meeting.at != null
               and meeting.at.isBefore(T(java.time.Instant).now())}"
       onsubmit="return confirm('Karşı tarafın buluşmaya gelmediğini bildirmek üzeresin. Emin misin?')">
+  <input type="hidden" name="geri" th:value="${geri}"/>
   <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Gelmedi</button>
 </form>
 
-<div th:fragment="bulusmaFormu(action, meeting, noktalar)" style="margin-top:12px">
+<!--/* Buluşma ayarlama / güncelleme formu.
+       action  : gönderilecek uç
+       meeting : mevcut buluşma (null olabilir)
+       noktalar: seçilebilir teslim noktaları
+       geri    : kaydettikten sonra dönülecek sayfa (iki taraf da ayarlayabilir) */-->
+<div th:fragment="bulusmaFormu(action, meeting, noktalar, geri)" style="margin-top:12px">
   <details class="card card-pad" th:open="${meeting == null or !meeting.arranged}">
     <summary style="font-size:14px;font-weight:800;cursor:pointer;list-style:none"
              th:text="${meeting != null and meeting.arranged} ? 'Buluşmayı değiştir' : 'Buluşma ayarla'">
       Buluşma ayarla</summary>
 
     <form th:action="${action}" method="post" style="margin-top:14px">
+      <input type="hidden" name="geri" th:value="${geri}"/>
       <div class="field" style="margin-bottom:12px">
         <label class="label" th:for="'nokta-' + ${action}">Teslim noktası</label>
         <select class="input" name="pointId" th:id="'nokta-' + ${action}">

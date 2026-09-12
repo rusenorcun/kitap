@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-/** Kitap takası: keşif, kendi kitapların, teklifler ve karşılıklı kargo. */
+/** Kitap takası: keşif, kendi kitapların, teklifler ve karşılıklı teslim. */
 @Controller
 @RequestMapping("/takas")
 public class SwapController {
@@ -26,13 +26,16 @@ public class SwapController {
     private final PickupPointService points;
     private final BookService bookService;
     private final CoverService coverService;
+    private final app.kitapla.config.Features features;
 
     public SwapController(SwapService swapService, BookService bookService,
-                          CoverService coverService, PickupPointService points) {
+                          CoverService coverService, PickupPointService points,
+                          app.kitapla.config.Features features) {
         this.swapService = swapService;
         this.points = points;
         this.bookService = bookService;
         this.coverService = coverService;
+        this.features = features;
     }
 
     /** Takasa açık kitaplar + gelen teklifler. */
@@ -127,7 +130,9 @@ public class SwapController {
                             RedirectAttributes ra) {
         try {
             swapService.offer(targetId, offeredId, principal.getUser(), message);
-            ra.addFlashAttribute("basari", "Teklifin gönderildi. Karşı taraf kabul ederse adresler paylaşılacak.");
+            ra.addFlashAttribute("basari", features.isShipping()
+                    ? "Teklifin gönderildi. Karşı taraf kabul ederse adresler paylaşılacak."
+                    : "Teklifin gönderildi. Karşı taraf kabul ederse kampüste buluşup kitapları karşılıklı teslim edebilirsiniz.");
             return "redirect:/takas/takaslarim";
         } catch (IllegalStateException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());
@@ -169,8 +174,10 @@ public class SwapController {
 
     @PostMapping("/teklif/{id}/kabul")
     public String kabul(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id, RedirectAttributes ra) {
-        return run(ra, () -> swapService.accept(id, principal.getUser()),
-                "Takası kabul ettin. Adresler paylaşıldı; kitabı kargolayabilirsin.", "/takas/takaslarim");
+        return run(ra, () -> swapService.accept(id, principal.getUser()), features.isShipping()
+                ? "Takası kabul ettin. Adresler paylaşıldı; kitabı kargolayabilirsin."
+                : "Takası kabul ettin. Şimdi bir buluşma ayarlayın ve kitapları karşılıklı teslim edin.",
+                "/takas/takaslarim");
     }
 
     @PostMapping("/teklif/{id}/reddet")
@@ -183,10 +190,25 @@ public class SwapController {
         return run(ra, () -> swapService.cancel(id, principal.getUser()), "Teklifin geri çekildi.", "/takas/takaslarim");
     }
 
+    /**
+     * Kargo modunda "kargoya verdim", kampüs teslimde "kitabı teslim ettim".
+     * Uç adı geriye dönük uyumluluk için korunur.
+     */
     @PostMapping("/teklif/{id}/kargola")
-    public String kargola(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id, RedirectAttributes ra) {
-        return run(ra, () -> swapService.ship(id, principal.getUser()),
-                "Kargo bilgin kaydedildi. İki taraf da kargoladığında takas tamamlanır.", "/takas/takaslarim");
+    public String kargola(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id,
+                          @RequestParam(required = false) String geri, RedirectAttributes ra) {
+        return run(ra, () -> swapService.ship(id, principal.getUser()), features.isShipping()
+                ? "Kargo bilgin kaydedildi. İki taraf da kargoladığında takas tamamlanır."
+                : "Teslimi onayladın. İki taraf da onayladığında takas tamamlanır.",
+                geriAdresi(geri));
+    }
+
+    /** Takas sayfaları arasında yalnızca bilinen hedeflere dönülür (açık yönlendirme olmasın). */
+    private static String geriAdresi(String geri) {
+        if (geri == null || geri.isBlank()) return "/takas/takaslarim";
+        if (geri.startsWith("/takas/teklifler/") || "/takas/takaslarim".equals(geri) || "/takas".equals(geri))
+            return geri;
+        return "/takas/takaslarim";
     }
 
     private String run(RedirectAttributes ra, Runnable action, String okMessage, String target) {

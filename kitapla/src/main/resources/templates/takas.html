@@ -62,6 +62,10 @@
           </div>
           <a class="btn btn-primary btn-sm btn-block" style="margin-top:12px"
              th:href="@{'/takas/teklif/' + ${s.id}}">Takas teklif et</a>
+          <div class="row" style="justify-content:center;margin-top:8px">
+            <a class="btn btn-soft btn-sm" style="color:inherit;font-size:12px"
+               th:href="@{'/sikayet/swap_book/' + ${s.id}(geri='/takas')}">Bu ilanı şikâyet et</a>
+          </div>
         </div>
       </div>
     </section>

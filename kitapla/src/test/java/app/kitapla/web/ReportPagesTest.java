@@ -175,8 +175,14 @@ class ReportPagesTest {
                         .param("reason", "HASARLI").param("note", "Kapak yırtık ve sayfalar eksik")
                         .param("geri", "/aldiklarim"))
                 .andExpect(redirectedUrl("/aldiklarim"))
-                .andExpect(flash().attributeExists("basari"))
-                .andExpect(flash().attributeExists("sikayetId"));
+                .andExpect(flash().attributeExists("basari"));
+
+        // Şikâyet kullanıcının kendi listesinde görünmeli ve destek sohbeti açılabilmeli
+        mvc.perform(get("/sikayetlerim").with(user(as(alici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kitap hasarlı, eksik veya ilandakinden farklı")))
+                .andExpect(content().string(containsString("Kapak yırtık ve sayfalar eksik")))
+                .andExpect(content().string(containsString("/mesajlar/ac/report/")));
     }
 
     @Test

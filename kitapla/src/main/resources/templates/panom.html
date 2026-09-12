@@ -61,6 +61,10 @@
       <div style="font-size:15px;font-weight:800">Karşıladıklarım</div>
       <div class="muted" style="font-size:13px;font-weight:500">Karşıladığın istekler ve buluşmalar</div>
     </a>
+    <a class="card card-pad" th:href="@{/sikayetlerim}" style="color:inherit">
+      <div style="font-size:15px;font-weight:800">Şikâyetlerim</div>
+      <div class="muted" style="font-size:13px;font-weight:500">Gönderdiğin şikâyetler ve sonuçları</div>
+    </a>
   </div>
 
   <div class="card card-pad" style="margin-top:26px" th:if="${user.studentStatus.name() == 'PENDING'}">

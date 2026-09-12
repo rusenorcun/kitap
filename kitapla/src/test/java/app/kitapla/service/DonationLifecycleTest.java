@@ -47,6 +47,11 @@ class DonationLifecycleTest {
         return donationService.create(donor, b, qty, TargetLevel.HEPSI, DonationSource.OWN, "Temiz durumda");
     }
 
+    /** Kampüs teslimi için basit bir buluşma isteği (yer serbest metin, zaman geçmişte değil). */
+    private MeetingRequest bulusma() {
+        return new MeetingRequest(null, "Kütüphane girişi", Instant.now().plus(1, ChronoUnit.DAYS));
+    }
+
     private void backdate(Donation d, long days) {
         jdbc.update("UPDATE donations SET created_at = ? WHERE id = ?",
                 Timestamp.from(Instant.now().minus(days, ChronoUnit.DAYS)), d.getId());
@@ -81,7 +86,7 @@ class DonationLifecycleTest {
     }
 
     @Test
-    void teslimatAkisiKargolaTeslimTesekkur() {
+    void teslimatAkisiBulusmaTeslimTesekkur() {
         User donor = user("bagisci", false, "İzmir");
         User ogrenci = user("ogrenci", true, "Ankara");
         Donation d = newDonation(donor, 1);
@@ -89,10 +94,9 @@ class DonationLifecycleTest {
         Claim c = donationService.claim(d.getId(), ogrenci);
         assertThat(c.getStatus()).isEqualTo(ClaimStatus.MATCHED);
 
-        donationService.ship(c.getId(), donor);
-        assertThat(claims.findById(c.getId()).orElseThrow().getStatus()).isEqualTo(ClaimStatus.SHIPPED);
-        assertThat(notifications.findTop50ByUserOrderByCreatedAtDesc(ogrenci))
-                .extracting(Notification::getType).contains("claim_shipped");
+        // Kampüs teslimi: önce buluşma ayarlanır, kargo adımı yoktur
+        donationService.arrange(c.getId(), donor, bulusma());
+        assertThat(claims.findById(c.getId()).orElseThrow().getStatus()).isEqualTo(ClaimStatus.ARRANGED);
 
         donationService.deliver(c.getId(), ogrenci);
         Claim delivered = claims.findById(c.getId()).orElseThrow();
@@ -147,16 +151,27 @@ class DonationLifecycleTest {
     }
 
     @Test
-    void kargolandiktanSonraIptalEdilemez() {
+    void bulusmaAyarlandiktanSonraIptalEdilemez() {
         User donor = user("bagisci", false, "İzmir");
         User ogrenci = user("ogrenci", true, "Ankara");
         Donation d = newDonation(donor, 1);
         Claim c = donationService.claim(d.getId(), ogrenci);
-        donationService.ship(c.getId(), donor);
+        donationService.arrange(c.getId(), donor, bulusma());
 
         assertThatThrownBy(() -> donationService.cancelClaim(c.getId(), ogrenci))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("iptal edilemez");
+    }
+
+    @Test
+    void kargoKapaliykenKargolamaReddedilir() {
+        User donor = user("bagisci", false, "İzmir");
+        User ogrenci = user("ogrenci", true, "Ankara");
+        Claim c = donationService.claim(newDonation(donor, 1).getId(), ogrenci);
+
+        assertThatThrownBy(() -> donationService.ship(c.getId(), donor))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Kargo akışı kapalı");
     }
 
     @Test

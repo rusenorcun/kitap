@@ -122,10 +122,12 @@ public class RequestService {
         return r;
     }
 
-    /** Karşılayan kargoya verdi. */
+    /** Karşılayan kargoya verdi. Yalnızca kargo akışı açıkken kullanılır. */
     @Transactional
     public void ship(Long requestId, User fulfiller) {
         BookRequest r = ownFulfilled(requestId, fulfiller);
+        if (!features.isShipping())
+            throw new IllegalStateException("Kargo akışı kapalı; teslim kampüste yüz yüze yapılır.");
         if (r.getStatus() != RequestStatus.FULFILLED)
             throw new IllegalStateException("Bu istek kargo aşamasında değil.");
         r.setStatus(RequestStatus.SHIPPED);

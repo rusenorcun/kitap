@@ -221,8 +221,9 @@ public class SwapService {
                     "Takas teklifin reddedildi: \"" + other.getTargetSwapBook().getBook().getTitle() + "\" başka biriyle takaslandı.");
         }
 
-        notifications.notify(o.getFromUser(), "swap_accepted",
-                me.getName() + " takas teklifini kabul etti. Adresler paylaşıldı; kitabı kargolayabilirsin.");
+        notifications.notify(o.getFromUser(), "swap_accepted", features.isShipping()
+                ? me.getName() + " takas teklifini kabul etti. Adresler paylaşıldı; kitabı kargolayabilirsin."
+                : me.getName() + " takas teklifini kabul etti. Kampüste bir buluşma ayarlayıp kitapları karşılıklı teslim edebilirsiniz.");
         return o;
     }
 
@@ -329,7 +330,6 @@ public class SwapService {
         offers.save(o);
     }
 
-    /** Adresler yalnızca kabul edilmiş/tamamlanmış takasta paylaşılır. */
     /** Karşı taraf takas buluşmasına gelmedi. Takas iptal olur, kitaplar geri açılır. */
     @Transactional
     public SwapOffer noShow(Long offerId, User bildiren) {

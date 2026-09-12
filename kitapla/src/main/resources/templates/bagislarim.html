@@ -89,12 +89,15 @@
             <div th:if="${features.handover}" style="flex-basis:100%">
               <div class="row gap-8" style="justify-content:flex-end;align-items:center;flex-wrap:wrap">
                 <a th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
-                <a class="btn btn-soft btn-sm" th:href="@{'/sikayet/claim/' + ${c.id}(geri='/bagislarim')}"
-                   style="color:inherit">Şikâyet et</a>
+                <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('claim', ${c.id}, '/bagislarim')}"></a>
+                <th:block th:if="${c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW'}">
+                  <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/bagis/' + ${c.id}, ${c.meeting}, '/bagislarim')}"></form>
+                </th:block>
               </div>
               <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
-              <div th:if="${c.status.name() != 'DELIVERED'}"
-                   th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar})}"></div>
+              <th:block th:if="${c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW'}">
+                <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar}, '/bagislarim')}"></div>
+              </th:block>
             </div>
           </div>
         </div>

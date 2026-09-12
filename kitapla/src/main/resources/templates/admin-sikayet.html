@@ -44,6 +44,33 @@
   </div>
 
   <!-- Şikâyet edilen teslimat / içerik detayları -->
+  <!--/* Controller bağış ve takas ilanını da modele koyar; ikisi de burada gösterilir,
+         yoksa yönetici neyin şikâyet edildiğini göremez. */-->
+  <div th:if="${donation}" class="card card-pad" style="margin-bottom:18px">
+    <div class="label" style="margin-bottom:8px">İlgili Bağış İlanı</div>
+    <div style="font-size:15px;font-weight:800" th:text="${donation.book.title}">Kitap</div>
+    <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">
+      Yazar: <span th:text="${donation.book.author}">Yazar</span> ·
+      Bağışçı: <span th:text="${donation.donor.name}">Ad</span> ·
+      Durum: <span th:text="${donation.status.name()}">Durum</span>
+    </div>
+    <p th:if="${donation.description}" class="muted" style="font-size:13px;font-weight:500;margin:8px 0 0"
+       th:text="${donation.description}">Açıklama</p>
+    <a class="btn btn-soft btn-sm" style="margin-top:10px" th:href="@{'/kitap/' + ${donation.id}}">İlanı aç →</a>
+  </div>
+
+  <div th:if="${swapBook}" class="card card-pad" style="margin-bottom:18px">
+    <div class="label" style="margin-bottom:8px">İlgili Takas İlanı</div>
+    <div style="font-size:15px;font-weight:800" th:text="${swapBook.book.title}">Kitap</div>
+    <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">
+      Yazar: <span th:text="${swapBook.book.author}">Yazar</span> ·
+      Sahibi: <span th:text="${swapBook.user.name}">Ad</span> ·
+      Durum: <span th:text="${swapBook.status.name()}">Durum</span>
+    </div>
+    <p th:if="${swapBook.note}" class="muted" style="font-size:13px;font-weight:500;margin:8px 0 0"
+       th:text="'İster: ' + ${swapBook.note}">Not</p>
+  </div>
+
   <div th:if="${claim}" class="card card-pad" style="margin-bottom:18px">
     <div class="label" style="margin-bottom:8px">İlgili Bağış Teslimatı Bilgisi</div>
     <div style="font-size:15px;font-weight:800" th:text="${claim.donation.book.title}">Kitap</div>

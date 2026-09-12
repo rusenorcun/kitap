@@ -271,10 +271,12 @@ public class DonationService {
 
     // ---------- Teslimat akışı ----------
 
-    /** Bağışçı kargoya verdi. */
+    /** Bağışçı kargoya verdi. Yalnızca kargo akışı açıkken kullanılır. */
     @Transactional
     public void ship(Long claimId, User donor) {
         Claim c = claimOfDonor(claimId, donor);
+        if (!features.isShipping())
+            throw new IllegalStateException("Kargo akışı kapalı; teslim kampüste yüz yüze yapılır.");
         if (c.getStatus() != ClaimStatus.MATCHED)
             throw new IllegalStateException("Bu kayıt zaten kargolanmış.");
         c.setStatus(ClaimStatus.SHIPPED);

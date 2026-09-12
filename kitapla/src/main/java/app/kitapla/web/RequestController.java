@@ -24,11 +24,14 @@ public class RequestController {
     private final RequestService requestService;
     private final PickupPointService points;
     private final BookService bookService;
+    private final app.kitapla.config.Features features;
 
-    public RequestController(RequestService requestService, BookService bookService, PickupPointService points) {
+    public RequestController(RequestService requestService, BookService bookService,
+                             PickupPointService points, app.kitapla.config.Features features) {
         this.requestService = requestService;
         this.points = points;
         this.bookService = bookService;
+        this.features = features;
     }
 
     /** Açık istekler — herkese açık; teslimat adresi burada GÖSTERİLMEZ. */
@@ -92,7 +95,9 @@ public class RequestController {
             DonationSource src = (source == null || source.isBlank())
                     ? DonationSource.PURCHASE : DonationSource.valueOf(source.trim().toUpperCase(java.util.Locale.ROOT));
             requestService.fulfill(id, principal.getUser(), src);
-            ra.addFlashAttribute("basari", "İsteği karşıladın. Teslimat adresi aşağıda; kargoladığında işaretle.");
+            ra.addFlashAttribute("basari", features.isShipping()
+                    ? "İsteği karşıladın. Teslimat adresi aşağıda; kargoladığında işaretle."
+                    : "İsteği karşıladın. Karşı tarafla mesajlaşıp kampüste bir buluşma ayarlayabilirsin.");
             return "redirect:/karsiladiklarim";
         } catch (IllegalStateException | IllegalArgumentException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());

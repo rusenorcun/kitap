@@ -18,7 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Bağış oluşturma, bağışlarım ve teslimat (kargola) işlemleri. */
+/** Bağış oluşturma, bağışlarım ve teslimat işlemleri. */
 @Controller
 public class DonationController {
 

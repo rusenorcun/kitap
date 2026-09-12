@@ -198,4 +198,37 @@ class MessageAndReportApiTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.body").value(adminMsg.body()));
     }
+
+    /**
+     * Şikâyet gönderen kendi kayıtlarını ve sonucunu görebilmeli; mobil taraf
+     * "Şikâyetlerim" ekranını bu uçtan besler.
+     */
+    @Test
+    void my_reports_listesi_kendi_kayitlarini_dondurur() throws Exception {
+        ReportBody body = new ReportBody("TESLIMAT_SORUNU", "Buluşmaya gelmedi, ulaşamıyorum");
+
+        mvc.perform(post("/api/v1/reports/claim/" + claim.getId())
+                        .with(user(as(userB)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(mapper.writeValueAsString(body)))
+                .andExpect(status().isNoContent());
+
+        mvc.perform(get("/api/v1/reports").with(user(as(userB))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()", greaterThanOrEqualTo(1)))
+                .andExpect(jsonPath("$[0].kind").value("CLAIM"))
+                .andExpect(jsonPath("$[0].status").value("OPEN"))
+                .andExpect(jsonPath("$[0].note").value(body.note()))
+                .andExpect(jsonPath("$[0].reasonLabel").exists());
+
+        // Şikâyet edilen tarafın listesinde bu kayıt görünmez
+        mvc.perform(get("/api/v1/reports").with(user(as(userA))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.length()").value(0));
+    }
+
+    @Test
+    void my_reports_girissiz_erisilemez() throws Exception {
+        mvc.perform(get("/api/v1/reports")).andExpect(status().isUnauthorized());
+    }
 }

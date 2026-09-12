@@ -124,10 +124,12 @@ public class MessageService {
     }
 
     public long unread(Conversation c, User me) {
-        Instant son = c.lastReadOf(me);
-        if (son == null && c.getKind() == ConversationKind.REPORT && me.isAdmin() && !c.has(me)) {
-            son = c.getUserB().getId().equals(me.getId()) ? c.getLastReadB() : c.getLastReadA();
-        }
+        // Şikâyet sohbetinde yönetici tarafı userB'dir; sohbetin tarafı olmayan
+        // bir yönetici de aynı damgayı kullanır. Şikâyet edenin (userA) damgasına
+        // asla düşülmez, yoksa yönetici "okunmuş" görünen mesajları kaçırır.
+        Instant son = c.getKind() == ConversationKind.REPORT && me.isAdmin() && !c.has(me)
+                ? c.getLastReadB()
+                : c.lastReadOf(me);
         return son == null
                 ? messages.countByConversationAndSenderNot(c, me)
                 : messages.countByConversationAndSenderNotAndCreatedAtAfter(c, me, son);
