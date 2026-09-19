@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Okul e-postası onayı')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+<div class="container-narrow" style="padding:40px 0">
+  <h1>Okul e-postanı doğrula</h1>
+  <p>Bu işlem, giriş yaptığın hesabın bekleyen okul adresini doğrular.</p>
+  <p th:text="${user.studentEmail}"></p>
+  <form th:action="@{/profil/ogrenci/eposta/onay}" method="post" class="card card-pad">
+    <input type="hidden" name="token" th:value="${token}"/>
+    <button class="btn btn-primary" type="submit">Okul e-postamı onayla</button>
+  </form>
+</div>
+</body>
+</html>

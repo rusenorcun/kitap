@@ -1,9 +1,8 @@
 # Bakım sayfası
 
-`index.html`, KİTAPLA uygulaması (`127.0.0.1:8080` ya da `kitapla:8080`)
-kapalıyken Caddy'nin ziyaretçiye gösterdiği sayfadır. **Tüm dağıtım yolları
-bu tek dosyayı sunar**; daha önce üç ayrı kopya vardı ve biri diğerlerinden
-farklı görünüyordu.
+`index.html`, KitAppLa uygulaması (`127.0.0.1:8080`) kapalıyken ana makinedeki
+Caddy'nin ziyaretçiye gösterdiği sayfadır. `deploy/kitappla.caddy` içindeki
+`handle_errors 502 503 504` bloğu bu klasörü (`C:/Project/kitap/kitap/bakim`) sunar.
 
 ## Sayfanın kendisi
 
@@ -19,43 +18,13 @@ motorları bakım metnini sitenin içeriği sanmaz.
 Sayfadaki küçük betik 15 saniyede bir sunucuyu yoklar; yanıt 5xx olmaktan
 çıktığı anda sayfayı kendiliğinden yeniler.
 
-## Hangi yapılandırma nereye bakıyor
-
-| Dağıtım | Dosya | Bakım sayfasının kökü |
-|---|---|---|
-| Ana makinedeki `caddy.exe` (kitap.rorcun.com) | `deploy/Caddyfile.rorcun-ornek` | `C:/Project/kitap/kitap/bakim` |
-| Docker + ortak Caddy | `deploy/Caddyfile.sunucu` | `/bakim` (compose'da bağlanır) |
-| Docker, tek alan adı | `deploy/Caddyfile` | `/bakim` (compose'da bağlanır) |
-| Mevcut Caddy'ye eklenen blok | `deploy/kitap-site.caddy` | sunucudaki depo yolu |
-
-Docker tarafında klasör compose dosyalarında salt okunur bağlanır:
-
-```yaml
-- ${BAKIM_KLASORU:-./bakim}:/bakim:ro
-```
-
-Başka bir klasörden sunmak istersen `.env` içine `BAKIM_KLASORU` yaz.
-Doğrudan kurulumda (systemd) `root *` satırını deponun sunucudaki yoluna
-göre düzelt.
-
-Her blokta `rewrite * /index.html` vardır: klasördeki her yol bu sayfaya
+Caddy bloğunda `rewrite * /index.html` vardır: klasördeki her yol bu sayfaya
 döner, dolayısıyla klasöre başka bir dosya konsa bile dışarı sızmaz.
 
 ## Değişiklik yaptıktan sonra
 
-Sayfa diskten okunduğu için Caddy'yi yeniden başlatmaya gerek yok;
-kaydetmek yeterlidir. Yalnızca Caddyfile'ı değiştirirsen:
-
-```
-caddy validate --config Caddyfile
-caddy reload  --config Caddyfile
-```
-
-Docker'da:
-
-```
-docker compose -f docker-compose.sunucu.yml restart caddy
-```
+Sayfa diskten okunduğu için kaydetmek yeterlidir; Caddy'yi yeniden yüklemeye
+gerek yok. `deploy/kitappla.caddy`'yi değiştirirsen bkz. `docs/canliya-gecis.md`.
 
 ## Sınır
 

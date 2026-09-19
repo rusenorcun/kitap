@@ -1,67 +1,103 @@
-# 📚 KİTAPLA
+# KitAppLa
 
 Öğrencilere öncelik veren, herkesin katılabildiği bir **kitap bağış ve takas platformu**.
-Spring Boot + Thymeleaf ile sunucu tarafında render edilen, tek parça çalışan bir web uygulamasıdır.
+Spring Boot + Thymeleaf ile sunucu tarafında render edilen web sitesi; mobil uygulama için
+aynı iş kurallarını kullanan bir JSON API (`/api/v1`) de sunar.
 
-> Yerel kullanım için hazırdır: e-posta gönderimi, ödeme ya da harici servis bağımlılığı yoktur.
+- Site: <https://www.kitappla.com>
+- Yönetim: <https://admin.kitappla.com>
 
-## Hızlı başlangıç
+## Depo düzeni
 
-### Docker ile (en kolay)
-
-```bash
-docker compose up -d --build     # http://localhost:8080
+```
+kitappla/                 uygulama (Maven projesi, Dockerfile)
+  src/main/java/app/kitapla/
+    domain/               JPA varlıkları ve enum'lar
+    repo/                 Spring Data repository'leri
+    service/              iş kuralları (kota, öncelik, moderasyon, posta, SSE)
+    security/             kimlik doğrulama, beni hatırla, giriş sınırı
+    web/                  sayfa controller'ları
+    api/                  mobil JSON API (v1) ve DTO'lar
+    config/               güvenlik, marka, önbellek, açılış verisi
+  src/main/resources/
+    templates/            Thymeleaf şablonları (mail/ ve error/ dahil)
+    static/               tasarım sistemi (css) ve favicon
+    db/migration/         Flyway göçleri (PostgreSQL)
+docker-compose.yml        canlı sunucu: uygulama + PostgreSQL
+deploy/kitappla.caddy     canlı Caddy site blokları
+deploy/kitapla.env.ornek  .env şablonu
+bakim/                    uygulama kapalıyken Caddy'nin sunduğu bakım sayfası
+docs/canliya-gecis.md     canlıya alma, doğrulama ve geri dönüş
 ```
 
-Java kurmana gerek yok. Ayrıntılar ve yayına alma için:
-**[deploy/DOCKER.md](deploy/DOCKER.md)**.
+## Yerel geliştirme
 
-### Doğrudan (Docker olmadan)
-
-Tek gereksinim **JDK 21**. Maven kurmanıza gerek yok — depodaki sarmalayıcı (`mvnw`) gerekirse
-kendi Maven sürümünü indirir.
+Tek gereksinim **JDK 21**; Maven sarmalayıcısı (`mvnw`) gerekirse kendi Maven sürümünü indirir.
+Yerelde dosya tabanlı H2 veritabanı kullanılır (`kitappla/data/`), örnek veri açıktır ve posta
+gönderilmez (iletiler günlüğe yazılır).
 
 ```bash
-cd kitapla
-./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run
-```
-
-Uygulama <http://localhost:8080> adresinde açılır. İlk açılışta veritabanı, yönetici hesabı ve
-deneme verisi otomatik oluşur.
-
-Tek dosyalık çalıştırılabilir sürüm isterseniz:
-
-```bash
-./mvnw -DskipTests package
-java -jar target/kitapla-0.1.0.jar
+cd kitappla
+./mvnw spring-boot:run        # Windows: mvnw.cmd spring-boot:run  →  http://localhost:8080
+./mvnw test
 ```
 
 | Hesap | E-posta | Şifre | Rolü |
 | --- | --- | --- | --- |
 | Yönetici | `admin@kitapla.app` | `admin123` | Yönetim paneli |
-| Bağışçı | `ayse@ornek.com` | `sifre123` | Üye (doğrulanmamış) |
+| Bağışçı | `ayse@ornek.com` | `sifre123` | Üye |
 | Öğrenci | `elif@ornek.com` | `sifre123` | Onaylı öğrenci |
 | Başvuru sahibi | `mert@ornek.com` | `sifre123` | Belgesi incelemede |
 
-```bash
-./mvnw test                   # 248 test
+Bu hesaplar yalnızca yerelde oluşur: canlıda örnek veri kapalıdır ve `prod` profili
+`admin123` şifresiyle açılmayı reddeder.
+
+## Canlıya alma
+
+Canlı sunucu bu makinedir: ana makinedeki Caddy servisi HTTPS'i ve alan adlarını karşılar,
+uygulama ile PostgreSQL `docker-compose.yml` ile konteynerde çalışır ve yalnızca
+`127.0.0.1:8080`'i dinler.
+
+```bat
+cd C:\Project\kitap\kitap
+docker compose up -d --build
 ```
+
+Yedek, doğrulama ve geri dönüş adımları: **[docs/canliya-gecis.md](docs/canliya-gecis.md)**.
+
+`prod` profili oturum çerezini `Secure` yapar, şablon önbelleğini açar, H2 konsolunu kapatır,
+ters vekilin ilettiği `X-Forwarded-*` başlıklarını dikkate alır ve şemayı Flyway ile yönetir
+(`ddl-auto=validate`). Yeni bir şema değişikliği `kitappla/src/main/resources/db/migration/`
+altına yeni bir `V<n>__aciklama.sql` dosyası olarak eklenir.
+
+## Yapılandırma
+
+Canlı ayarlar depo kökündeki `.env` dosyasından okunur (depoya girmez); şablon ve açıklamalar
+`deploy/kitapla.env.ornek` içindedir. Başlıcaları:
+
+| Değişken | Açıklama |
+| --- | --- |
+| `KITAPLA_NAME`, `KITAPLA_DOMAIN` | Görünen marka adı ve alan adı |
+| `KITAPLA_BASE_URL` | Postadaki bağlantıların kök adresi |
+| `KITAPLA_ADMIN_URL` | Yönetimin ayrı alan adı (boşsa `/admin` sitenin içinde) |
+| `KITAPLA_ADMIN_EMAIL` / `_PASSWORD` / `_NAME` | Açılışta oluşturulan/güncellenen yönetici |
+| `KITAPLA_DB_*` | PostgreSQL bağlantısı |
+| `KITAPLA_MAIL_ENABLED`, `KITAPLA_SMTP_*` | E-posta gönderimi |
+
+Kapalı akışlar bayrakla geri açılabilir (kod ve sütunlar yerinde durur): `KITAPLA_DOCUMENT`
+(belgeyle öğrenci başvurusu), `KITAPLA_SHIPPING` (kargo), `KITAPLA_PURCHASE` (satın alıp gönder),
+`KITAPLA_ADDRESS` (teslimat adresi).
+
+> `application.properties` ISO-8859-1 okunur: Türkçe karakterli değerler `\u` kaçışıyla yazılır.
 
 ## Hesap modeli
 
 Tek hesap; herkes hem **bağış yapabilir** hem de **kitap alabilir**. Alıcı iki katmandan biridir:
 
-- **Üye** — okul adresi doğrulanmamış. Bağış yapar, takas eder, kitap alır. Önceliği yoktur, kotası düşüktür.
-- **Öğrenci** — okul e-postası (`.edu.tr`) doğrulanmış üye. Bağışta **48 saat öncelik** ve daha yüksek kota kazanır.
-
-Kayıt sırasında `.edu.tr` uzantılı bir adres kullanan doğrudan öğrenci olur. Kişisel bir adresle kaydolan üye
-dilediği zaman `/profil/ogrenci` üzerinden okul adresini ekleyip öğrenci olabilir — yeniden kaydolması gerekmez.
-
-> Posta servisi bağlanana kadar adres yalnızca **uzantısına** bakılarak kabul edilir; gerçekten üyeye ait olduğu
-> doğrulanmaz. Servis geldiğinde bu adrese kod gönderilip onay istenecek (`User.studentEmail` bu yüzden ayrı tutulur).
-
-Belge yükleyerek başvuru **silinmedi**, kapatıldı: `kitapla.features.document=true` ile geri gelir ve yönetim
-onay ekranı olduğu gibi çalışır (`BelgeModuTest` bunu doğrular).
+- **Üye** — okul adresi doğrulanmamış. Bağış yapar, takas eder, kitap alır; kotası düşüktür.
+- **Öğrenci** — okul e-postası (`.edu.tr`) doğrulanmış üye. Bağışta **48 saat öncelik** ve daha
+  yüksek kota kazanır. Okul adresi kayıtta ya da sonradan `/profil/ogrenci` üzerinden eklenir;
+  adrese gönderilen bağlantıyla doğrulanır. Bir okul adresi yalnızca bir hesaba bağlanabilir.
 
 ## Akışlar
 
@@ -69,151 +105,36 @@ onay ekranı olduğu gibi çalışır (`BelgeModuTest` bunu doğrular).
 2. **İstek** — Alıcı ihtiyacı olan kitabı listeler; başka biri elindeki kopyayla karşılar.
 3. **Takas** — Üyeler kitaplarını takasa açar, başkasının kitabına kendi kitabıyla teklif verir. Kabul edilince kampüste buluşup karşılıklı verirler. Kotadan bağımsızdır.
 
-Teslim **kampüs içinde yüz yüze** yapılır; kargo yoktur ve **ev adresi paylaşılmaz**. Eşleşen taraflar mesajlaşarak yer ve saatte anlaşır, biri buluşmayı kaydeder, karşı tarafa bildirim gider. Buluşmadan önce hatırlatma düşer. Akış `eşleşti → buluşma ayarlandı → teslim edildi`; karşı taraf gelmezse **gelinmedi** olarak işaretlenir (kitap havuza döner, gelmeyenin kota hakkı yanar).
-
-Eşleşen taraflar **mesajlaşabilir**; sohbet yalnızca bir alışveriş üzerinden açılır. Kural dışı içerik **şikâyet** edilebilir.
+Teslim **kampüs içinde yüz yüze** yapılır; ev adresi paylaşılmaz. Eşleşen taraflar mesajlaşarak
+yer ve saatte anlaşır, buluşmadan önce hatırlatma düşer. Akış
+`eşleşti → buluşma ayarlandı → teslim edildi`; karşı taraf gelmezse **gelinmedi** olarak
+işaretlenir (kitap havuza döner, gelmeyenin kota hakkı yanar). Kural dışı içerik **şikâyet**
+edilebilir.
 
 ## Kurallar
 
-- **Öğrenci önceliği** — Yeni bağış ilk **48 saat** yalnızca doğrulanmış öğrencilere açıktır; süre dolunca tüm üyelere açılır.
-- **Kota** — Öğrenci son 7 günde **3**, 30 günde **10**; üye son 7 günde **1**, 30 günde **3** kitap alabilir. Bağıştan alınanlar ve karşılanan istekler sayıma dahildir. Bağış yapmanın sınırı yoktur.
-- **Teslim** — Kampüs içindeki teslim noktalarında yüz yüze. Ev adresi istenmez.
-- **Gelinmedi** — Buluşma saati geçtikten sonra karşı taraf bildirebilir. Kitap havuza döner ama gelmeyenin kota hakkı yanar; tekrarı yönetim tarafından görülür.
-- **Öğrenci doğrulaması** — Okulun verdiği `.edu.tr` uzantılı e-posta adresi. Bir okul adresi yalnızca bir hesaba bağlanabilir.
-- **Kitap kaydı** — Aynı ad + yazar ikinci kez oluşturulmaz (bul ya da oluştur). Alışveriş linki verilirse başlık ve kapak **OpenGraph** ile otomatik doldurulur.
+- **Öğrenci önceliği** — Yeni bağış ilk **48 saat** yalnızca doğrulanmış öğrencilere açıktır.
+- **Kota** — Öğrenci son 7 günde **3**, 30 günde **10**; üye son 7 günde **1**, 30 günde **3** kitap alabilir. Bağış yapmanın sınırı yoktur.
+- **Kitap kaydı** — Aynı ad + yazar ikinci kez oluşturulmaz. Alışveriş linki verilirse başlık ve kapak OpenGraph ile doldurulur.
 - **Giriş denemesi** — Aynı e-posta + IP için 15 dakikada 8 hatalı denemeden sonra giriş geçici olarak kilitlenir.
+- **Askıya alma** — Askıya alınan üyenin süren talep, istek ve takasları iptal edilir, karşı tarafın hakkı iade edilir.
 
-## Yönetim paneli (`/admin`)
+## Yönetim paneli
 
-- **Pano** — üye, öğrenci, bağış, istek ve takas sayaçları; bekleyen belge uyarısı
-- **Öğrenci belgeleri** — onayla ya da gerekçeli reddet. Reddedilen belge diskten silinir, üye yeni belgeyle tekrar başvurabilir
-- **Üyeler** — arama, askıya alma/aktif etme, yönetici yetkisi verme/alma, kaydı olmayan üyeyi silme
-- **İçerik** — açık bağış, istek ve takas ilanlarını gerekçeyle kaldırma
-
-Her yönetim işlemi ilgili üyeye bildirim bırakır. Yönetici işlemleri **anında** geçerli olur; ilgili üyenin yeniden giriş yapması gerekmez, askıya alınan üyenin açık oturumu da hemen düşer.
-
-Öğrenci belgeleri hiçbir zaman herkese açık servis edilmez; yalnızca `/admin/belge/{id}` ucundan, yönetici oturumuyla görüntülenir.
-
-## Yayına alma
-
-İki yol var:
-
-- **Docker ile** — `docker-compose.prod.yml`: uygulama ve Caddy birlikte ayağa
-  kalkar, tek komut. Bkz. **[deploy/DOCKER.md](deploy/DOCKER.md)**.
-- **Doğrudan sunucuya** — systemd + sistem Caddy'si. Bkz.
-  **[deploy/README.md](deploy/README.md)**.
-
-Her ikisi de `deploy/Caddyfile` dosyasını paylaşır; alan adı ve hedef ortam
-değişkeninden okunur.
-
-```bash
-./mvnw -DskipTests package
-java -jar target/kitapla-0.1.0.jar --spring.profiles.active=prod
-```
-
-`prod` profili uygulamayı yalnızca `127.0.0.1`'e bağlar, oturum çerezini
-`Secure` yapar, şablon önbelleğini açar, H2 konsolunu kapatır ve ters vekilin
-ilettiği `X-Forwarded-*` başlıklarını dikkate alır.
-
-## Yapılandırma
-
-`kitapla/src/main/resources/application.properties` içinden ya da ortam değişkenleriyle:
-
-| Değişken | Açıklama | Varsayılan |
-| --- | --- | --- |
-| `KITAPLA_ADMIN_EMAIL` | Açılışta oluşturulacak yönetici | `admin@kitapla.app` |
-| `KITAPLA_ADMIN_PASSWORD` | Yönetici şifresi | `admin123` |
-| `KITAPLA_ADMIN_NAME` | Yönetici adı | `Yönetici` |
-| `KITAPLA_CONTACT_EMAIL` | İletişim sayfasında gösterilen adres | yönetici e-postası |
-| `SERVER_PORT` | Sunucu portu | `8080` |
-| `KITAPLA_DOCUMENT` | Belgeyle öğrenci başvurusunu geri açar | `false` |
-| `KITAPLA_SHIPPING` / `KITAPLA_PURCHASE` / `KITAPLA_ADDRESS` | Kargo, satın alma ve adres akışlarını geri açar | `false` |
-
-Varsayılan yönetici şifresi kullanıldığında açılışta uyarı loglanır. Yerel deneme dışında mutlaka değiştirin:
-
-```bash
-KITAPLA_ADMIN_PASSWORD=guclu-parola ./mvnw spring-boot:run
-```
-
-> Ortam değişkeniyle **Türkçe karakter** içeren bir değer verecekseniz (ör. yönetici adı)
-> kabuğun UTF-8 yerelinde olması gerekir; aksi halde JVM değeri ASCII olarak okur:
-> `LANG=C.UTF-8 KITAPLA_ADMIN_NAME="Baş Yönetici" ./mvnw spring-boot:run`
-
-Diğer ayarlar: `kitapla.upload-dir` (yüklenen dosyalar, varsayılan `./uploads`),
-`kitapla.login.max-attempts`, `kitapla.login.window-minutes`.
-
-## Sürüm yükseltme
-
-Şema `spring.jpa.hibernate.ddl-auto=update` ile yönetilir: yeni sürüm açıldığında
-eksik tablo ve sütunlar var olan veritabanına eklenir, veriler durur.
-
-Bunun çalışması için varsayılanı olan her `NOT NULL` alan `@ColumnDefault` taşır —
-yoksa H2 dolu bir tabloya varsayılansız `NOT NULL` sütun ekleyemez, DDL sessizce
-başarısız olur ve uygulama açılışın hemen ardından çöker. Docker'da `restart`
-politikası bunu **sürekli yeniden başlayan bir konteynere** dönüştürür: Spring
-başlıyor gibi görünür, sonra baştan alır.
-
-Belirti buysa günlüğe bakın:
-
-```bash
-docker compose logs kitapla | grep -i "GenerationTarget\|APPLICATION FAILED"
-```
-
-`app.kitapla.domain` altındaki entity'lere varsayılanı olan yeni bir `NOT NULL` alan
-eklerken `@ColumnDefault` yazmayı unutmayın; `SemaGuncellemeTest` bu kuralı korur.
-
-## Mobil uygulama
-
-Backend sunucu-render (Thymeleaf) mimarisiyle çalışır; **JSON API yoktur**.
-Mobil uygulamayı uyarlayacak kişi için hazırlanan devir notu — mevcut uçlar,
-iş kuralları, eski sürüme göre değişenler ve önerilen API katmanı:
-**[docs/MOBIL-DEVIR.md](docs/MOBIL-DEVIR.md)**
+Pano sayaçları; üye arama, askıya alma, yönetici yetkisi; teslim noktaları; ilan kaldırma;
+şikâyetler. Yönetim işlemleri anında geçerli olur ve ilgili üyeye bildirim bırakır.
+`KITAPLA_ADMIN_URL` tanımlıysa yönetim sayfaları yalnızca o alan adında açılır.
 
 ## Teknoloji
 
 | Katman | Seçim |
 | --- | --- |
 | Çalışma zamanı | Java 21, Spring Boot 3.3 |
-| Web | Spring MVC + Thymeleaf (sunucu tarafı render) |
-| Dinamik parçalar | HTMX (filtreler, link önizleme, bildirim okundu işaretleme) |
-| Veri | Spring Data JPA + H2 (dosya tabanlı; testlerde bellek içi) |
-| Güvenlik | Spring Security (form girişi, BCrypt, CSRF) |
-| Bağımlılık | Jsoup (OpenGraph başlık/kapak çıkarımı) |
+| Web | Spring MVC + Thymeleaf, HTMX, SSE (canlı bildirim ve mesaj) |
+| Veri | Spring Data JPA; canlıda PostgreSQL 16 + Flyway, yerelde ve testlerde H2 |
+| Güvenlik | Spring Security (form girişi, BCrypt, CSRF, kalıcı "beni hatırla") |
+| Önbellek | Caffeine |
+| Diğer | Jsoup (OpenGraph), Spring Mail |
 
-`spring.jpa.open-in-view` kapalıdır; şablonların eriştiği ilişkiler repository sorgularında `join fetch` ile çekilir.
-
-## Proje yapısı
-
-```
-kitapla/
-  src/main/java/app/kitapla/
-    domain/      JPA varlıkları ve enum'lar
-    repo/        Spring Data repository'leri
-    service/     iş kuralları (kota, öncelik, moderasyon)
-    security/    kimlik doğrulama, oturum tazeleme, giriş sınırı
-    web/         controller'lar
-    config/      güvenlik yapılandırması ve deneme verisi
-  src/main/resources/
-    templates/   Thymeleaf şablonları
-    static/css/  tasarım sistemi
-```
-
-## Sayfalar
-
-Herkese açık: ana sayfa, keşfet, kitap detayı, açık istekler, SSS, **topluluk kuralları**,
-**gizlilik** ve **iletişim**. Giriş sonrası: panom, bağış/istek/takas akışları, teslimat takibi,
-profil, öğrenci başvurusu ve bildirimler. Yöneticiye ayrıca `/admin` altındaki dört sayfa açılır.
-
-## Tasarım
-
-Renk paleti: Saman Kağıdı `#F3EAD3`, Koyu Espresso `#3E2723`, Tarçın `#C65D47`, Soluk Adaçayı `#8FA89B`.
-Karanlık tema `prefers-color-scheme` ile otomatik gelir. Logo üç kitap sırtından oluşur.
-
-## Testler
-
-```bash
-cd kitapla && ./mvnw test
-```
-
-248 test; iş kuralları (kota, öncelik penceresi, takas durumları, moderasyon) servis testleriyle,
-sayfa akışları ve erişim denetimi MockMvc testleriyle doğrulanır.
+`spring.jpa.open-in-view` kapalıdır; şablonların eriştiği ilişkiler repository sorgularında
+`join fetch` ile çekilir.

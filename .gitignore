@@ -6,8 +6,11 @@ data/
 uploads/
 
 *.log
-.env
 .DS_Store
+
+# Sırlar ve yedekleri (örnek dosya: deploy/kitapla.env.ornek)
+.env
+.env.*
 
 # code-review-graph verisi
 .code-review-graph/

@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Panom')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('panom')}"></div>
+
+<!--/* Pano üç soruyu sırayla yanıtlar: ne kadar hakkım var, ne yapmam gerekiyor, nereye gideyim.
+       Bağlantılar üst menüyle yinelenmesin diye yalnızca iki ana eylem başlıkta durur. */-->
+<main class="container pano">
+  <header class="pano-ust">
+    <div>
+      <h1 class="pano-baslik">Merhaba, <span th:text="${#strings.arraySplit(user.name, ' ')[0]}">Elif</span></h1>
+      <p class="muted pano-alt-baslik" th:text="${user.student} ? 'Doğrulanmış öğrenci · öncelikli üyelik' : ${marka.ad} + ' üyesi'">Üye</p>
+    </div>
+    <div class="row gap-8 pano-eylem">
+      <!--/* "Bağış yap" üst menüde her sayfada duruyor; burada menüde olmayan iki iş yer alır. */-->
+      <a class="btn btn-soft" th:href="@{/istek/yeni}">Kitap iste</a>
+      <a class="btn btn-soft" th:href="@{/takas/kitaplarim}">Takasa kitap ekle</a>
+    </div>
+  </header>
+
+  <!-- Haklar ve öğrencilik durumu: üç eşit kart -->
+  <section class="pano-istatistik" aria-label="Kitap hakların">
+    <div class="card card-pad stat">
+      <div class="stat-etiket">Bu hafta kalan hak</div>
+      <div class="stat-deger"><b th:text="${quota.weeklyRemaining}">1</b><span th:text="'/ ' + ${quota.weeklyLimit}">/ 3</span></div>
+      <div class="ilerleme" role="progressbar" aria-label="Haftalık hak"
+           th:aria-valuenow="${quota.weeklyRemaining}" aria-valuemin="0" th:aria-valuemax="${quota.weeklyLimit}">
+        <span th:style="'width:' + ${quota.weeklyRemaining * 100 / quota.weeklyLimit} + '%'"></span>
+      </div>
+    </div>
+    <div class="card card-pad stat">
+      <div class="stat-etiket">30 günlük hak</div>
+      <div class="stat-deger"><b th:text="${quota.monthlyRemaining}">9</b><span th:text="'/ ' + ${quota.monthlyLimit}">/ 10</span></div>
+      <div class="ilerleme" role="progressbar" aria-label="30 günlük hak"
+           th:aria-valuenow="${quota.monthlyRemaining}" aria-valuemin="0" th:aria-valuemax="${quota.monthlyLimit}">
+        <span th:style="'width:' + ${quota.monthlyRemaining * 100 / quota.monthlyLimit} + '%'"></span>
+      </div>
+    </div>
+
+    <div class="card card-pad stat stat-ogrenci" th:switch="${user.studentStatus.name()}">
+      <th:block th:case="'APPROVED'">
+        <div class="stat-etiket">Öğrenci önceliği</div>
+        <div class="stat-durum stat-durum-iyi">Aktif</div>
+        <p class="stat-not">Yeni bağışlarda 48 saat öncelik ve haftada 3 kitap hakkın var.</p>
+      </th:block>
+      <th:block th:case="'PENDING'">
+        <div class="stat-etiket">Öğrenci doğrulaman</div>
+        <div class="stat-durum">İnceleniyor</div>
+        <p class="stat-not">Onaylanınca öncelikli kitap alabileceksin. <a th:href="@{/profil/ogrenci}">Durumu gör →</a></p>
+      </th:block>
+      <th:block th:case="'REJECTED'">
+        <div class="stat-etiket">Öğrenci başvurun</div>
+        <div class="stat-durum">Onaylanmadı</div>
+        <!--/* Reddedilen başvuru yenilenebilir; bağlantı olmazsa üye yolu bulamıyordu. */-->
+        <p class="stat-not">Öğrenci başvurun onaylanmadı; okul e-postanla ya da güncel belgeyle yeniden başvurabilirsin.
+          <a th:href="@{/profil/ogrenci}">Öğrenci ol →</a></p>
+      </th:block>
+      <th:block th:case="*">
+        <div class="stat-etiket">Öğrenci misin?</div>
+        <div class="stat-durum">Öncelik kazan</div>
+        <p class="stat-not">Okul e-postanı (.edu.tr) doğrula: 48 saat öncelik, haftada 3 hak.
+          <a th:href="@{/profil/ogrenci}">Öğrenci ol →</a></p>
+      </th:block>
+    </div>
+  </section>
+
+  <!-- Bekleyen işler: yalnızca bir adım bekleyen süreçler -->
+  <section class="card pano-bolum" aria-labelledby="bekleyen-baslik"
+           th:with="toplam=${bekleyen.toplam() + unreadMessages}">
+    <div class="pano-bolum-bas">
+      <h2 id="bekleyen-baslik">Bekleyen işlerin</h2>
+      <span th:if="${toplam > 0}" class="badge badge-accent" th:text="${toplam}">3</span>
+    </div>
+    <ul class="gorevler" th:if="${toplam > 0}">
+      <li th:if="${bekleyen.gelenTeklif() > 0}">
+        <a th:href="@{/takas/takaslarim}"><b th:text="${bekleyen.gelenTeklif()}">1</b>
+          <span>Yanıt bekleyen takas teklifi</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${bekleyen.surenTakas() > 0}">
+        <a th:href="@{/takas/takaslarim}"><b th:text="${bekleyen.surenTakas()}">1</b>
+          <span>Buluşma ya da teslim bekleyen takas</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${bekleyen.aldiklarim() > 0}">
+        <a th:href="@{/aldiklarim}"><b th:text="${bekleyen.aldiklarim()}">1</b>
+          <span>Teslim alacağın kitap</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${bekleyen.bagislarim() > 0}">
+        <a th:href="@{/bagislarim}"><b th:text="${bekleyen.bagislarim()}">1</b>
+          <span>Teslim edeceğin bağış</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${bekleyen.isteklerim() > 0}">
+        <a th:href="@{/isteklerim}"><b th:text="${bekleyen.isteklerim()}">1</b>
+          <span>Karşılanan isteğin</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${bekleyen.karsiladiklarim() > 0}">
+        <a th:href="@{/karsiladiklarim}"><b th:text="${bekleyen.karsiladiklarim()}">1</b>
+          <span>Götüreceğin istek</span><span class="ok" aria-hidden="true">→</span></a></li>
+      <li th:if="${unreadMessages > 0}">
+        <a th:href="@{/mesajlar}"><b th:text="${unreadMessages}">1</b>
+          <span>Okunmamış mesajı olan sohbet</span><span class="ok" aria-hidden="true">→</span></a></li>
+    </ul>
+    <p th:unless="${toplam > 0}" class="pano-bos muted">
+      Şu an bekleyen bir işin yok. <a th:href="@{/kesfet}">Bağışlara göz at →</a></p>
+  </section>
+
+  <!-- Bölümler: üç dengeli grup, her birinde iki bağlantı -->
+  <section class="pano-gruplar" aria-label="Bölümler">
+    <nav class="card card-pad grup" aria-labelledby="grup-bagis">
+      <div class="grup-bas">
+        <span class="grup-ikon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12v10H4V12"/><path d="M2 7h20v5H2z"/><path d="M12 22V7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg></span>
+        <h2 id="grup-bagis">Bağış</h2>
+      </div>
+      <a class="grup-link" th:href="@{/bagislarim}"><span><b>Bağışlarım</b><small>Bağışların ve buluşmaların</small></span><span class="ok" aria-hidden="true">→</span></a>
+      <a class="grup-link" th:href="@{/aldiklarim}"><span><b>Aldıklarım</b><small>Teslimat durumunu takip et</small></span><span class="ok" aria-hidden="true">→</span></a>
+    </nav>
+    <nav class="card card-pad grup" aria-labelledby="grup-istek">
+      <div class="grup-bas">
+        <span class="grup-ikon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z"/><path d="M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z"/></svg></span>
+        <h2 id="grup-istek">İstek</h2>
+      </div>
+      <a class="grup-link" th:href="@{/isteklerim}"><span><b>İsteklerim</b><small>Açık ve karşılanan isteklerin</small></span><span class="ok" aria-hidden="true">→</span></a>
+      <a class="grup-link" th:href="@{/karsiladiklarim}"><span><b>Karşıladıklarım</b><small>Karşıladığın istekler</small></span><span class="ok" aria-hidden="true">→</span></a>
+    </nav>
+    <nav class="card card-pad grup" aria-labelledby="grup-takas">
+      <div class="grup-bas">
+        <span class="grup-ikon" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m17 2 4 4-4 4"/><path d="M3 11v-1a4 4 0 0 1 4-4h14"/><path d="m7 22-4-4 4-4"/><path d="M21 13v1a4 4 0 0 1-4 4H3"/></svg></span>
+        <h2 id="grup-takas">Takas</h2>
+      </div>
+      <a class="grup-link" th:href="@{/takas/takaslarim}"><span><b>Takaslarım</b><small>Gelen ve giden teklifler</small></span><span class="ok" aria-hidden="true">→</span></a>
+      <a class="grup-link" th:href="@{/takas/kitaplarim}"><span><b>Takas kitaplarım</b><small>Takasa açtığın kitaplar</small></span><span class="ok" aria-hidden="true">→</span></a>
+    </nav>
+  </section>
+
+  <p class="pano-dip muted">
+    <a th:href="@{/sikayetlerim}">Şikâyetlerim</a> · <a th:href="@{/profil}">Hesap ayarları</a>
+  </p>
+</main>
+</body>
+</html>

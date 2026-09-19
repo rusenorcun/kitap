@@ -1,0 +1,110 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <th:block th:fragment="offerCard(o, gelen, svc, me)">
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;margin-bottom:12px">
+        <div class="row gap-8">
+          <span class="avatar" style="width:28px;height:28px;font-size:10px"
+                th:text="${svc.counterpart(o, me).initials}">MC</span>
+          <span style="font-size:14px;font-weight:700" th:text="${svc.counterpart(o, me).name}">Kişi</span>
+          <span class="muted" style="font-size:12px;font-weight:600" th:text="${gelen} ? '(gelen)' : '(gönderdiğin)'">(gelen)</span>
+        </div>
+        <span class="badge"
+              th:classappend="${o.status.name() == 'COMPLETED'} ? 'badge-sage'
+                            : (${o.status.name() == 'ACCEPTED'} ? 'badge-accent' : 'badge-muted')"
+              th:text="${o.status.name() == 'PENDING'} ? 'Yanıt bekliyor'
+                     : (${o.status.name() == 'ACCEPTED'} ? 'Kabul edildi'
+                     : (${o.status.name() == 'COMPLETED'} ? 'Tamamlandı'
+                     : (${o.status.name() == 'REJECTED'} ? 'Reddedildi' : 'Geri çekildi')))">Durum</span>
+      </div>
+
+      <!-- İki kitap -->
+      <div class="row gap-12" style="margin-bottom:14px">
+        <div style="flex:1;background:var(--surface2);border-radius:12px;padding:11px" class="row gap-10">
+          <div th:if="${!svc.theirBookIn(o, me).book.hasCover()}" class="cover"
+               th:style="'width:32px;height:46px;flex-shrink:0;padding:0;background:' + ${svc.theirBookIn(o, me).book.coverColor}"></div>
+          <div>
+            <div class="muted" style="font-size:10px;font-weight:700">Alacağın</div>
+            <div style="font-size:13px;font-weight:700" th:text="${svc.theirBookIn(o, me).book.title}">Kitap</div>
+          </div>
+        </div>
+        <div style="flex:1;background:var(--surface2);border-radius:12px;padding:11px" class="row gap-10">
+
+          <div th:if="${!svc.myBookIn(o, me).book.hasCover()}" class="cover"
+               th:style="'width:32px;height:46px;flex-shrink:0;padding:0;background:' + ${svc.myBookIn(o, me).book.coverColor}"></div>
+          <div>
+            <div class="muted" style="font-size:10px;font-weight:700">Vereceğin</div>
+            <div style="font-size:13px;font-weight:700" th:text="${svc.myBookIn(o, me).book.title}">Kitap</div>
+          </div>
+        </div>
+      </div>
+
+      <p th:if="${o.message != null and o.status.name() == 'PENDING'}" class="muted"
+         style="font-size:13px;font-weight:500;line-height:1.5;margin:0 0 12px" th:text="${o.message}">Mesaj</p>
+
+      <!-- Bekleyen teklif için mesaj ve şikayet satırı -->
+      <div th:if="${o.status.name() == 'PENDING'}" class="row gap-8"
+           style="justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+        <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
+        <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
+      </div>
+
+      <!-- Kampüs içi takas buluşması -->
+      <th:block th:if="${o.status.name() == 'ACCEPTED'}">
+        <div class="row gap-8" style="justify-content:flex-end;align-items:center;margin-bottom:8px;flex-wrap:wrap">
+          <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
+          <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
+          <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/takas/' + ${o.id}, ${o.meeting}, '/takas/takaslarim')}"></form>
+        </div>
+        <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
+        <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/takas/' + ${o.id}, ${o.meeting}, ${noktalar}, '/takas/takaslarim')}"></div>
+      </th:block>
+      <div th:if="${o.status.name() == 'COMPLETED'}">
+        <div th:replace="~{bulusma-fragments :: bulusmaKarti(${o.meeting})}"></div>
+        <div class="row gap-8" style="justify-content:flex-end;margin-top:10px">
+          <a th:replace="~{bulusma-fragments :: mesajBaglantisi('swap', ${o.id})}"></a>
+          <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
+        </div>
+      </div>
+
+      <div th:if="${o.status.name() == 'REJECTED' or o.status.name() == 'CANCELLED'}"
+           class="row gap-8" style="justify-content:flex-end;margin-top:10px">
+        <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('swap_offer', ${o.id}, '/takas/takaslarim')}"></a>
+      </div>
+
+      <!-- Aksiyonlar ve Detaylı Kıyaslama Bağlantısı -->
+      <div class="row gap-8" style="justify-content:space-between;align-items:center;margin-top:12px;flex-wrap:wrap">
+        <a class="btn btn-soft btn-sm" th:href="@{'/takas/teklifler/' + ${o.id}}" style="font-weight:700">
+          Teklifi İncele & Kıyasla →
+        </a>
+
+        <div class="row gap-8" style="align-items:center;flex-wrap:wrap">
+          <th:block th:if="${o.status.name() == 'PENDING'}">
+            <form th:if="${gelen}" th:action="@{'/takas/teklif/' + ${o.id} + '/reddet'}" method="post">
+              <button class="btn btn-sm" type="submit" style="background:var(--accent-soft);color:var(--accent)">Reddet</button>
+            </form>
+            <form th:if="${gelen}" th:action="@{'/takas/teklif/' + ${o.id} + '/kabul'}" method="post">
+              <button class="btn btn-sage btn-sm" type="submit">Kabul et</button>
+            </form>
+            <form th:unless="${gelen}" th:action="@{'/takas/teklif/' + ${o.id} + '/geri-cek'}" method="post">
+              <button class="btn btn-soft btn-sm" type="submit">Geri çek</button>
+            </form>
+          </th:block>
+
+          <th:block th:if="${offerStatus != null and offerStatus == 'ACCEPTED' or o.status.name() == 'ACCEPTED'}">
+            <span th:if="${svc.hasShipped(o, me)}" class="badge badge-sage">Teslimi onayladın · karşı taraf bekleniyor</span>
+            <form th:if="${!svc.hasShipped(o, me) and (features.shipping or !features.handover or o.meeting.arranged)}"
+                  th:action="@{'/takas/teklif/' + ${o.id} + '/kargola'}" method="post">
+              <input type="hidden" name="geri" value="/takas/takaslarim"/>
+              <button class="btn btn-primary btn-sm" type="submit"
+                      th:text="${features.shipping} ? 'Kargoya verdim' : 'Kitabı teslim ettim'">Kitabı teslim ettim</button>
+            </form>
+          </th:block>
+        </div>
+      </div>
+    </div>
+  </th:block>
+
+</body>
+</html>

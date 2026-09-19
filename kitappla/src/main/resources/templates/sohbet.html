@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Sohbet')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('mesajlar')}"></div>
+
+<div class="container" style="padding-top:22px; padding-bottom:32px; max-width:680px">
+  <div class="row gap-12" style="margin-bottom:18px">
+    <a class="btn btn-soft btn-sm" th:href="@{/mesajlar}">← Mesajlar</a>
+    <div class="avatar" style="width:34px;height:34px;font-size:12px"
+         th:text="${sohbet.kind.name() == 'REPORT' and !ben.admin} ? ${marka.destekKisaltma()} : ${karsiTaraf.initials}">EY</div>
+    <div>
+      <div style="font-size:16px;font-weight:800"
+           th:text="${sohbet.kind.name() == 'REPORT'} ? (${ben.admin} ? ${karsiTaraf.name} + ' (Şikâyet Eden)' : ${marka.destekAdi()} + ' / Yönetim') : ${karsiTaraf.name}">Ad</div>
+      <div class="muted" style="font-size:12px;font-weight:600"
+           th:text="${sohbet.kind.name() == 'CLAIM'} ? 'Bağış teslimi'
+                  : (${sohbet.kind.name() == 'REQUEST'} ? 'Karşılanan istek'
+                  : (${sohbet.kind.name() == 'SWAP'} ? 'Takas' : 'Şikâyet Destek (Talep #' + ${sohbet.refId} + ')'))">Tür</div>
+    </div>
+  </div>
+
+  <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
+
+  <!--/* Canlı akış bu listeyi tazeler */-->
+  <div id="mesajlar" th:fragment="liste"
+       style="display:flex;flex-direction:column;gap:10px;max-height:60vh;overflow-y:auto;padding:4px">
+    <p th:if="${#lists.isEmpty(mesajlar)}" class="muted"
+       style="text-align:center;font-weight:500;padding:40px 0;margin:0"
+       th:text="${sohbet.kind.name() == 'REPORT'} ? 'Henüz mesaj yok. Şikâyetinizle ilgili bilgi veya soru ileterek başlayabilirsiniz.' : 'Henüz mesaj yok. Buluşma yerini ve saatini konuşarak başlayabilirsin.'">
+      Henüz mesaj yok.
+    </p>
+    <div th:each="m : ${mesajlar}"
+         th:style="${m.sender.id == ben.id}
+                 ? 'align-self:flex-end;max-width:78%;background:var(--accent);color:#fff;border-radius:14px 14px 4px 14px;padding:10px 14px'
+                 : 'align-self:flex-start;max-width:78%;background:var(--surface);border:1px solid var(--line);border-radius:14px 14px 14px 4px;padding:10px 14px'">
+      <div style="font-size:14px;font-weight:600;line-height:1.5;white-space:pre-wrap"
+           th:text="${m.body}">Mesaj</div>
+      <div style="font-size:10px;font-weight:600;margin-top:4px;opacity:.7"
+           th:text="${m.createdAtText}">tarih</div>
+    </div>
+  </div>
+
+  <form th:action="@{'/mesajlar/' + ${sohbet.id}}" method="post"
+        th:unless="${sohbet.archived}"
+        class="row gap-8" style="margin-top:16px">
+    <input class="input" name="body" required maxlength="2000" autocomplete="off" autofocus
+           aria-label="Mesajın" placeholder="Mesaj yaz…" style="flex:1"/>
+    <button class="btn btn-primary" type="submit">Gönder</button>
+  </form>
+  <div th:if="${sohbet.archived}" class="alert" role="alert"
+       style="margin-top:16px;font-weight:600">
+    Bu sohbet arşivlenmiştir ve salt okunurdur. Geçmiş mesajları okuyabilirsin; yeni mesaj gönderilemez.
+  </div>
+
+  <div class="row gap-8" style="justify-content:space-between;margin-top:14px;flex-wrap:wrap">
+    <p class="muted" style="font-size:12px;font-weight:500;margin:0;flex:1;min-width:220px"
+       th:text="${sohbet.kind.name() == 'REPORT'} ? 'Bu sohbet şikâyetinizle ilgili yönetim ekibiyle doğrudan destek görüşmesidir.' : 'Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.'">
+      Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.
+    </p>
+    <a th:if="${sohbet.kind.name() != 'REPORT'}" class="btn btn-soft btn-sm"
+       th:href="@{'/sikayet/conversation/' + ${sohbet.id}(geri='/mesajlar/' + ${sohbet.id})}">
+      Bu sohbeti şikâyet et</a>
+    <a th:if="${sohbet.kind.name() == 'REPORT' and ben.admin}" class="btn btn-soft btn-sm"
+       th:href="@{'/admin/sikayetler/' + ${sohbet.refId}}">
+      Şikâyet detayına git →</a>
+  </div>
+</div>
+
+<script th:inline="javascript">
+  // Canlı akış: yeni mesaj olayında listeyi tazeler.
+  // Olay yalnızca sinyal taşır; içerik sunucudan HTML olarak alınır,
+  // böylece kaçış/enjeksiyon riski olmaz.
+  (function () {
+    var id = [[${sohbet.id}]];
+    var liste = document.getElementById('mesajlar');
+    function dibeKaydir() { liste.scrollTop = liste.scrollHeight; }
+    dibeKaydir();
+
+    if (!window.EventSource) return;
+    var akis = new EventSource('/mesajlar/' + id + '/akis');
+    akis.addEventListener('yeni', function () {
+      fetch('/mesajlar/' + id + '/liste', { headers: { 'HX-Request': 'true' } })
+        .then(function (r) { return r.text(); })
+        .then(function (html) {
+          var kap = document.createElement('div');
+          kap.innerHTML = html;
+          var yeni = kap.querySelector('#mesajlar');
+          if (yeni) { liste.innerHTML = yeni.innerHTML; dibeKaydir(); }
+        })
+        .catch(function () { /* geçici hata: sonraki olayda yeniden denenir */ });
+    });
+    window.addEventListener('beforeunload', function () { akis.close(); });
+  })();
+</script>
+</body>
+</html>
