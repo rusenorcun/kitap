@@ -65,7 +65,7 @@ public class MessageApiController {
         messageService.markRead(c, me);
 
         // Şikâyet sohbetinde yöneticinin gerçek adı şikâyet edene gösterilmez (web ile aynı)
-        boolean maskele = c.getKind() == ConversationKind.REPORT && !me.isAdmin();
+        boolean maskele = c.isYonetimSohbeti() && !me.isAdmin();
 
         List<Message> msgs = messageService.messagesOf(c);
         List<ChatMessageDto> dtos = msgs.stream()

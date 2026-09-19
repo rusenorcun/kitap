@@ -32,8 +32,8 @@ class FlywayMigrationTest {
     void flywayMigrasyonlariBasariylaUygulanir() {
         var info = flyway.info().current();
         assertThat(info).as("Flyway migrasyonu uygulanmış olmalı").isNotNull();
-        assertThat(info.getVersion().getVersion()).isEqualTo("7");
-        assertThat(info.getDescription()).isEqualTo("persistent logins");
+        assertThat(info.getVersion().getVersion()).isEqualTo("8");
+        assertThat(info.getDescription()).isEqualTo("destek sohbeti");
         assertThat(info.getState().isApplied()).isTrue();
     }
 

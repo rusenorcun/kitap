@@ -12,6 +12,17 @@
 
   <div th:if="${hata}" class="alert alert-error" role="alert" th:text="${hata}">Hata</div>
 
+  <div th:unless="${currentUser.admin}" class="card card-pad row gap-14"
+       style="margin-bottom:16px;flex-wrap:wrap;background:var(--sage-soft);border-color:transparent">
+    <div style="flex:1;min-width:220px">
+      <div style="font-size:15px;font-weight:800">Yönetime yaz</div>
+      <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px">
+        Hesabın, belge onayın ya da uygulamayla ilgili bir sorun için yöneticiye doğrudan mesaj gönderebilirsin.
+      </div>
+    </div>
+    <a class="btn btn-primary btn-sm" th:href="@{/mesajlar/destek}">Yöneticiye mesaj gönder</a>
+  </div>
+
   <div th:if="${#lists.isEmpty(sohbetler)}" class="card card-pad" style="text-align:center;padding:56px 24px">
     <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz sohbetin yok</div>
     <p class="muted" style="font-weight:500;margin:0 0 20px">
@@ -25,16 +36,17 @@
     <a th:each="c : ${sohbetler}" th:href="@{'/mesajlar/' + ${c.id}}"
        class="card card-pad row gap-14" style="color:inherit">
       <div class="avatar" style="flex-shrink:0"
-           th:text="${c.kind.name() == 'REPORT' and !currentUser.admin} ? ${marka.destekKisaltma()} : ${c.other(currentUser).initials}">EY</div>
+           th:text="${c.yonetimSohbeti and !currentUser.admin} ? ${marka.destekKisaltma()} : ${c.other(currentUser).initials}">EY</div>
       <div style="flex:1;min-width:0">
         <div class="row gap-8">
           <span style="font-size:15px;font-weight:800"
-                th:text="${c.kind.name() == 'REPORT'} ? (${currentUser.admin} ? ${c.other(currentUser).name} + ' (Şikâyet)' : ${marka.destekAdi()}) : ${c.other(currentUser).name}">Ad</span>
+                th:text="${c.yonetimSohbeti} ? (${currentUser.admin} ? ${c.other(currentUser).name} + (${c.kind.name() == 'REPORT'} ? ' (Şikâyet)' : ' (Destek)') : ${marka.destekAdi()}) : ${c.other(currentUser).name}">Ad</span>
           <span class="badge" style="font-size:10px"
-                th:classappend="${c.kind.name() == 'REPORT'} ? 'badge-accent' : 'badge-muted'"
+                th:classappend="${c.yonetimSohbeti} ? 'badge-accent' : 'badge-muted'"
                 th:text="${c.kind.name() == 'CLAIM'} ? 'Bağış'
                        : (${c.kind.name() == 'REQUEST'} ? 'İstek'
-                       : (${c.kind.name() == 'SWAP'} ? 'Takas' : 'Destek / Şikâyet'))">Tür</span>
+                       : (${c.kind.name() == 'SWAP'} ? 'Takas'
+                       : (${c.kind.name() == 'SUPPORT'} ? 'Yönetim' : 'Destek / Şikâyet')))">Tür</span>
         </div>
         <div class="muted" style="font-size:13px;font-weight:500;margin-top:3px;
                     overflow:hidden;text-overflow:ellipsis;white-space:nowrap"

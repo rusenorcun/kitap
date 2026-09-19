@@ -168,4 +168,58 @@ class MessagePagesTest {
         mvc.perform(get("/bagislarim").with(user(as(donor))))
                 .andExpect(content().string(containsString("/mesajlar/ac/claim/" + c.getId())));
     }
+
+    @Test
+    void yoneticiyeMesajGonderilirVeListedeYonetimOlarakGorunur() throws Exception {
+        User uye = mk("destek-sayfa", false);
+        mvc.perform(get("/mesajlar").with(user(as(uye))))
+                .andExpect(content().string(containsString("Yöneticiye mesaj gönder")));
+
+        var sonuc = mvc.perform(get("/mesajlar/destek").with(user(as(uye))))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+        String hedef = sonuc.getResponse().getRedirectedUrl();
+        assertThat(hedef).matches("/mesajlar/\\d+");
+
+        mvc.perform(post(hedef).with(user(as(uye))).with(csrf()).param("body", "Şifremi yenileyebilir misiniz?"))
+                .andExpect(redirectedUrl(hedef));
+        mvc.perform(get(hedef).with(user(as(uye))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Şifremi yenileyebilir misiniz?")))
+                .andExpect(content().string(containsString("Yönetimle yazışma")))
+                .andExpect(content().string(not(containsString("Bu sohbeti şikâyet et"))));
+        mvc.perform(get("/mesajlar").with(user(as(uye))))
+                .andExpect(content().string(containsString("Şifremi yenileyebilir misiniz?")));
+    }
+
+    @Test
+    void yoneticiUyelerSayfasindanUyeyeMesajGonderir() throws Exception {
+        User admin = mk("uyeler-yonetici", false);
+        admin.setAdmin(true);
+        users.save(admin);
+        User uye = mk("uyeler-hedef", false);
+
+        mvc.perform(get("/admin/uyeler").param("q", uye.getEmail()).with(user(as(admin))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/mesajlar/ac/support/" + uye.getId())));
+
+        var sonuc = mvc.perform(get("/mesajlar/ac/support/" + uye.getId()).with(user(as(admin))))
+                .andExpect(status().is3xxRedirection())
+                .andReturn();
+        String hedef = sonuc.getResponse().getRedirectedUrl();
+        assertThat(hedef).matches("/mesajlar/\\d+");
+
+        mvc.perform(post(hedef).with(user(as(admin))).with(csrf()).param("body", "İlanın hakkında bir sorumuz var."))
+                .andExpect(redirectedUrl(hedef));
+        // Üye mesajı yönetimden gelmiş olarak görür, yöneticinin adı görünmez
+        mvc.perform(get(hedef).with(user(as(uye))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("İlanın hakkında bir sorumuz var.")))
+                .andExpect(content().string(not(containsString(admin.getName()))));
+
+        // Normal üye başkası adına bu sohbeti açamaz
+        User baska = mk("uyeler-baska", false);
+        mvc.perform(get("/mesajlar/ac/support/" + uye.getId()).with(user(as(baska))))
+                .andExpect(redirectedUrl("/mesajlar"));
+    }
 }

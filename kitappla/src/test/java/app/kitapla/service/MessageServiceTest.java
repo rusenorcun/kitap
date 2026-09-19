@@ -311,4 +311,65 @@ class MessageServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("sana ait değil");
     }
+
+    @Test
+    void uyeYonetimeDestekSohbetiAcarVeYazisir() {
+        User admin = mk("destek-yonetici", false);
+        admin.setAdmin(true);
+        users.save(admin);
+        User uye = mk("destek-uye", false);
+        User yabanci = mk("destek-yabanci", false);
+
+        Conversation c = messages.open(ConversationKind.SUPPORT, uye.getId(), uye);
+        assertThat(c.getUserA().getId()).isEqualTo(uye.getId());
+        assertThat(c.isYonetimSohbeti()).isTrue();
+        // Aynı üye için tek aktif sohbet
+        assertThat(messages.open(ConversationKind.SUPPORT, uye.getId(), uye).getId()).isEqualTo(c.getId());
+
+        messages.send(c.getId(), uye, "Belgem bir haftadır incelemede.");
+        // Sohbeti açan yönetici olmasa da her güncel yönetici görür ve okunmamış sayar
+        assertThat(messages.mine(admin)).extracting(Conversation::getId).contains(c.getId());
+        assertThat(messages.unread(c, admin)).isEqualTo(1);
+        assertThat(messages.unreadCounts(java.util.List.of(c), admin)).containsEntry(c.getId(), 1L);
+        assertThat(messages.unreadConversations(admin)).isPositive();
+
+        messages.markRead(c, admin);
+        messages.send(c.getId(), admin, "Hemen bakıyoruz.");
+        assertThat(messages.unread(c, uye)).isEqualTo(1);
+        assertThat(messages.unreadConversations(uye)).isEqualTo(1);
+        assertThat(notifications.latest(uye)).anyMatch(n -> n.getMessage().contains("Hemen bakıyoruz."));
+        assertThat(messages.messagesOf(c)).extracting(Message::getBody)
+                .containsExactly("Belgem bir haftadır incelemede.", "Hemen bakıyoruz.");
+
+        // Başka üye ne açabilir ne okuyabilir; listesinde de görünmez
+        assertThatThrownBy(() -> messages.open(ConversationKind.SUPPORT, uye.getId(), yabanci))
+                .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> messages.require(c.getId(), yabanci))
+                .isInstanceOf(IllegalStateException.class);
+        assertThat(messages.mine(yabanci)).extracting(Conversation::getId).doesNotContain(c.getId());
+
+        // Yetkisi alınan yönetici erişimini kaybeder
+        User eski = users.findById(admin.getId()).orElseThrow();
+        eski.setAdmin(false);
+        users.save(eski);
+        assertThatThrownBy(() -> messages.require(c.getId(), eski)).isInstanceOf(IllegalStateException.class);
+        assertThat(messages.mine(eski)).extracting(Conversation::getId).doesNotContain(c.getId());
+    }
+
+    @Test
+    void yoneticiUyeyeDestekSohbetiAcabilirYoneticiIcinAcilmaz() {
+        User admin = mk("destek-acan-yonetici", false);
+        admin.setAdmin(true);
+        users.save(admin);
+        User uye = mk("destek-hedef-uye", false);
+
+        Conversation c = messages.open(ConversationKind.SUPPORT, uye.getId(), admin);
+        assertThat(c.getUserA().getId()).isEqualTo(uye.getId());
+        assertThat(c.getUserB().getId()).isEqualTo(admin.getId());
+        messages.send(c.getId(), admin, "Merhaba, ilanınla ilgili bir sorumuz var.");
+        assertThat(messages.mine(uye)).extracting(Conversation::getId).contains(c.getId());
+
+        assertThatThrownBy(() -> messages.open(ConversationKind.SUPPORT, admin.getId(), admin))
+                .isInstanceOf(IllegalStateException.class);
+    }
 }

@@ -98,6 +98,20 @@ public class MessageService {
                         : (admin ? me : users.findFirstByAdminTrueOrderByIdAsc().orElse(reporter));
                 return new User[]{reporter, adminUser};
             }
+            case SUPPORT -> {
+                // refId üyenin kendisidir: üye yalnızca kendi destek sohbetini açar,
+                // yönetici ise herhangi bir üyeye yazmak için açabilir.
+                User uye = users.findById(refId)
+                        .orElseThrow(() -> new IllegalStateException("Üye bulunamadı."));
+                boolean admin = currentAdmin(me);
+                if (!admin && !uye.getId().equals(me.getId()))
+                    throw new IllegalStateException("Bu sohbet sana ait değil.");
+                if (uye.isAdmin())
+                    throw new IllegalStateException("Yöneticiler için destek sohbeti açılmaz.");
+                User yonetici = admin ? me : users.findFirstByAdminTrueOrderByIdAsc()
+                        .orElseThrow(() -> new IllegalStateException("Şu anda ulaşılabilecek bir yönetici yok."));
+                return new User[]{uye, yonetici};
+            }
             default -> throw new IllegalStateException("Bilinmeyen sohbet türü.");
         }
     }
@@ -131,7 +145,7 @@ public class MessageService {
         return conversations.save(c);
     }
 
-    /** Kimlikten sohbeti getirir; yalnızca tarafları erişebilir (veya REPORT için yöneticiler). */
+    /** Kimlikten sohbeti getirir; yalnızca tarafları erişebilir (REPORT ve SUPPORT için yöneticiler de). */
     public Conversation require(Long conversationId, User me) {
         Conversation c = conversations.findByIdWithUsers(conversationId)
                 .orElseThrow(() -> new IllegalStateException("Sohbet bulunamadı."));
@@ -151,6 +165,13 @@ public class MessageService {
             if (!reporter && !currentAdmin(me))
                 throw new IllegalStateException("Bu sohbet sana ait değil.");
             return reporter;
+        }
+        if (c.getKind() == ConversationKind.SUPPORT) {
+            // Üye her zaman userA'dır; yönetici tarafı (userB damgası) güncel role göre belirlenir
+            boolean uye = c.getUserA().getId().equals(me.getId());
+            if (!uye && !currentAdmin(me))
+                throw new IllegalStateException("Bu sohbet sana ait değil.");
+            return uye;
         }
         if (!c.has(me)) throw new IllegalStateException("Bu sohbet sana ait değil.");
         return c.getUserA().getId().equals(me.getId());
@@ -207,7 +228,7 @@ public class MessageService {
      * (MessageServiceTest#reportAccessUsesCurrentRoleAndReporterForEveryEntryPoint).
      */
     public long unreadConversations(User me) {
-        return conversations.countUnreadAsParty(me) + conversations.countUnreadReportsForAdmin(me);
+        return conversations.countUnreadAsParty(me) + conversations.countUnreadYonetimSohbetleri(me);
     }
 
     @Transactional
@@ -264,6 +285,12 @@ public class MessageService {
             recipient = sideA ? users.findFirstByAdminTrueOrderByIdAsc().orElse(null)
                     : reports.findByIdWithUsers(c.getRefId()).orElseThrow().getReporter();
             senderName = sideA ? me.getName() : marka.destekAdi() + " / Yönetim";
+        } else if (c.getKind() == ConversationKind.SUPPORT) {
+            // Sohbeti açan yönetici hâlâ yöneticiyse ona, değilse ilk yöneticiye gider
+            recipient = sideA
+                    ? (currentAdmin(c.getUserB()) ? c.getUserB() : users.findFirstByAdminTrueOrderByIdAsc().orElse(null))
+                    : c.getUserA();
+            senderName = sideA ? me.getName() : marka.destekAdi() + " / Yönetim";
         } else {
             recipient = c.other(me);
             senderName = me.getName();
@@ -296,12 +323,12 @@ public class MessageService {
 
     /**
      * Rozeti değişen kişilerin önbellek kaydını siler (işlem commit olunca uygulanır).
-     * Şikâyet sohbetinde tüm yöneticiler aynı okuma damgasını paylaştığı için kayıtların
+     * Şikâyet ve destek sohbetlerinde tüm yöneticiler aynı okuma damgasını paylaştığı için kayıtların
      * hepsi silinir; bu sohbetler seyrek olduğundan maliyeti yoktur.
      */
     private void rozetiTazele(Conversation c) {
         Cache cache = cacheManager.getCache(OnbellekConfig.OKUNMAMIS_SOHBET);
-        if (c.getKind() == ConversationKind.REPORT) {
+        if (c.isYonetimSohbeti()) {
             cache.clear();
         } else {
             cache.evict(c.getUserA().getId());

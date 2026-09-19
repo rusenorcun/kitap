@@ -73,6 +73,12 @@ public class Conversation {
     @ColumnDefault("CURRENT_TIMESTAMP")
     private Instant createdAt = Instant.now();
 
+    /** Şablonlar için: karşı taraf yönetim mi (şikâyet ya da destek sohbeti). */
+    @Transient
+    public boolean isYonetimSohbeti() {
+        return kind != null && kind.yonetimSohbeti();
+    }
+
     @Transient
     public boolean has(User u) {
         return u != null && (userA.getId().equals(u.getId()) || userB.getId().equals(u.getId()));

@@ -253,10 +253,11 @@ public final class ApiDtoMapper {
             case REQUEST -> "Kitap İsteği";
             case SWAP -> "Kitap Takası";
             case REPORT -> "Şikâyet Destek (#" + conversation.getRefId() + ")";
+            case SUPPORT -> "Yönetime Mesaj";
         };
         String counterpartName = counterpart != null ? counterpart.getName() : null;
         String counterpartInitials = counterpart != null ? counterpart.getInitials() : null;
-        if (conversation.getKind() == ConversationKind.REPORT && !me.isAdmin()) {
+        if (conversation.isYonetimSohbeti() && !me.isAdmin()) {
             counterpartName = destekAdi;
             counterpartInitials = destekKisaltma;
         }

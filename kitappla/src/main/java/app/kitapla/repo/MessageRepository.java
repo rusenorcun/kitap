@@ -39,14 +39,18 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
     @Query("""
            select c.id as conversationId, count(m) as adet from Message m join m.conversation c
            where c.id in :conversationIds and m.sender <> :me
-              and ((c.kind <> app.kitapla.domain.ConversationKind.REPORT
+              and ((c.kind not in (app.kitapla.domain.ConversationKind.REPORT, app.kitapla.domain.ConversationKind.SUPPORT)
                     and ((c.userA = :me and (c.lastReadA is null or m.createdAt > c.lastReadA))
                       or (c.userB = :me and (c.lastReadB is null or m.createdAt > c.lastReadB))))
                 or (c.kind = app.kitapla.domain.ConversationKind.REPORT and exists (
                     select r.id from Report r where r.id = c.refId
                       and ((r.reporter = :me and (c.lastReadA is null or m.createdAt > c.lastReadA))
                         or (r.reporter <> :me and (c.lastReadB is null or m.createdAt > c.lastReadB)
-                          and exists (select u.id from User u where u = :me and u.admin = true))))))
+                          and exists (select u.id from User u where u = :me and u.admin = true)))))
+                or (c.kind = app.kitapla.domain.ConversationKind.SUPPORT
+                    and ((c.userA = :me and (c.lastReadA is null or m.createdAt > c.lastReadA))
+                      or (c.userA <> :me and (c.lastReadB is null or m.createdAt > c.lastReadB)
+                          and exists (select u.id from User u where u = :me and u.admin = true)))))
            group by c.id
            """)
     List<OkunmamisAdet> countUnreadByConversation(@Param("conversationIds") Collection<Long> conversationIds,

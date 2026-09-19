@@ -29,10 +29,13 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
            select c from Conversation c
            join fetch c.userA
            join fetch c.userB
-           where (c.kind <> app.kitapla.domain.ConversationKind.REPORT and (c.userA = :user or c.userB = :user))
+           where (c.kind not in (app.kitapla.domain.ConversationKind.REPORT, app.kitapla.domain.ConversationKind.SUPPORT)
+                   and (c.userA = :user or c.userB = :user))
                or (c.kind = app.kitapla.domain.ConversationKind.REPORT and exists (
                    select r.id from Report r where r.id = c.refId and (r.reporter = :user or exists (
                        select u.id from User u where u = :user and u.admin = true))))
+               or (c.kind = app.kitapla.domain.ConversationKind.SUPPORT and (c.userA = :user or exists (
+                       select u.id from User u where u = :user and u.admin = true)))
            order by c.lastMessageAt desc nulls last, c.createdAt desc
            """)
     List<Conversation> findMine(@Param("user") User user);
@@ -43,7 +46,8 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
      */
     @Query("""
            select count(c) from Conversation c
-           where c.kind <> app.kitapla.domain.ConversationKind.REPORT and ((c.userA = :me and exists (
+           where c.kind not in (app.kitapla.domain.ConversationKind.REPORT, app.kitapla.domain.ConversationKind.SUPPORT)
+             and ((c.userA = :me and exists (
                      select m.id from Message m where m.conversation = c and m.sender <> :me
                        and (c.lastReadA is null or m.createdAt > c.lastReadA)))
               or (c.userB = :me and exists (
@@ -52,17 +56,26 @@ public interface ConversationRepository extends JpaRepository<Conversation, Long
            """)
     long countUnreadAsParty(@Param("me") User me);
 
-    /** Yöneticinin taraf olmadığı şikâyet sohbetleri: yönetici tarafının (userB) damgası kullanılır. */
+    /**
+     * Yönetimle yürüyen sohbetler (şikâyet ve destek). Üye tarafı userA damgasını, yönetici
+     * tarafı (sohbetin tarafı olsun olmasın, güncel yöneticiler) userB damgasını kullanır.
+     * Nav rozeti her sayfada hesaplandığı için iki tür tek sorguda sayılır.
+     */
     @Query("""
            select count(c) from Conversation c
-           where c.kind = app.kitapla.domain.ConversationKind.REPORT
+           where (c.kind = app.kitapla.domain.ConversationKind.REPORT
               and exists (select r.id from Report r where r.id = c.refId
                   and (r.reporter = :me or exists (select u.id from User u where u = :me and u.admin = true))
                   and exists (select m.id from Message m where m.conversation = c and m.sender <> :me
                       and ((r.reporter = :me and (c.lastReadA is null or m.createdAt > c.lastReadA))
-                          or (r.reporter <> :me and (c.lastReadB is null or m.createdAt > c.lastReadB)))))
+                          or (r.reporter <> :me and (c.lastReadB is null or m.createdAt > c.lastReadB))))))
+              or (c.kind = app.kitapla.domain.ConversationKind.SUPPORT
+              and exists (select m.id from Message m where m.conversation = c and m.sender <> :me
+                  and ((c.userA = :me and (c.lastReadA is null or m.createdAt > c.lastReadA))
+                      or (c.userA <> :me and (c.lastReadB is null or m.createdAt > c.lastReadB)
+                          and exists (select u.id from User u where u = :me and u.admin = true)))))
            """)
-    long countUnreadReportsForAdmin(@Param("me") User me);
+    long countUnreadYonetimSohbetleri(@Param("me") User me);
 
     /** Alışveriş → sohbet kimliği eşlemesi (projeksiyon). */
     interface SohbetKimligi {

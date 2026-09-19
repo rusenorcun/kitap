@@ -41,6 +41,19 @@ public class MessageController {
         return "mesajlar";
     }
 
+    /** Üyenin yönetime yazdığı destek sohbetini açar (yoksa oluşturur). */
+    @GetMapping("/destek")
+    public String destek(@AuthenticationPrincipal AppUserDetails principal, RedirectAttributes ra) {
+        User me = principal.getUser();
+        try {
+            Conversation c = messages.open(ConversationKind.SUPPORT, me.getId(), me);
+            return "redirect:/mesajlar/" + c.getId();
+        } catch (IllegalStateException ex) {
+            ra.addFlashAttribute("hata", ex.getMessage());
+            return "redirect:/mesajlar";
+        }
+    }
+
     /** Alışveriş üzerinden sohbeti açar (yoksa oluşturur) ve içine yönlendirir. */
     @GetMapping("/ac/{kind}/{refId}")
     public String ac(@AuthenticationPrincipal AppUserDetails principal,

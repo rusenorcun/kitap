@@ -45,6 +45,8 @@
       </div>
 
       <div class="row gap-8" style="flex-wrap:wrap">
+        <a th:unless="${u.admin}" class="btn btn-soft btn-sm"
+           th:href="@{'/mesajlar/ac/support/' + ${u.id}}">Mesaj gönder</a>
         <th:block th:if="${!u.blocked}">
           <form th:action="@{'/admin/uyeler/' + ${u.id} + '/askiya-al'}" method="post" style="margin:0"
                 onsubmit="return confirm('Üye askıya alınınca süren talep, istek ve takasları iptal edilir; karşı taraflara hakları iade edilir ve bildirim gider. Askı kaldırılsa da bu süreçler geri gelmez. Devam edilsin mi?')">
