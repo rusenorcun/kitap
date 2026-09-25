@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — İsteği karşıla')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:640px">
+  <a class="btn btn-soft btn-sm" th:href="@{/istekler}" style="margin-bottom:20px">← Açık istekler</a>
+
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <div class="card card-pad">
+    <div class="row gap-16" style="margin-bottom:16px">
+      <div th:if="${!r.book.hasCover()}" class="cover"
+           th:style="'width:60px;height:84px;flex-shrink:0;padding:0;background:' + ${r.book.coverColor}"></div>
+      <img th:if="${r.book.hasCover()}" th:src="${r.book.coverUrl}" alt="" loading="lazy" decoding="async"
+           style="width:60px;height:84px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+      <div style="flex:1">
+        <div style="font-size:18px;font-weight:800" th:text="${r.book.title}">Kitap</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${r.book.author}">Yazar</div>
+        <div class="row gap-8" style="flex-wrap:wrap;margin-top:8px">
+          <span class="badge badge-muted">İsteyen: <span th:text="${r.student.name}">Kişi</span></span>
+          <span th:if="${r.student.student}" class="badge badge-sage">Öğrenci</span>
+          <span th:if="${r.student.school != null}" class="badge badge-sage"
+                th:text="${r.student.school.label}">Kampüs</span>
+        </div>
+        <p th:if="${r.description}" class="muted" style="font-size:13px;font-weight:500;line-height:1.5;margin:10px 0 0"
+           th:text="${r.description}">Not</p>
+      </div>
+    </div>
+
+    <div style="border-top:1px solid var(--line);padding-top:16px">
+      <div class="label" style="margin-bottom:12px">Karşılama bilgileri</div>
+      <form th:action="@{'/istek/' + ${r.id} + '/karsila'}" method="post" class="stack gap-12">
+        <div>
+          <label class="label" for="source" style="margin-bottom:6px">Kitabın kaynağı</label>
+          <select class="input" name="source" id="source" style="padding:10px 14px;font-size:14px;width:100%">
+            <option value="PURCHASE">Satın alıp elden teslim edeceğim</option>
+            <option value="OWN">Elimdeki kopya</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" type="submit" style="width:100%;padding:12px 20px;font-size:15px">
+          Kaydet ve karşı tarafa bildir
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <p class="muted" style="font-size:12px;font-weight:500;margin-top:14px;text-align:center">
+    "Kaydet ve karşı tarafa bildir" butonuna bastığında isteği karşılamış olursun ve isteyen kişiye bildirim gider.
+  </p>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

@@ -224,7 +224,7 @@ class RequestServiceTest {
         requestService.fulfill(r.getId(), a, DonationSource.OWN);
         assertThatThrownBy(() -> requestService.fulfill(r.getId(), b, DonationSource.OWN))
                 .isInstanceOf(IllegalStateException.class)
-                .hasMessageContaining("zaten karşılanmış");
+                .hasMessageContaining("başkası tarafından karşılandı");
     }
 
     @Test

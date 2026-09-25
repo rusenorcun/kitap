@@ -47,13 +47,7 @@
 
       <!-- Karşılama: kendi isteği değilse ve giriş yapılmışsa -->
       <th:block th:if="${currentUser != null and !r.student.id.equals(currentUser.id)}">
-        <form th:action="@{'/istek/' + ${r.id} + '/karsila'}" method="post" class="stack gap-8" style="min-width:180px">
-          <select class="input" name="source" aria-label="Kitabın kaynağı" style="padding:9px 12px;font-size:13px">
-            <option value="PURCHASE">Satın alıp elden teslim edeceğim</option>
-            <option value="OWN">Elimdeki kopya</option>
-          </select>
-          <button class="btn btn-primary btn-sm" type="submit">Bu isteği karşıla</button>
-        </form>
+        <a th:href="@{'/istek/' + ${r.id} + '/karsila'}" class="btn btn-primary btn-sm" style="min-width:160px;text-align:center">Bu isteği karşıla</a>
       </th:block>
       <span th:if="${currentUser != null and r.student.id.equals(currentUser.id)}" class="badge badge-muted">Senin isteğin</span>
       <a th:if="${currentUser == null}" class="btn btn-soft btn-sm" th:href="@{/login}">Karşılamak için giriş yap</a>

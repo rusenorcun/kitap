@@ -2,6 +2,7 @@ package app.kitappla.web;
 
 import app.kitappla.domain.Book;
 import app.kitappla.domain.DonationSource;
+import app.kitappla.domain.RequestStatus;
 import app.kitappla.domain.User;
 import app.kitappla.security.AppUserDetails;
 import app.kitappla.security.CurrentUser;
@@ -87,6 +88,28 @@ public class RequestController {
         model.addAttribute("requests", requestService.fulfilledByMe(principal.getUser()));
         model.addAttribute("noktalar", points.active());
         return "karsiladiklarim";
+    }
+
+    /** Karşılama onay sayfası: istek detaylarını gösterir, kullanıcı "Kaydet ve karşı tarafa bildir" ile onaylar. */
+    @GetMapping("/istek/{id}/karsila")
+    public String karsilaOnay(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id,
+                              Model model, RedirectAttributes ra) {
+        var opt = requestService.view(id);
+        if (opt.isEmpty()) {
+            ra.addFlashAttribute("hata", "İstek bulunamadı.");
+            return "redirect:/istekler";
+        }
+        var r = opt.get();
+        if (r.getStatus() != RequestStatus.OPEN) {
+            ra.addFlashAttribute("hata", "Bu istek başkası tarafından karşılandı.");
+            return "redirect:/istekler";
+        }
+        if (r.getStudent().getId().equals(principal.getUser().getId())) {
+            ra.addFlashAttribute("hata", "Kendi isteğini karşılayamazsın.");
+            return "redirect:/istekler";
+        }
+        model.addAttribute("r", r);
+        return "istek-karsila";
     }
 
     @PostMapping("/istek/{id}/karsila")

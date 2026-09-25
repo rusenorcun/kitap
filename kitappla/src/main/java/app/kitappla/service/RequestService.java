@@ -106,7 +106,7 @@ public class RequestService {
                 .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
 
         if (r.getStatus() != RequestStatus.OPEN)
-            throw new IllegalStateException("Bu istek zaten karşılanmış.");
+            throw new IllegalStateException("Bu kitap başkası tarafından karşılandı.");
         if (r.getStudent().getId().equals(fulfiller.getId()))
             throw new IllegalStateException("Kendi isteğini karşılayamazsın.");
         if (fulfiller.isBlocked())
