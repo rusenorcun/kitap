@@ -1,0 +1,108 @@
+# KitAppLa — alan adları (canlı Caddyfile bu dosyayı "import" eder)
+#
+#   www.kitappla.com         -> uygulama (üye sitesi + mobil API)
+#   admin.kitappla.com       -> aynı uygulama; yalnızca yönetim sayfaları (ayrım uygulamada:
+#                               YonetimAlanAdiFiltresi, KITAPPLA_ADMIN_URL ile açılır)
+#   kitappla.com             -> 301 www.kitappla.com (yalnızca /.well-known/assetlinks.json yönlendirilmez)
+#   kitappla.xyz             -> Natro'nun alan adı yönlendirmesiyle .com'a gider (burada tanımlı değil)
+#   kitap.rorcun.com         -> 301 www.kitappla.com; /api/* eski mobil sürümler için proxy'lenmeye devam eder
+#
+# Değişiklikten sonra yalnızca Caddy yeniden yüklenir; ayrıntılar: docs/canliya-gecis.md
+
+# Uygulamaya vekillik (konteyner yalnızca bu makinede 8080'i dinler)
+(kitappla_proxy) {
+	reverse_proxy 127.0.0.1:8080 {
+		header_up X-Real-IP {remote_host}
+		# Canlı akış (SSE) olaylarını tamponlamadan hemen ilet
+		flush_interval -1
+		# Uygulamayla bağlantıları yeniden kullan (her istekte yeni TCP açılmasın)
+		transport http {
+			keepalive 90s
+			keepalive_idle_conns 64
+		}
+	}
+}
+
+# www ve admin için ortak site ayarları. Argüman: X-Frame-Options değeri (SAMEORIGIN | DENY).
+# Başlık burada tek yerden verilir; ayrı bir "header" ile ezmeye çalışmak işe yaramıyordu
+# (dıştaki ertelenmiş başlık en son uygulanıp ortak değeri geri yazıyordu).
+(kitappla_site) {
+	encode zstd gzip
+
+	# Tarama yolları önce elensin (catch-all handle'dan ÖNCE gelmeli)
+	@scanners path /wp-admin* /wp-login* /.env* /.git* /phpmyadmin* /xmlrpc.php
+	handle @scanners {
+		respond 404
+	}
+
+	handle {
+		import kitappla_proxy
+	}
+
+	# Öğrenci belgesi ve kapak yüklemesi (uygulama sınırı 5MB, pay bırakıldı)
+	request_body {
+		max_size 10MB
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		X-Frame-Options "{args[0]}"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		Permissions-Policy "camera=(), microphone=(), geolocation=(), interest-cohort=()"
+		-Server
+	}
+
+	# Statik varlıklar önbelleklenebilir. ">" ertelenmiş kümeleme: uygulama her yanıta
+	# no-store eklediği için düz "header" iki çakışan Cache-Control bırakıyordu.
+	@statik path /css/* /js/* /webjars/*
+	header @statik >Cache-Control "public, max-age=604800"
+
+	# Kapak dosya adları rastgele ve değişmez: bir yıl saklanabilir
+	@kapak path /uploads/covers/*
+	header @kapak >Cache-Control "public, max-age=31536000, immutable"
+
+	# Konteyner kapalıyken çıplak 502 yerine bakım sayfası (503 + noindex)
+	handle_errors 502 503 504 {
+		root * "C:/Project/kitappla/kitappla/bakim"
+		rewrite * /index.html
+		header Cache-Control "no-store"
+		header Retry-After "120"
+		file_server {
+			status 503
+		}
+	}
+}
+
+www.kitappla.com {
+	import kitappla_site SAMEORIGIN
+}
+
+admin.kitappla.com {
+	# Yönetim paneli hiçbir çerçeveye gömülmesin ve arama motorlarına girmesin
+	import kitappla_site DENY
+	header >X-Robots-Tag "noindex, nofollow"
+}
+
+kitappla.com {
+	# Android App Links doğrulaması: Android bu dosyayı yönlendirme izlemeden okur; kök alan adı
+	# 301 verirse kitappla.com bağlantıları uygulama yerine tarayıcıda açılır. Yalnızca bu yol vekillenir.
+	handle /.well-known/assetlinks.json {
+		import kitappla_proxy
+	}
+	handle {
+		redir https://www.kitappla.com{uri} permanent
+	}
+}
+
+# Eski adres: tarayıcılar kalıcı olarak yeni adrese gider. Mobil uygulamanın eski
+# sürümleri API'yi bu adresten çağırır; POST gövdesi yönlendirmede kaybolacağı için
+# /api/* yönlendirilmez, uygulamaya vekillik edilmeye devam eder.
+kitap.rorcun.com {
+	handle /api/* {
+		import kitappla_proxy
+	}
+	handle {
+		redir https://www.kitappla.com{uri} permanent
+	}
+}

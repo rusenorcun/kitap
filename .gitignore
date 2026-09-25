@@ -6,8 +6,18 @@ data/
 uploads/
 
 *.log
-.env
 .DS_Store
+
+# Sırlar ve yedekleri (örnek dosya: deploy/kitappla.env.ornek)
+.env
+.env.*
 
 # code-review-graph verisi
 .code-review-graph/
+.vscode/
+
+docs/
+
+# Canlı veri yedekleri (kişisel veri içerir)
+*.dump
+*-yedek-*.tgz

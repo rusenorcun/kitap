@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Okul e-postası onayı')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+<div class="container-narrow" style="padding:40px 0">
+  <h1>Okul e-postanı doğrula</h1>
+  <p>Bu işlem, giriş yaptığın hesabın bekleyen okul adresini doğrular.</p>
+  <p th:text="${user.studentEmail}"></p>
+
+  <div class="card card-pad" style="background:var(--sage-soft); border-color:transparent; margin-bottom:18px; text-align:center;">
+    <p style="margin:0 0 10px; font-weight:600; color:var(--ink);">📱 Mobil cihazınızda KitAppLa uygulamasını mı kullanıyorsunuz?</p>
+    <a th:href="'intent://profil/ogrenci?token=' + ${token} + '#Intent;scheme=kitappla;package=com.kitappla.app;end'"
+       class="btn btn-sage" style="display:inline-block; font-weight:700; text-decoration:none; padding:10px 20px;">
+       KitAppLa Uygulamasında Aç
+    </a>
+  </div>
+
+  <form th:action="@{/profil/ogrenci/eposta/onay}" method="post" class="card card-pad">
+    <input type="hidden" name="token" th:value="${token}"/>
+    <button class="btn btn-primary" type="submit">Tarayıcıda onayla</button>
+  </form>
+</div>
+
+<script th:inline="javascript">
+  /*<![CDATA[*/
+  (function() {
+    var token = /*[[${token}]]*/ '';
+    var isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    if (isMobile && token) {
+      var intentUrl = "intent://profil/ogrenci?token=" + encodeURIComponent(token) + "#Intent;scheme=kitappla;package=com.kitappla.app;end";
+      window.location.href = intentUrl;
+    }
+  })();
+  /*]]>*/
+</script>
+</body>
+</html>

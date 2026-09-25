@@ -1,0 +1,13 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<body th:replace="~{mail/duzen :: govde('Okul e-postanı doğrula', ~{::icerik})}">
+<div th:fragment="icerik" th:remove="tag">
+  <p>Merhaba <span th:text="${ad}">Üye</span>,</p>
+  <p>Öğrenci önceliğini etkinleştirmek için <strong th:text="${eposta}"></strong> adresini doğrula.</p>
+  <p><a th:href="${link}">Okul e-postamı doğrula</a></p>
+  <p>Hesabına giriş yaptıktan sonra açılan sayfadaki onay düğmesine basmalısın.
+    Bağlantı süreli ve tek kullanımlıktır. Süresi dolarsa profilinden yenisini isteyebilirsin.</p>
+  <p>Bu isteği sen yapmadıysan e-postayı yok sayabilirsin. Onay verilmeden öğrenci önceliği tanınmaz.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Bildirimler')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<style>
+  .bildirim-card {
+    position: relative;
+    transition: transform .15s ease, background-color .15s ease, border-color .15s ease, box-shadow .15s ease;
+    cursor: pointer;
+  }
+  .bildirim-card:hover {
+    transform: translateY(-1px);
+    background: var(--surface2, #faf6f0);
+    border-color: var(--accent);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.04);
+  }
+  .bildirim-card.okundu:hover {
+    border-color: var(--line);
+    box-shadow: none;
+  }
+  .bildirim-card .chevron-icon {
+    opacity: 0.35;
+    transition: transform .15s ease, opacity .15s ease;
+  }
+  .bildirim-card:hover .chevron-icon {
+    opacity: 0.85;
+    transform: translateX(3px);
+  }
+</style>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:720px">
+  <div class="row" style="justify-content:space-between; margin-bottom:20px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Bildirimler</h1>
+    <form th:action="@{/bildirimler/hepsi-okundu}" method="post">
+      <button class="btn btn-soft btn-sm" type="submit">Tümünü okundu işaretle</button>
+    </form>
+  </div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+
+  <div id="liste" th:fragment="liste">
+    <div th:if="${#lists.isEmpty(notifications)}" class="card card-pad" style="text-align:center;padding:56px 24px">
+      <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz bildirimin yok</div>
+      <p class="muted" style="font-weight:500;margin:0">Bağış, istek ve takas hareketlerin burada görünecek.</p>
+    </div>
+
+    <div class="stack gap-10" th:unless="${#lists.isEmpty(notifications)}">
+      <div th:each="n : ${notifications}" class="card card-pad row gap-14 bildirim-card"
+           th:classappend="${n.readFlag} ? 'okundu' : 'okunmadi'"
+           th:style="${n.readFlag} ? 'opacity:.72' : ''">
+        <a th:href="@{'/bildirimler/' + ${n.id} + '/git'}"
+           style="position:absolute; inset:0; z-index:1; border-radius:inherit;"
+           aria-label="İlgili sayfaya git"></a>
+
+        <!-- İkon rozeti -->
+        <div class="badge" style="width:40px;height:40px;border-radius:12px;justify-content:center;padding:0;flex-shrink:0;position:relative;z-index:2;pointer-events:none;"
+             th:classappend="${n.readFlag} ? 'badge-muted' : (${#strings.startsWith(n.type, 'swap')} ? 'badge-sage' : 'badge-accent')">
+          <!-- Mesaj ikonu -->
+          <svg th:if="${n.type == 'mesaj'}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <!-- Takas ikonu -->
+          <svg th:if="${#strings.startsWith(n.type, 'swap')}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m16 3 4 4-4 4"/><path d="M20 7H4"/><path d="m8 21-4-4 4-4"/><path d="M4 17h16"/></svg>
+          <!-- Öğrenci / belge ikonu -->
+          <svg th:if="${n.type == 'belge'}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+          <!-- Buluşma / hatırlatma ikonu -->
+          <svg th:if="${n.type == 'bulusma_hatirlatma'}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <!-- Diğer bildirimler (zil) -->
+          <svg th:if="${n.type != 'mesaj' and !#strings.startsWith(n.type, 'swap') and n.type != 'belge' and n.type != 'bulusma_hatirlatma'}" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+        </div>
+
+        <!-- Metin ve Zaman -->
+        <div style="flex:1; position:relative; z-index:2; pointer-events:none;">
+          <div style="font-size:14px;font-weight:700;line-height:1.4" th:text="${n.message}">Bildirim</div>
+          <div class="muted" style="font-size:12px;font-weight:500;margin-top:3px"
+               th:text="${n.createdAtText}">tarih</div>
+        </div>
+
+        <!-- Okundu aksiyonu & Ok yönü -->
+        <div class="row gap-8" style="align-items:center; position:relative; z-index:3;">
+          <button th:unless="${n.readFlag}" class="btn btn-sm btn-soft"
+                  th:hx-post="@{'/bildirimler/' + ${n.id} + '/okundu'}"
+                  hx-target="#liste" hx-swap="outerHTML"
+                  onclick="event.stopPropagation()">Okundu</button>
+          <span th:if="${n.readFlag}" class="muted" style="font-size:12px;font-weight:600">okundu</span>
+          <svg class="chevron-icon muted" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

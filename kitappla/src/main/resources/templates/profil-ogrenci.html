@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Öğrenci doğrulama')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:680px">
+  <div class="muted" style="font-size:13px;font-weight:600;margin-bottom:14px">
+    <a th:href="@{/profil}" style="color:inherit">Hesap ayarları</a> · Öğrenci doğrulama
+  </div>
+  <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0 0 4px">Öğrenci doğrulaması</h1>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">
+    e-Devlet öğrenci belgeni yükleyerek veya <strong>.edu.tr</strong> okul e-postanı onaylayarak bağışlarda öncelik kazanabilirsin.
+  </p>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <div class="card card-pad" style="background:var(--espresso);color:#F3EAD3;border-color:transparent;margin-bottom:18px">
+    <div class="row gap-8" style="margin-bottom:12px">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#E9A38C" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+      <span style="font-size:14px;font-weight:700;color:#E9A38C">Öğrenci ayrıcalıkları</span>
+    </div>
+    <div style="font-size:14px;font-weight:600;padding:8px 0;border-bottom:1px solid #5a4741">Yeni bağışlarda 48 saat öncelik</div>
+    <div style="font-size:14px;font-weight:600;padding:8px 0">Haftada 3, ayda 10 kitap alma hakkı</div>
+  </div>
+
+  <!-- 1. Durum: Onaylı Öğrenci -->
+  <div th:if="${user.studentStatus?.name() == 'APPROVED'}" class="card card-pad"
+       style="background:var(--sage-soft);border-color:transparent;margin-bottom:18px">
+    <div class="row gap-12" style="align-items:center">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--sage-ink)" stroke-width="2.4"
+           stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M20 6 9 17l-5-5"/></svg>
+      <div>
+        <div style="font-size:16px;font-weight:800;color:var(--sage-ink)">Öğrenci olduğun doğrulandı!</div>
+        <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">
+          <span th:if="${user.schoolLevel != null}" th:text="${user.schoolLevel.name() == 'LISE' ? 'Lise öğrencisi' : 'Üniversite öğrencisi'}">Üniversite öğrencisi</span>
+          <span th:if="${user.school != null}" th:text="' · ' + ${user.school.label}"></span>
+          <span th:if="${user.studentEmail != null}" th:text="' · ' + ${user.studentEmail}"></span>
+          <span th:if="${user.documentNo != null and user.studentEmail == null}" th:text="' · Belge no: ' + ${user.documentNo}"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Durum: Belge İncelemede -->
+  <div th:if="${user.studentStatus?.name() == 'PENDING' and user.documentPath != null}" class="card card-pad"
+       style="border-left:4px solid var(--accent);margin-bottom:18px">
+    <div class="row gap-12" style="align-items:flex-start">
+      <div class="badge badge-accent" style="width:36px;height:36px;border-radius:10px;justify-content:center;padding:0;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800">Öğrenci belgeniz incelemede</div>
+        <p class="muted" style="font-size:13px;font-weight:500;margin:4px 0 8px;line-height:1.5">
+          Yüklediğiniz öğrenci belgesi yöneticilerimiz tarafından incelenmektedir. İncelendikten sonra profiliniz otomatik olarak güncellenecektir.
+        </p>
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <span class="badge badge-muted" th:if="${user.schoolLevel != null}"
+                th:text="${user.schoolLevel.name() == 'LISE' ? 'Lise' : 'Üniversite'}">Üniversite</span>
+          <span class="badge badge-muted" th:if="${user.documentNo != null}"
+                th:text="'Belge no: ' + ${user.documentNo}">Belge no: 123</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. Durum: E-posta Onayı Bekleniyor -->
+  <div th:if="${user.studentStatus?.name() == 'PENDING' and user.studentEmail != null and user.documentPath == null}" class="card card-pad"
+       style="border-left:4px solid var(--accent);margin-bottom:18px">
+    <div class="row gap-12" style="align-items:flex-start">
+      <div class="badge badge-accent" style="width:36px;height:36px;border-radius:10px;justify-content:center;padding:0;flex-shrink:0">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+      </div>
+      <div style="flex:1">
+        <div style="font-size:16px;font-weight:800">Okul e-postası doğrulaması bekleniyor</div>
+        <p class="muted" style="font-size:13px;font-weight:500;margin:4px 0 0;line-height:1.5">
+          <strong th:text="${user.studentEmail}">ornek@okul.edu.tr</strong> adresine onay bağlantısı gönderildi. Bağlantıya tıklayarak onaylayabilir veya dilerseniz e-postayı tekrar gönderebilirsiniz.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Durum: Ret Bildirimi -->
+  <div th:if="${user.studentStatus?.name() == 'REJECTED'}" class="alert alert-error" role="alert" style="margin-bottom:18px">
+    <strong>Öğrenci başvurunuz onaylanmadı.</strong> Lütfen geçerli, okunaklı bir e-Devlet öğrenci belgesi ile veya .edu.tr okul e-postanızla tekrar başvurunuz.
+  </div>
+
+  <!-- Başvuru Formları (Onaylı öğrenci değilse) -->
+  <div th:unless="${user.studentStatus?.name() == 'APPROVED'}" class="stack gap-18">
+
+    <!-- Seçenek 1: Öğrenci Belgesi ile Doğrulama -->
+    <form th:if="${features.document and (user.studentStatus?.name() != 'PENDING' or user.documentPath == null)}"
+          th:action="@{/profil/ogrenci}" method="post" enctype="multipart/form-data" class="card card-pad">
+      <div class="row gap-8" style="margin-bottom:12px;align-items:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+        <h2 style="font-size:17px;font-weight:800;margin:0">Öğrenci belgesi ile doğrula</h2>
+      </div>
+      <p class="muted" style="font-size:13px;font-weight:500;margin:0 0 16px;line-height:1.5">
+        e-Devlet üzerinden alacağınız barkodlu öğrenci belgenizi (PDF veya görsel formatında) yükleyerek yönetici onayına gönderebilirsiniz.
+      </p>
+
+      <div class="field">
+        <label class="label" for="schoolLevel">Okul seviyesi</label>
+        <select class="input" id="schoolLevel" name="schoolLevel" required>
+          <option value="UNIVERSITE" th:selected="${user.schoolLevel?.name() == 'UNIVERSITE'}">Üniversite</option>
+          <option value="LISE" th:selected="${user.schoolLevel?.name() == 'LISE'}">Lise</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="label" for="documentNo">Öğrenci belge numarası / Barkod no</label>
+        <input class="input" id="documentNo" name="documentNo" required
+               placeholder="Örn: 2024-XXXX-XXXX veya e-Devlet barkod no" th:value="${user.documentNo}"/>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:4px 0 0">
+          e-Devlet belgenizin sağ üst veya alt köşesinde yer alan barkod numarasını giriniz.
+        </p>
+      </div>
+
+      <div class="field">
+        <label class="label" for="document">Öğrenci belgesi (PDF / Görsel)</label>
+        <input class="input" type="file" id="document" name="document" accept=".pdf,image/jpeg,image/png" required/>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:4px 0 0">
+          Desteklenen formatlar: PDF, JPG, PNG (en fazla 5 MB).
+        </p>
+      </div>
+
+      <button class="btn btn-primary btn-block" type="submit" style="margin-top:8px">Yönetici onayına gönder</button>
+    </form>
+
+    <!-- Seçenek 2: Okul E-postası ile Doğrulama -->
+    <form th:action="@{/profil/ogrenci/eposta}" method="post" class="card card-pad">
+      <div class="row gap-8" style="margin-bottom:12px;align-items:center">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+             stroke-linecap="round" stroke-linejoin="round" style="color:var(--accent)"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+        <h2 style="font-size:17px;font-weight:800;margin:0">Okul e-postası ile anında doğrula</h2>
+      </div>
+      <p class="muted" style="font-size:13px;font-weight:500;margin:0 0 16px;line-height:1.5">
+        Üniversitenizin verdiği .edu.tr uzantılı e-posta adresine gönderilecek bağlantıyı onaylayarak anında öğrenci olabilirsiniz.
+      </p>
+
+      <div class="field">
+        <label class="label" for="studentEmail">Okul e-posta adresin</label>
+        <input class="input" type="email" id="studentEmail" name="studentEmail" required
+               placeholder="ornek@atauni.edu.tr" th:value="${user.studentEmail}"/>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+          <strong>.edu.tr</strong> ile bitmelidir. Giriş e-postandan farklı olabilir —
+          hesabını kişisel adresinle açtıysan tekrar kaydolmana gerek yok.
+        </p>
+      </div>
+      <button class="btn btn-primary btn-block" type="submit">Doğrulama bağlantısı gönder</button>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:12px 0 0;line-height:1.6">
+        Bağlantıyı onaylayana kadar öğrenci önceliğin yoktur. Yeni istek eski bağlantıyı geçersiz kılar.
+      </p>
+    </form>
+
+  </div>
+</div>
+</body>
+</html>

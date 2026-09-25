@@ -1,43 +1,83 @@
-# KİTAPLA — yerel çalıştırma
+# KitAppLa — canlı sunucu (www.kitappla.com / admin.kitappla.com)
 #
-#   docker compose up -d --build     başlat (ilk seferde derler)
-#   docker compose logs -f           günlükleri izle
-#   docker compose down              durdur (veriler kalır)
+# Ana makinedeki Caddy servisi tek web sunucusudur; bu konteyner yalnızca 127.0.0.1:8080'i
+# dinler ve Caddy ona vekillik eder. Caddy yapılandırması: deploy/kitappla.caddy
+# (canlı Caddyfile bu dosyayı "import" eder). Adımlar: docs/canliya-gecis.md
 #
-# Uygulama:  http://localhost:8080
-#
-# Yayına almak için bu dosya yerine docker-compose.prod.yml kullanılır.
+#   copy deploy\kitappla.env.ornek .env   (ilk kurulumda; sonra .env'i doldur)
+#   docker compose up -d --build
+
+# Proje adı sabit: klasör adı ne olursa olsun konteyner, birim ve imaj adları kitappla* olur.
+name: kitappla
 
 services:
-  kitapla:
-    build: ./kitapla
-    container_name: kitapla
+  postgres:
+    image: postgres:16-alpine
+    container_name: kitappla-db
     restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${KITAPPLA_DB_NAME:-kitappla}
+      POSTGRES_USER: ${KITAPPLA_DB_USER:-kitappla}
+      POSTGRES_PASSWORD: ${KITAPPLA_DB_PASSWORD:?KITAPPLA_DB_PASSWORD .env dosyasinda tanimli olmali}
+    # Ayarlar 1000 kullanıcı hedefi için (kapasite taraması). Sorgu istatistiği için bir kez:
+    #   docker exec kitappla-db psql -U kitappla -d kitappla -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    command: ["postgres",
+      "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB",
+      "-c", "work_mem=8MB", "-c", "maintenance_work_mem=256MB",
+      "-c", "max_connections=50", "-c", "random_page_cost=1.1",
+      "-c", "effective_io_concurrency=200",
+      "-c", "shared_preload_libraries=pg_stat_statements",
+      "-c", "log_min_duration_statement=250"]
+    shm_size: 1gb
+    deploy:
+      resources:
+        limits: { cpus: "4", memory: 2g }
+    volumes:
+      - kitappla-db-veri:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  kitappla:
+    build: ./kitappla
+    container_name: kitappla
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
 
     ports:
-      - "8080:8080"
-      # H2 TCP sunucusu (DBeaver vb. icin). Sadece bu makineden erisilebilir;
-      # basindaki 127.0.0.1 silinmemeli (sa kullanicisinin sifresi yok).
-      - "127.0.0.1:9092:9092"
+      # SADECE ana makinenin loopback'ine bağlanır: konteyner dışarıya kapalı,
+      # ona yalnızca aynı makinedeki Caddy erişebilir.
+      # Başındaki 127.0.0.1 SİLİNMEMELİ; silinirse uygulama doğrudan
+      # internete açılır ve HTTPS'i atlayan istekler mümkün olur.
+      - "127.0.0.1:8080:8080"
 
     environment:
-      # H2 AUTO_SERVER rastgele port yerine sabit 9092 kullanir; yukaridaki
-      # port yayini ile DBeaver dogrudan baglanabilir (bkz. deploy/DOCKER.md, "DBeaver").
-      SPRING_DATASOURCE_URL: "jdbc:h2:file:./data/kitapla;AUTO_SERVER=TRUE;AUTO_SERVER_PORT=9092"
-      # Yerelde HTTPS yok, bu yüzden prod profili kullanılmaz.
-      KITAPLA_ADMIN_EMAIL: admin@kitapla.local
-      KITAPLA_ADMIN_PASSWORD: admin123
-      KITAPLA_CONTACT_EMAIL: destek@kitapla.local
-      KITAPLA_BASE_URL: http://localhost:8080
-      # Posta kapalı: gönderilecek iletiler günlüğe yazılır.
-      # docker compose logs -f kitapla ile şifre sıfırlama bağlantısını görebilirsin.
-      KITAPLA_MAIL_ENABLED: "false"
+      SPRING_PROFILES_ACTIVE: prod
+      # Konteyner içinde 0.0.0.0 dinlenmeli; yalıtımı yukarıdaki 127.0.0.1 sağlar.
+      KITAPPLA_BIND: "0.0.0.0"
+      KITAPPLA_DB_HOST: postgres
+      KITAPPLA_DB_PORT: "5432"
+      KITAPPLA_DB_NAME: ${KITAPPLA_DB_NAME:-kitappla}
+      KITAPPLA_DB_USER: ${KITAPPLA_DB_USER:-kitappla}
+      KITAPPLA_DB_PASSWORD: ${KITAPPLA_DB_PASSWORD}
+      # Şifresi bilinen örnek hesaplar yayında asla oluşturulmaz (.env ne derse desin)
+      KITAPPLA_SEED_DEMO: "false"
+    env_file:
+      - .env
+
+    # Sınır olmadan JVM yığını makinenin RAM'ine göre büyür ve aynı makinedeki diğer siteler ile
+    # Ollama'dan pay alır. 3 GB bellekte yığın ~2,2 GB olur (yük testinde canlı yığın ~0,7 GB).
+    deploy:
+      resources:
+        limits: { cpus: "6", memory: 3g }
 
     volumes:
-      # Veriler konteynerin DIŞINDA durur; konteyneri silsen de kaybolmaz.
-      - kitapla-veri:/uygulama/data
-      - kitapla-dosya:/uygulama/uploads
+      - kitappla-dosya:/uygulama/uploads
 
 volumes:
-  kitapla-veri:
-  kitapla-dosya:
+  kitappla-db-veri:
+  kitappla-dosya:

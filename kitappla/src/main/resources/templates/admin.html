@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Yönetim')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:1040px">
+  <div class="row" style="justify-content:space-between; margin-bottom:6px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Yönetim panosu</h1>
+    <span class="badge badge-sage">Yönetici</span>
+  </div>
+  <p class="muted" style="font-weight:500;margin:0 0 22px">Platformun genel durumu ve bekleyen işler.</p>
+
+  <div th:replace="~{fragments :: adminnav('pano')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <!-- Bekleyen iş varsa en üstte -->
+  <div th:if="${features.document and stats.pendingDocuments() > 0}" class="card card-pad row gap-14"
+       style="border-color:var(--accent);margin-bottom:22px">
+    <div class="badge badge-accent" style="width:40px;height:40px;border-radius:12px;justify-content:center;padding:0;flex-shrink:0">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:800" th:text="${stats.pendingDocuments()} + ' öğrenci belgesi incelemeni bekliyor'">2 belge</div>
+      <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">Onaylanan üyeler bağışlarda 48 saat öncelik kazanır.</div>
+    </div>
+    <a class="btn btn-primary btn-sm" th:href="@{/admin/belgeler}">İncele</a>
+  </div>
+
+  <div th:if="${sikayetSayisi > 0}" class="card card-pad row gap-14"
+       style="border-color:var(--accent);margin-bottom:22px">
+    <div class="badge badge-accent" style="width:40px;height:40px;border-radius:12px;justify-content:center;padding:0;flex-shrink:0">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+           stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+    </div>
+    <div style="flex:1">
+      <div style="font-size:15px;font-weight:800" th:text="${sikayetSayisi} + ' şikâyet incelemeni bekliyor'">1 şikâyet</div>
+      <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">Üyeler tarafından iletilen şikâyetleri inceleyip karara bağlayabilirsin.</div>
+    </div>
+    <a class="btn btn-primary btn-sm" th:href="@{/admin/sikayetler}">İncele</a>
+  </div>
+
+  <!-- Sayaçlar -->
+  <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(168px,1fr));margin-bottom:14px">
+    <div class="card card-pad" th:each="s : ${ {
+            {'Üye', stats.users()},
+            {'Onaylı öğrenci', stats.students()}, 
+            {'Bekleyen şikâyet', sikayetSayisi},
+            {'Bekleyen belge', stats.pendingDocuments()},
+            {'Askıdaki üye', stats.blocked()},
+            {'Yönetici', stats.admins()},
+            {'Kitap', stats.books()} } }">
+      <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase"
+           th:text="${s[0]}">Üye</div>
+      <div style="font-size:30px;font-weight:800;letter-spacing:-1px;margin-top:4px" th:text="${s[1]}">0</div>
+    </div>
+  </div>
+
+  <!-- Canlı İzleç Özeti -->
+  <div th:if="${monitor != null}" class="card card-pad" style="margin-top:14px;margin-bottom:20px;background:var(--surface)">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="row gap-8">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2e7d32;box-shadow:0 0 0 2px rgba(46,125,50,.25)"></span>
+        <h2 style="font-size:16px;font-weight:800;margin:0">Canlı Sistem ve Oturum İzleci</h2>
+      </div>
+      <a class="btn btn-soft btn-sm" th:href="@{/admin/izlec}">Detaylı İzleç ve Oturumlar →</a>
+    </div>
+
+    <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Aktif Oturum</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--accent)" th:text="${monitor.activeSessions}">0</div>
+        <div class="muted" style="font-size:12px;font-weight:500">açık HTTP oturumu</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Çevrim İçi Üye</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--ink)" th:text="${monitor.onlineUsers}">0</div>
+        <div class="muted" style="font-size:12px;font-weight:500" th:text="${monitor.onlineAdmins} + ' yön, ' + ${monitor.onlineStudents} + ' öğr'">0 yön</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">JVM Bellek</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--ink)" th:text="'%' + ${monitor.memoryPercent}">%0</div>
+        <div class="muted" style="font-size:12px;font-weight:500" th:text="${monitor.usedMemoryMb} + ' / ' + ${monitor.maxMemoryMb} + ' MB'">0 MB</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Çalışma Süresi</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.6px;margin-top:4px;color:var(--ink)" th:text="${monitor.uptimeFormatted}">0 sn</div>
+        <div class="muted" style="font-size:12px;font-weight:500">kesintisiz açık</div>
+      </div>
+    </div>
+  </div>
+
+  <h2 style="font-size:16px;font-weight:800;margin:26px 0 12px">Hareketler</h2>
+  <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(168px,1fr))">
+    <div class="card card-pad" th:each="s : ${ {
+            {'Açık bağış', stats.openDonations()},
+            {'Kapanan bağış', stats.closedDonations()},
+            {'Eşleşen talep', stats.matchedClaims()},
+            {'Teslim bekleyen', stats.shippedClaims()},
+            {'Teslim edilen', stats.deliveredClaims()},
+            {'Açık istek', stats.openRequests()},
+            {'Karşılanan istek', stats.fulfilledRequests()},
+            {'Takasta kitap', stats.openSwapBooks()},
+            {'Bekleyen teklif', stats.pendingOffers()},
+            {'Tamamlanan takas', stats.completedOffers()} } }">
+      <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase"
+           th:text="${s[0]}">Bağış</div>
+      <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:4px" th:text="${s[1]}">0</div>
+    </div>
+  </div>
+
+  <div class="row gap-8" style="margin-top:26px;flex-wrap:wrap">
+    <a class="btn btn-soft btn-sm" th:href="@{/admin/uyeler}">Üyeleri yönet</a>
+    <a class="btn btn-soft btn-sm" th:href="@{/admin/icerik}">İçerik moderasyonu</a>
+    <a class="btn btn-soft btn-sm" th:href="@{/kesfet}">Siteyi üye gözüyle gör</a>
+  </div>
+</div>
+</body>
+</html>

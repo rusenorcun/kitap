@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — E-posta doğrulama')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="max-width:480px;padding-top:56px;padding-bottom:64px">
+  <div class="card card-pad" style="text-align:center;padding:40px 24px">
+    <th:block th:if="${sonuc == 'DOGRULANDI' or sonuc == 'ZATEN_DOGRULANMIS'}">
+      <div style="font-size:40px;line-height:1;margin-bottom:12px" aria-hidden="true">✓</div>
+      <h1 style="font-size:24px;font-weight:800;margin:0 0 8px"
+          th:text="${sonuc == 'DOGRULANDI'} ? 'Hesabın doğrulandı' : 'Hesabın zaten doğrulanmış'">Hesabın doğrulandı</h1>
+      <p class="muted" style="font-weight:500;margin:0 0 20px">
+        Artık bağış yapabilir, kitap isteyebilir, takas ve mesajlaşma özelliklerini kullanabilirsin.
+      </p>
+      <th:block th:unless="${uygulama}">
+        <a sec:authorize="isAuthenticated()" class="btn btn-primary" th:href="@{/panom}">Panoma git</a>
+        <a sec:authorize="!isAuthenticated()" class="btn btn-primary" th:href="@{/login}">Giriş yap</a>
+      </th:block>
+    </th:block>
+
+    <th:block th:if="${sonuc == 'GECERSIZ'}">
+      <h1 style="font-size:22px;font-weight:800;margin:0 0 8px">Bağlantı geçersiz</h1>
+      <p class="muted" style="font-weight:500;margin:0 0 20px">
+        Bu bağlantının süresi dolmuş ya da yerine yenisi gönderilmiş olabilir.
+        Giriş yapıp yeni bir doğrulama bağlantısı isteyebilirsin.
+      </p>
+      <a th:unless="${uygulama}" class="btn btn-primary" th:href="@{/hesap-dogrulama}">Yeni bağlantı iste</a>
+    </th:block>
+  </div>
+
+  <!--/* Mobil uygulamadan açılan kayıt: sonuç ne olursa olsun uygulamaya dönülür; uygulama
+         oturumdaki kullanıcıyı yeniden okuyup doğrulama durumunu günceller. */-->
+  <th:block th:if="${uygulama}">
+    <div th:replace="~{fragments :: uygulamayaDon(${sonuc == 'GECERSIZ'} ? 'eposta-dogrulandi?durum=gecersiz' : 'eposta-dogrulandi', 'Uygulamaya dönüp devam et')}"></div>
+  </th:block>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

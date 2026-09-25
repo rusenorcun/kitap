@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — E-postanı doğrula')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container-narrow" style="max-width:520px;padding-top:40px;padding-bottom:64px">
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <div class="card card-pad" style="padding:32px 26px">
+    <h1 style="font-size:24px;font-weight:800;margin:0 0 10px">E-posta adresini doğrula</h1>
+    <p style="font-weight:500;margin:0 0 8px">
+      Bağış, istek, takas ve mesaj gibi işlemleri yapabilmek için
+      <strong th:text="${user.email}">adres</strong> adresinin sana ait olduğunu doğrulaman gerekiyor.
+    </p>
+    <p class="muted" style="font-weight:500;margin:0 0 22px">
+      Gelen kutundaki doğrulama bağlantısına tıklaman yeterli. E-posta gelmediyse gereksiz (spam)
+      klasörüne bak ya da yenisini iste.
+    </p>
+    <form th:action="@{/hesap-dogrulama/yeniden}" method="post" style="margin:0">
+      <button class="btn btn-primary" type="submit">Doğrulama e-postasını yeniden gönder</button>
+    </form>
+  </div>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

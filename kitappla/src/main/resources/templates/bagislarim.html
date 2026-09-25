@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Bağışlarım')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:48px; max-width:920px">
+  <div class="row" style="justify-content:space-between; margin-bottom:20px">
+    <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Bağışlarım</h1>
+    <a class="btn btn-primary" th:href="@{/bagis/yeni}">Yeni bağış</a>
+  </div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <div th:if="${#lists.isEmpty(donations)}" class="card card-pad" style="text-align:center; padding:56px 24px">
+    <div style="font-size:19px;font-weight:800;margin-bottom:8px">Henüz bağış yapmadın</div>
+    <p class="muted" style="font-weight:500;margin:0 0 20px">Rafındaki bir kitap, bir öğrencinin dönemini kurtarabilir.</p>
+    <a class="btn btn-primary" th:href="@{/bagis/yeni}">İlk bağışını yap</a>
+  </div>
+
+  <div class="stack gap-16" th:unless="${#lists.isEmpty(donations)}">
+    <div th:each="d : ${donations}" class="card card-pad">
+      <div class="row gap-16" style="align-items:flex-start">
+        <div th:if="${!d.book.hasCover()}" class="cover"
+             th:style="'width:54px;height:76px;flex-shrink:0;padding:0;background:' + ${d.book.coverColor}"></div>
+        <img th:if="${d.book.hasCover()}" th:src="${d.book.coverUrl}" alt="" loading="lazy" decoding="async"
+             style="width:54px;height:76px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+
+        <div style="flex:1">
+          <a th:href="@{'/kitap/' + ${d.id}}" style="font-size:17px;font-weight:800;color:inherit"
+             th:text="${d.book.title}">Kitap</a>
+          <div class="muted" style="font-size:13px;font-weight:500" th:text="${d.book.author}">Yazar</div>
+          <div class="row gap-8" style="flex-wrap:wrap;margin-top:8px">
+            <span class="badge badge-muted"><span th:text="${d.claimed}">0</span>/<span th:text="${d.quantity}">1</span> alındı</span>
+            <span th:if="${d.priorityActive}" class="badge badge-accent">Öncelik: <span th:text="${d.priorityLeft}">1g</span></span>
+            <span th:if="${d.donation.status.name() == 'CLOSED' and !d.donation.removedByAdmin}" class="badge badge-muted">Kapalı</span>
+            <span th:if="${d.donation.removedByAdmin}" class="badge badge-accent"
+                  title="Bu ilan yönetim tarafından yayından kaldırıldı; yeniden açılamaz ya da takasa aktarılamaz.">Yönetim kaldırdı</span>
+            <!-- Bağışçının önerdiği teslim noktası (kampüs içi teslim) -->
+            <span th:if="${features.handover and d.donation.preferredPlaceText != null}"
+                  class="badge badge-sage" th:text="${d.donation.preferredPlaceText}">Nokta</span>
+          </div>
+        </div>
+
+        <div class="row gap-8" style="flex-wrap:wrap">
+          <!--/* Yönetimin kaldırdığı ilan yeniden yayına giremez: servis reddeder, düğme de gösterilmez. */-->
+          <form th:if="${d.claimed == 0 and !d.donation.removedByAdmin}" th:action="@{'/bagis/' + ${d.id} + '/takasa-aktar'}" method="post">
+            <button class="btn btn-soft btn-sm" type="submit" title="Bağıştan kaldırıp takas listene ekle">Takasa aktar</button>
+          </form>
+          <form th:if="${d.donation.status.name() == 'OPEN'}" th:action="@{'/bagis/' + ${d.id} + '/kapat'}" method="post">
+            <button class="btn btn-soft btn-sm" type="submit">Kapat</button>
+          </form>
+          <form th:if="${d.donation.status.name() == 'CLOSED' and d.remaining > 0 and !d.donation.removedByAdmin}" th:action="@{'/bagis/' + ${d.id} + '/ac'}" method="post">
+            <button class="btn btn-soft btn-sm" type="submit">Yeniden aç</button>
+          </form>
+          <form th:if="${d.claimed == 0}" th:action="@{'/bagis/' + ${d.id} + '/sil'}" method="post">
+            <button class="btn btn-sm" type="submit"
+                    style="background:var(--accent-soft);color:var(--accent)">Sil</button>
+          </form>
+        </div>
+      </div>
+
+      <!-- Alanlar ve buluşma düzeni -->
+      <th:block th:with="list=${claimers.get(d.id)}">
+      <div th:if="${list != null and !#lists.isEmpty(list)}"
+           style="margin-top:16px; border-top:1px solid var(--line); padding-top:14px">
+        <div class="label" style="margin-bottom:10px">Bu bağışı alanlar</div>
+        <div class="stack gap-12">
+          <div th:each="c : ${list}" class="row gap-12" style="align-items:flex-start; flex-wrap:wrap; background:var(--surface2); border-radius:12px; padding:12px">
+            <div class="avatar" style="width:34px;height:34px;font-size:11px" th:text="${c.student.initials}">EY</div>
+            <div style="flex:1">
+              <div style="font-size:14px;font-weight:800" th:text="${c.student.name}">Alıcı</div>
+              <div class="muted" style="font-size:12px;font-weight:500;line-height:1.5"
+                   th:if="${features.address}">
+                <span th:text="${c.student.address}">Adres</span>
+                <span th:if="${c.student.phone}"> · <span th:text="${c.student.phone}">Telefon</span></span>
+              </div>
+            </div>
+            <span class="badge"
+                  th:classappend="${c.status.name() == 'DELIVERED'} ? 'badge-sage' : 'badge-accent'"
+                  th:text="${c.status.name() == 'DELIVERED'} ? 'Teslim edildi'
+                         : (${c.status.name() == 'NO_SHOW'} ? 'Gelinmedi'
+                         : (${c.status.name() == 'CANCELLED'} ? 'İptal edildi'
+                         : (${c.status.name() == 'SHIPPED'} ? 'Kargoda'
+                         : (${c.status.name() == 'ARRANGED'} ? 'Buluşma ayarlandı'
+                         : (${features.shipping} ? 'Kargo bekleniyor' : 'Buluşma bekleniyor')))))">Durum</span>
+            <form th:if="${features.shipping and c.status.name() == 'MATCHED'}"
+                  th:action="@{'/teslimat/' + ${c.id} + '/kargola'}" method="post">
+              <button class="btn btn-sage btn-sm" type="submit">Kargoya verdim</button>
+            </form>
+            <div th:if="${features.handover}" style="flex-basis:100%">
+              <div class="row gap-8" style="justify-content:flex-end;align-items:center;flex-wrap:wrap">
+                <!--/* Askı nedeniyle iptal edilen kaydın sohbeti arşivlidir; Mesajlar'dan okunur. */-->
+                <th:block th:unless="${c.status.name() == 'CANCELLED'}">
+                  <a th:replace="~{bulusma-fragments :: mesajBaglantisi('claim', ${c.id})}"></a>
+                </th:block>
+                <a th:replace="~{bulusma-fragments :: sikayetBaglantisi('claim', ${c.id}, '/bagislarim')}"></a>
+                <th:block th:if="${c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW' and c.status.name() != 'CANCELLED'}">
+                  <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/bagis/' + ${c.id}, ${c.meeting}, '/bagislarim')}"></form>
+                </th:block>
+              </div>
+              <div th:replace="~{bulusma-fragments :: bulusmaKarti(${c.meeting})}"></div>
+              <th:block th:if="${c.status.name() != 'DELIVERED' and c.status.name() != 'NO_SHOW' and c.status.name() != 'CANCELLED'}">
+                <div th:replace="~{bulusma-fragments :: bulusmaFormu('/bulusma/bagis/' + ${c.id}, ${c.meeting}, ${noktalar}, '/bagislarim')}"></div>
+              </th:block>
+            </div>
+          </div>
+        </div>
+      </div>
+      </th:block>
+    </div>
+  </div>
+</div>
+</body>
+</html>
