@@ -51,34 +51,8 @@
     <p class="muted" style="font-size:13px;font-weight:500;margin:4px 0 0;line-height:1.6">
       <strong>Öğrenci misin?</strong> Okulunun verdiği <strong>.edu.tr</strong> adresine gönderilen bağlantıyı onaylamalısın.
       E-posta gönderilemezse normal üyeliğin kullanılabilir, öğrenci önceliğin beklemede kalır.
-      Başka bir adresle kaydolursan profilinden okul adresini ekleyebilirsin.</p>
+      Başka bir adresle kaydolursan profilinden okul adresini ekleyebilirsin. Veya doğrudan öğrenci belgesi ile doğrulama yapabilirsin.</p>
 
-    <!--/* Belgeyle başvuru silinmedi; kitapla.features.document=true ile geri gelir. */-->
-    <div th:if="${features.document}">
-      <label class="row gap-8" style="margin:8px 0 4px; cursor:pointer; font-weight:700; font-size:14px">
-        <input type="checkbox" name="wantsStudent" value="true"
-               onchange="document.getElementById('ogr').style.display=this.checked?'block':'none'"/>
-        Öğrenci belgesi ile doğrula
-      </label>
-
-      <div id="ogr" style="display:none; border-top:1px solid var(--line); margin-top:12px; padding-top:16px;">
-        <div class="field">
-          <label class="label" for="schoolLevel">Okul seviyesi</label>
-          <select class="input" id="schoolLevel" name="schoolLevel">
-            <option value="LISE">Lise</option>
-            <option value="UNIVERSITE">Üniversite</option>
-          </select>
-        </div>
-        <div class="field">
-          <label class="label" for="documentNo">Öğrenci belge numarası</label>
-          <input class="input" id="documentNo" name="documentNo"/>
-        </div>
-        <div class="field">
-          <label class="label" for="document">Öğrenci belgesi (PDF/görsel)</label>
-          <input class="input" type="file" id="document" name="document" accept="application/pdf,image/*"/>
-        </div>
-      </div>
-    </div>
 
     <button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Hesabımı oluştur</button>
     <p class="muted" style="text-align:center;margin:16px 0 0;font-weight:500">Zaten hesabın var mı?

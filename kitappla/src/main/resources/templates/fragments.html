@@ -13,7 +13,7 @@
        Anonim sayfalardaki formlar (giriş, kayıt) jetonu kendi gizli alanında taşır. -->
   <meta sec:authorize="isAuthenticated()" name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta sec:authorize="isAuthenticated()" name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
-  <link rel="stylesheet" th:href="@{/css/kitappla.css}"/>
+  <link rel="stylesheet" th:href="@{/css/kitappla.css(v=2)}"/>
   <script defer th:src="@{/webjars/htmx.org/1.9.12/dist/htmx.min.js}"></script>
   <script th:inline="javascript">
     document.addEventListener('htmx:configRequest', function (e) {
@@ -21,6 +21,78 @@
       var h = document.querySelector('meta[name="_csrf_header"]');
       if (t && h && h.content) e.detail.headers[h.content] = t.content;
     });
+    (function () {
+      function updateStepper(stepper) {
+        if (!stepper) return;
+        var input = stepper.querySelector('.qty-input, input[type="number"]');
+        if (!input) return;
+        var val = parseInt(input.value, 10);
+        var min = input.hasAttribute('min') ? parseInt(input.getAttribute('min'), 10) : 1;
+        var max = input.hasAttribute('max') ? parseInt(input.getAttribute('max'), 10) : 9999;
+        var dec = stepper.querySelector('.qty-dec');
+        var inc = stepper.querySelector('.qty-inc');
+        if (dec) dec.disabled = !isNaN(val) && val <= min;
+        if (inc) inc.disabled = !isNaN(val) && val >= max;
+      }
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.qty-btn');
+        if (!btn) return;
+        var stepper = btn.closest('.qty-stepper');
+        if (!stepper) return;
+        var input = stepper.querySelector('.qty-input, input[type="number"]');
+        if (!input || input.disabled) return;
+        var min = input.hasAttribute('min') ? parseInt(input.getAttribute('min'), 10) : 1;
+        var max = input.hasAttribute('max') ? parseInt(input.getAttribute('max'), 10) : 9999;
+        var step = input.hasAttribute('step') ? parseInt(input.getAttribute('step'), 10) : 1;
+        var current = parseInt(input.value, 10);
+        if (isNaN(current)) current = min;
+        if (btn.classList.contains('qty-dec')) {
+          var next = current - step;
+          if (next >= min) {
+            input.value = next;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        } else if (btn.classList.contains('qty-inc')) {
+          var next = current + step;
+          if (next <= max) {
+            input.value = next;
+            input.dispatchEvent(new Event('input', { bubbles: true }));
+            input.dispatchEvent(new Event('change', { bubbles: true }));
+          }
+        }
+        updateStepper(stepper);
+      });
+      document.addEventListener('input', function (e) {
+        if (e.target && e.target.closest && e.target.closest('.qty-stepper')) {
+          updateStepper(e.target.closest('.qty-stepper'));
+        }
+      });
+      document.addEventListener('change', function (e) {
+        if (e.target && e.target.closest && e.target.closest('.qty-stepper')) {
+          var input = e.target;
+          var stepper = input.closest('.qty-stepper');
+          var min = input.hasAttribute('min') ? parseInt(input.getAttribute('min'), 10) : 1;
+          var max = input.hasAttribute('max') ? parseInt(input.getAttribute('max'), 10) : 9999;
+          var val = parseInt(input.value, 10);
+          if (isNaN(val) || val < min) input.value = min;
+          else if (val > max) input.value = max;
+          updateStepper(stepper);
+        }
+      });
+      function initAll() {
+        document.querySelectorAll('.qty-stepper').forEach(updateStepper);
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initAll);
+      } else {
+        initAll();
+      }
+      document.addEventListener('htmx:load', function (e) {
+        var root = e.detail && e.detail.elt ? e.detail.elt : document;
+        root.querySelectorAll('.qty-stepper').forEach(updateStepper);
+      });
+    })();
   </script>
 </head>
 <body>
