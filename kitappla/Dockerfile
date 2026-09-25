@@ -20,14 +20,14 @@ FROM eclipse-temurin:21-jre-alpine
 RUN apk add --no-cache curl tzdata
 
 # Uygulama root olarak çalışmaz
-RUN addgroup -S kitapla && adduser -S -G kitapla -h /uygulama kitapla
+RUN addgroup -S kitappla && adduser -S -G kitappla -h /uygulama kitappla
 WORKDIR /uygulama
 
-COPY --from=derleme /derleme/target/kitapla-*.jar uygulama.jar
+COPY --from=derleme /derleme/target/kitappla-*.jar uygulama.jar
 
 # Yüklenen dosyalar; compose buraya kalıcı birim bağlar (veritabanı ayrı PostgreSQL konteynerinde).
-RUN mkdir -p /uygulama/uploads && chown -R kitapla:kitapla /uygulama
-USER kitapla
+RUN mkdir -p /uygulama/uploads && chown -R kitappla:kitappla /uygulama
+USER kitappla
 
 ENV LANG=C.UTF-8 \
     TZ=Europe/Istanbul \

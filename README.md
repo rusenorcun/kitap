@@ -11,7 +11,7 @@ aynı iş kurallarını kullanan bir JSON API (`/api/v1`) de sunar.
 
 ```
 kitappla/                 uygulama (Maven projesi, Dockerfile)
-  src/main/java/app/kitapla/
+  src/main/java/app/kitappla/
     domain/               JPA varlıkları ve enum'lar
     repo/                 Spring Data repository'leri
     service/              iş kuralları (kota, öncelik, moderasyon, posta, SSE)
@@ -25,7 +25,7 @@ kitappla/                 uygulama (Maven projesi, Dockerfile)
     db/migration/         Flyway göçleri (PostgreSQL)
 docker-compose.yml        canlı sunucu: uygulama + PostgreSQL
 deploy/kitappla.caddy     canlı Caddy site blokları
-deploy/kitapla.env.ornek  .env şablonu
+deploy/kitappla.env.ornek  .env şablonu
 bakim/                    uygulama kapalıyken Caddy'nin sunduğu bakım sayfası
 docs/canliya-gecis.md     canlıya alma, doğrulama ve geri dönüş
 ```
@@ -44,7 +44,7 @@ cd kitappla
 
 | Hesap | E-posta | Şifre | Rolü |
 | --- | --- | --- | --- |
-| Yönetici | `admin@kitapla.app` | `admin123` | Yönetim paneli |
+| Yönetici | `admin@kitappla.app` | `admin123` | Yönetim paneli |
 | Bağışçı | `ayse@ornek.com` | `sifre123` | Üye |
 | Öğrenci | `elif@ornek.com` | `sifre123` | Onaylı öğrenci |
 | Başvuru sahibi | `mert@ornek.com` | `sifre123` | Belgesi incelemede |
@@ -59,7 +59,7 @@ uygulama ile PostgreSQL `docker-compose.yml` ile konteynerde çalışır ve yaln
 `127.0.0.1:8080`'i dinler.
 
 ```bat
-cd C:\Project\kitap\kitap
+cd C:\Project\kitappla\kitappla
 docker compose up -d --build
 ```
 
@@ -73,20 +73,20 @@ altına yeni bir `V<n>__aciklama.sql` dosyası olarak eklenir.
 ## Yapılandırma
 
 Canlı ayarlar depo kökündeki `.env` dosyasından okunur (depoya girmez); şablon ve açıklamalar
-`deploy/kitapla.env.ornek` içindedir. Başlıcaları:
+`deploy/kitappla.env.ornek` içindedir. Başlıcaları:
 
 | Değişken | Açıklama |
 | --- | --- |
-| `KITAPLA_NAME`, `KITAPLA_DOMAIN` | Görünen marka adı ve alan adı |
-| `KITAPLA_BASE_URL` | Postadaki bağlantıların kök adresi |
-| `KITAPLA_ADMIN_URL` | Yönetimin ayrı alan adı (boşsa `/admin` sitenin içinde) |
-| `KITAPLA_ADMIN_EMAIL` / `_PASSWORD` / `_NAME` | Açılışta oluşturulan/güncellenen yönetici |
-| `KITAPLA_DB_*` | PostgreSQL bağlantısı |
-| `KITAPLA_MAIL_ENABLED`, `KITAPLA_SMTP_*` | E-posta gönderimi |
+| `KITAPPLA_NAME`, `KITAPPLA_DOMAIN` | Görünen marka adı ve alan adı |
+| `KITAPPLA_BASE_URL` | Postadaki bağlantıların kök adresi |
+| `KITAPPLA_ADMIN_URL` | Yönetimin ayrı alan adı (boşsa `/admin` sitenin içinde) |
+| `KITAPPLA_ADMIN_EMAIL` / `_PASSWORD` / `_NAME` | Açılışta oluşturulan/güncellenen yönetici |
+| `KITAPPLA_DB_*` | PostgreSQL bağlantısı |
+| `KITAPPLA_MAIL_ENABLED`, `KITAPPLA_SMTP_*` | E-posta gönderimi |
 
-Kapalı akışlar bayrakla geri açılabilir (kod ve sütunlar yerinde durur): `KITAPLA_DOCUMENT`
-(belgeyle öğrenci başvurusu), `KITAPLA_SHIPPING` (kargo), `KITAPLA_PURCHASE` (satın alıp gönder),
-`KITAPLA_ADDRESS` (teslimat adresi).
+Kapalı akışlar bayrakla geri açılabilir (kod ve sütunlar yerinde durur): `KITAPPLA_DOCUMENT`
+(belgeyle öğrenci başvurusu), `KITAPPLA_SHIPPING` (kargo), `KITAPPLA_PURCHASE` (satın alıp gönder),
+`KITAPPLA_ADDRESS` (teslimat adresi).
 
 > `application.properties` ISO-8859-1 okunur: Türkçe karakterli değerler `\u` kaçışıyla yazılır.
 
@@ -123,7 +123,7 @@ edilebilir.
 
 Pano sayaçları; üye arama, askıya alma, yönetici yetkisi; teslim noktaları; ilan kaldırma;
 şikâyetler. Yönetim işlemleri anında geçerli olur ve ilgili üyeye bildirim bırakır.
-`KITAPLA_ADMIN_URL` tanımlıysa yönetim sayfaları yalnızca o alan adında açılır.
+`KITAPPLA_ADMIN_URL` tanımlıysa yönetim sayfaları yalnızca o alan adında açılır.
 
 ## Teknoloji
 

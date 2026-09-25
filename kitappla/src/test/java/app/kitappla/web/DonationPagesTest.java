@@ -1,0 +1,287 @@
+package app.kitappla.web;
+
+import app.kitappla.domain.*;
+import app.kitappla.repo.DonationRepository;
+import app.kitappla.repo.UserRepository;
+import app.kitappla.security.AppUserDetails;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+/** Bağış oluşturma sayfası, bağışlarım ve teslimat aksiyonları. */
+@SpringBootTest
+@AutoConfigureMockMvc
+@ActiveProfiles("test")
+class DonationPagesTest {
+
+    @Autowired MockMvc mvc;
+    @Autowired UserRepository users;
+    @Autowired DonationRepository donations;
+    @Autowired app.kitappla.repo.ClaimRepository claims;
+    @Autowired app.kitappla.service.PickupPointService points;
+    @Autowired PasswordEncoder encoder;
+
+    private User makeUser(String tag, String address) {
+        User u = new User();
+        u.setName("Web " + tag);
+        u.setEmail(tag + "-" + UUID.randomUUID() + "@test.local");
+        u.setPasswordHash(encoder.encode("sifre123"));
+        u.setAddress(address);
+        return users.save(u);
+    }
+
+    private AppUserDetails as(User u) {
+        return new AppUserDetails(u);
+    }
+
+    @Autowired app.kitappla.service.AdminService admin;
+    @Autowired app.kitappla.service.DonationService donationService;
+    @Autowired app.kitappla.service.SwapService swapService;
+    @Autowired app.kitappla.service.BookService bookService;
+
+    @Test
+    void askiNedeniyleIptalEdilenTalepSayfadaKapaliGorunur() throws Exception {
+        User bagisci = makeUser("aski-bagisci", "İzmir");
+        User alici = makeUser("aski-alici", "Ankara");
+        alici.setStudentStatus(StudentStatus.APPROVED);
+        alici.setSchoolLevel(SchoolLevel.LISE);
+        alici = users.save(alici);
+        User yonetici = makeUser("aski-yonetici", "Bursa");
+        yonetici.setAdmin(true);
+        yonetici = users.save(yonetici);
+        Donation d = donationService.create(bagisci, bookService.findOrCreate("Askı Sayfa " + UUID.randomUUID(),
+                "Y", null, null, null, null), 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        Claim c = donationService.claim(d.getId(), alici);
+
+        admin.setBlocked(yonetici, bagisci.getId(), true);
+
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(content().string(containsString("İptal edildi")))
+                .andExpect(content().string(not(containsString("/bulusma/bagis/" + c.getId()))))
+                .andExpect(content().string(not(containsString("/mesajlar/ac/claim/" + c.getId()))))
+                .andExpect(content().string(not(containsString("/teslimat/" + c.getId() + "/iptal"))));
+    }
+
+    @Test
+    void yonetiminKaldirdigiIlandaYenidenYayinDugmeleriGorunmez() throws Exception {
+        User sahip = makeUser("kaldirilan-sahip", "İzmir");
+        Donation d = donationService.create(sahip, bookService.findOrCreate("Kaldırılan Bağış " + UUID.randomUUID(),
+                "Y", null, null, null, null), 1, TargetLevel.HEPSI, DonationSource.OWN, null);
+        SwapBook sb = swapService.open(sahip, bookService.findOrCreate("Kaldırılan Takas " + UUID.randomUUID(),
+                "Y", null, null, null, null), null);
+        admin.removeDonation(d.getId(), null);
+        admin.removeSwapBook(sb.getId(), null);
+
+        mvc.perform(get("/bagislarim").with(user(as(sahip))))
+                .andExpect(content().string(containsString("Yönetim kaldırdı")))
+                .andExpect(content().string(not(containsString("/bagis/" + d.getId() + "/takasa-aktar"))))
+                .andExpect(content().string(not(containsString("/bagis/" + d.getId() + "/ac"))))
+                .andExpect(content().string(containsString("/bagis/" + d.getId() + "/sil")));
+
+        mvc.perform(get("/takas/kitaplarim").with(user(as(sahip))))
+                .andExpect(content().string(containsString("Yönetim kaldırdı")))
+                .andExpect(content().string(not(containsString("/takas/kitaplarim/" + sb.getId() + "/bagisa-aktar"))))
+                .andExpect(content().string(not(containsString("/takas/kitaplarim/" + sb.getId() + "/durum"))))
+                .andExpect(content().string(containsString("/takas/kitaplarim/" + sb.getId() + "/sil")));
+    }
+
+    @Test
+    void bagisFormuAcilir() throws Exception {
+        User donor = makeUser("form", "İzmir");
+        mvc.perform(get("/bagis/yeni").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(view().name("bagis-yeni"))
+                .andExpect(content().string(containsString("Bağış oluştur")));
+    }
+
+    @Test
+    void bagisFormuGirisIster() throws Exception {
+        mvc.perform(get("/bagis/yeni"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrlPattern("**/login"));
+    }
+
+    @Test
+    void bagisOlusturulurVeBagislarimdaGorunur() throws Exception {
+        User donor = makeUser("olustur", "İzmir Bornova");
+
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                        .param("title", "Web Test Kitabı")
+                        .param("author", "Web Yazar")
+                        .param("quantity", "2")
+                        .param("targetLevel", "HEPSI")
+                        .param("source", "OWN")
+                        .param("description", "Temiz"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/bagislarim"));
+
+        assertThat(donations.findByDonorWithDetails(donor)).hasSize(1);
+
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Web Test Kitabı")))
+                .andExpect(content().string(containsString("alındı")));
+    }
+
+    @Test
+    void baslikVeLinkYoksaHataGosterilir() throws Exception {
+        User donor = makeUser("hatali", "İzmir");
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                        .param("title", "")
+                        .param("quantity", "1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("bagis-yeni"))
+                .andExpect(model().attributeExists("hata"));
+    }
+
+    @Test
+    void onizlemeParcasiYalnizcaFragmentDondurur() throws Exception {
+        User donor = makeUser("onizleme", "İzmir");
+        mvc.perform(post("/bagis/onizleme").with(user(as(donor))).with(csrf())
+                        .param("purchaseLink", "ftp://gecersiz"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(not(containsString("<html"))))
+                .andExpect(content().string(containsString("elle yazabilirsin")));
+    }
+
+    @Test
+    void kampusTeslimindeAliciAdresiGosterilmez() throws Exception {
+        User donor = makeUser("kargo-bagisci", "İzmir");
+        User alici = makeUser("kargo-alici", "Ankara Çankaya 42");
+
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Kargo Kitabı " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI").param("source", "OWN"));
+
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+        // öncelik penceresini atlamak için öğrenci yapalım
+        alici.setStudentStatus(StudentStatus.APPROVED);
+        alici.setSchoolLevel(SchoolLevel.LISE);
+        alici = users.save(alici);
+
+        mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()))
+                .andExpect(redirectedUrl("/aldiklarim"));
+
+        // Yüz yüze teslimde adres paylaşılmaz, kargo düğmesi de çıkmaz;
+        // onun yerine buluşma ayarlama görünür (adres akışı: KargoModuSayfaTest)
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(content().string(not(containsString("Ankara Çankaya 42"))))
+                .andExpect(content().string(not(containsString("Kargoya verdim"))))
+                .andExpect(content().string(containsString("Buluşma ayarla")));
+    }
+
+    @Test
+    void listedenSecilenNoktaSayfalardaGorunur() throws Exception {
+        // open-in-view kapalı: seçilen nokta sorguda birlikte çekilmezse
+        // sayfa LazyInitializationException ile 500 döner
+        var nokta = points.create("Test Kampüs " + UUID.randomUUID(), "Kütüphane girişi", null);
+
+        User donor = makeUser("nokta-bagisci", "İzmir");
+        User alici = makeUser("nokta-alici", "Ankara");
+        alici.setStudentStatus(StudentStatus.APPROVED);
+        alici.setSchoolLevel(SchoolLevel.LISE);
+        alici = users.save(alici);
+
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Noktalı Kitap " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI")
+                .param("pointId", String.valueOf(nokta.getId())));
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+
+        // Bağışçının önerdiği nokta ilanında görünür
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi")));
+
+        mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()));
+        Long claimId = claims.findByStudentWithDetails(alici).get(0).getId();
+
+        mvc.perform(post("/bulusma/bagis/" + claimId).with(user(as(alici))).with(csrf())
+                        .param("pointId", String.valueOf(nokta.getId()))
+                        .param("note", "kırmızı çantalı")
+                        .param("at", LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Her iki taraf da nokta + notu birlikte görür
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi · kırmızı çantalı")));
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("Kütüphane girişi · kırmızı çantalı")));
+    }
+
+    @Test
+    void teslimatAksiyonlariSirayiTakipEder() throws Exception {
+        User donor = makeUser("akis-bagisci", "İzmir");
+        User alici = makeUser("akis-alici", "Ankara");
+        alici.setStudentStatus(StudentStatus.APPROVED);
+        alici.setSchoolLevel(SchoolLevel.LISE);
+        alici = users.save(alici);
+
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Akış Kitabı " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI").param("source", "OWN"));
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+
+        mvc.perform(post("/kitap/" + d.getId() + "/al").with(user(as(alici))).with(csrf()));
+
+        // Yüz yüze teslimde önce buluşma ayarlanır; o zamana kadar "Teslim aldım" çıkmaz
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(content().string(containsString("Buluşma ayarla")))
+                .andExpect(content().string(containsString("İptal et")))
+                .andExpect(content().string(not(containsString("Teslim aldım"))));
+
+        Long claimId = claims.findByStudentWithDetails(alici).get(0).getId();
+        mvc.perform(post("/bulusma/bagis/" + claimId).with(user(as(alici))).with(csrf())
+                        .param("note", "Kütüphane girişi")
+                        .param("at", LocalDateTime.now().plusDays(1)
+                                .truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Buluşma ayarlandıktan sonra teslim onayı görünür
+        mvc.perform(get("/aldiklarim").with(user(as(alici))))
+                .andExpect(content().string(containsString("Teslim aldım")))
+                .andExpect(content().string(containsString("Kütüphane girişi")));
+    }
+
+    @Test
+    void bagisTakasaAktarilabilirVeBagislarimdaGorunur() throws Exception {
+        User donor = makeUser("aktar-sayfa", "İzmir");
+        mvc.perform(post("/bagis/yeni").with(user(as(donor))).with(csrf())
+                .param("title", "Takasa Geçecek Kitap " + UUID.randomUUID()).param("author", "Y")
+                .param("quantity", "1").param("targetLevel", "HEPSI").param("source", "OWN"));
+        Donation d = donations.findByDonorWithDetails(donor).get(0);
+
+        // Sayfada "Takasa aktar" butonunu gör
+        mvc.perform(get("/bagislarim").with(user(as(donor))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/bagis/" + d.getId() + "/takasa-aktar")))
+                .andExpect(content().string(containsString("Takasa aktar")));
+
+        // Takasa aktar
+        mvc.perform(post("/bagis/" + d.getId() + "/takasa-aktar").with(user(as(donor))).with(csrf()))
+                .andExpect(redirectedUrl("/bagislarim"))
+                .andExpect(flash().attributeExists("basari"));
+
+        // Bağış listesinde kalmadığını doğrula
+        assertThat(donations.findById(d.getId())).isEmpty();
+    }
+}

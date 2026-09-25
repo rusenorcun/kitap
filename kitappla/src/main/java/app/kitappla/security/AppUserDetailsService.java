@@ -1,0 +1,24 @@
+package app.kitappla.security;
+
+import app.kitappla.repo.UserRepository;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.stereotype.Service;
+
+@Service
+public class AppUserDetailsService implements UserDetailsService {
+
+    private final UserRepository users;
+
+    public AppUserDetailsService(UserRepository users) {
+        this.users = users;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        return users.findByEmail(email.trim().toLowerCase(java.util.Locale.ROOT))
+                .map(AppUserDetails::new)
+                .orElseThrow(() -> new UsernameNotFoundException("Kullanıcı bulunamadı"));
+    }
+}

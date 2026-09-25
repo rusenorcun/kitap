@@ -1,0 +1,14 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "overused-font",
+        "value": "plus jakarta sans",
+        "createdAt": "2026-09-24T18:54:51.391Z",
+        "reason": "Claude: established KitAppLa brand typeface, shared by Design/*.html, static/css/kitappla.css, bakim/index.html and the Android theme (Type.kt + design spec); pre-existing, not introduced by the App Links change"
+      }
+    ]
+  }
+}

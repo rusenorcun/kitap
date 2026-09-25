@@ -12,10 +12,10 @@
   </parent>
 
   <groupId>app</groupId>
-  <artifactId>kitapla</artifactId>
+  <artifactId>kitappla</artifactId>
   <version>0.1.0</version>
-  <name>kitapla</name>
-  <description>KİTAPLA — kitap bağış ve takas platformu (web)</description>
+  <name>kitappla</name>
+  <description>KitAppLa — kitap bağış ve takas platformu (web)</description>
 
   <properties>
     <java.version>21</java.version>

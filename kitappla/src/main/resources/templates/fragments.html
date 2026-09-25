@@ -13,7 +13,7 @@
        Anonim sayfalardaki formlar (giriş, kayıt) jetonu kendi gizli alanında taşır. -->
   <meta sec:authorize="isAuthenticated()" name="_csrf" th:content="${_csrf != null ? _csrf.token : ''}"/>
   <meta sec:authorize="isAuthenticated()" name="_csrf_header" th:content="${_csrf != null ? _csrf.headerName : ''}"/>
-  <link rel="stylesheet" th:href="@{/css/kitapla.css}"/>
+  <link rel="stylesheet" th:href="@{/css/kitappla.css}"/>
   <script defer th:src="@{/webjars/htmx.org/1.9.12/dist/htmx.min.js}"></script>
   <script th:inline="javascript">
     document.addEventListener('htmx:configRequest', function (e) {
@@ -46,6 +46,33 @@
     <a sec:authorize="!isAuthenticated()" class="btn btn-primary btn-sm" th:href="@{/register}">Üye ol</a>
     <a sec:authorize="isAuthenticated()" class="btn btn-primary btn-sm" th:href="@{/panom}">Panom</a>
   </div>
+</div>
+
+<!-- Mobil uygulamaya geri dönüş. Mobil uygulamadan başlatılan işlemlerin e-posta bağlantıları
+     (/uygulamada-ac/...) uygulama yüklüyse App Link olarak doğrudan uygulamada açılır; tarayıcıda
+     açılırlarsa (App Link doğrulanmamış, eski bağlantı) bu kart kitappla:// şemasıyla uygulamaya gönderir.
+     hedef: şemasız yol ve sorgu, ör. "sifre-sifirla?token=..." -->
+<div th:fragment="uygulamayaDon(hedef, baslik)" class="card card-pad"
+     style="background:var(--sage-soft);border-color:transparent;margin:18px 0;text-align:center">
+  <p style="margin:0 0 10px;font-weight:600;color:var(--ink)" th:text="${baslik}">Uygulamaya dön</p>
+  <a id="uygulama-ac" class="btn btn-sage" th:href="'kitappla://' + ${hedef}" th:attr="data-hedef=${hedef}"
+     style="display:inline-block;font-weight:700;text-decoration:none;padding:10px 20px">KitAppLa uygulamasında aç</a>
+  <p class="muted" style="margin:10px 0 0;font-size:13px;font-weight:500">
+    Uygulama açılmazsa işlemi bu sayfadan da tamamlayabilirsin.</p>
+  <script>
+    (function () {
+      var a = document.getElementById('uygulama-ac');
+      if (!a) return;
+      var hedef = a.getAttribute('data-hedef');
+      // Android'de intent:// adresi, uygulama yüklü değilse hata sayfası yerine hiçbir şey yapmaz
+      if (/Android/i.test(navigator.userAgent)) {
+        var yol = hedef.split('?');
+        a.href = 'intent://' + yol[0] + (yol[1] ? '?' + yol[1] : '')
+            + '#Intent;scheme=kitappla;package=com.kitappla.app;end';
+      }
+      if (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) window.location.href = a.href;
+    })();
+  </script>
 </div>
 
 <!-- Uygulama (app) nav -->
@@ -89,6 +116,14 @@
     <a th:unless="${yonetimAlani}" class="avatar" th:href="@{/profil}" th:text="${currentUser?.initials}"
        th:title="${currentUser?.name}" aria-label="Profilim">EY</a>
   </div>
+  <!--/* E-postasını doğrulamamış üyeye kalıcı uyarı. Menü satırını bozmamak için sabit konumlu. */-->
+  <div th:if="${currentUser != null and !currentUser.emailVerified and !currentUser.admin}" role="status"
+       style="position:fixed;left:16px;right:16px;bottom:16px;z-index:60;max-width:680px;margin:0 auto;
+              background:var(--accent-soft);color:var(--ink);border-radius:14px;padding:12px 16px;
+              box-shadow:var(--shadow);display:flex;gap:12px;align-items:center;flex-wrap:wrap;font-size:14px;font-weight:600">
+    <span style="flex:1;min-width:200px">İşlem yapabilmek için e-posta adresini doğrula.</span>
+    <a class="btn btn-primary btn-sm" th:href="@{/hesap-dogrulama}">Doğrula</a>
+  </div>
   <script>
     // Dar ekranda bağlantı şeridi kaydırılabilir: etkin sekme şeridin görünür kısmına getirilir
     (function () {
@@ -101,8 +136,8 @@
   <script th:inline="javascript">
   /*<![CDATA[*/
   (function () {
-    if (window.__kitapla_notif_stream_active) return;
-    window.__kitapla_notif_stream_active = true;
+    if (window.__kitappla_notif_stream_active) return;
+    window.__kitappla_notif_stream_active = true;
     if (!window.EventSource) return;
 
     var akis = new EventSource('/bildirimler/akis');
@@ -160,6 +195,11 @@
     Şikâyetler
     <span th:if="${sikayetSayisi > 0}" th:text="${sikayetSayisi}"
           style="margin-left:6px;min-width:18px;height:18px;border-radius:999px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;padding:0 5px">1</span>
+  </a>
+  <a th:href="@{/admin/izlec}" class="btn btn-sm"
+     th:classappend="${active=='izlec'} ? 'btn-primary' : 'btn-soft'">
+    İzleç
+    <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2e7d32;margin-left:5px" title="Canlı İzleme"></span>
   </a>
 </div>
 

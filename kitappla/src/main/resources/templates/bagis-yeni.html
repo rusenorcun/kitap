@@ -56,7 +56,7 @@
       </div>
 
       <!--/* "Satın alıp göndereceğim" seçeneği kampüs teslimine geçilirken kapatıldı;
-             kitapla.features.purchase=true ile geri gelir. Kapalıyken kaynak
+             kitappla.features.purchase=true ile geri gelir. Kapalıyken kaynak
              sunucuda OWN varsayılır. */-->
       <div class="field" th:if="${features.purchase}">
         <div class="label">Nasıl göndereceksin?</div>
@@ -92,7 +92,7 @@
       <div class="field">
         <label class="label" for="description">Açıklama <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
         <textarea class="input" id="description" name="description"
-                  placeholder="Kitabın durumu, buluşma tercihi…" th:text="${form?.description}"></textarea>
+                  placeholder="Kitap hakkında açıklama, kondisyon veya eklemek istediğin not…" th:text="${form?.description}"></textarea>
       </div>
     </div>
 
@@ -127,14 +127,19 @@
     <div style="font-size:17px;font-weight:800" th:text="${meta.title}">Başlık</div>
     <div class="muted" style="font-size:13px;font-weight:500" th:text="${meta.author} ?: 'Yazarı elle gir'">Yazar</div>
     <div class="badge badge-sage" style="margin-top:12px">Linkten alındı</div>
+    <div th:if="${meta.description}" style="margin-top:14px;text-align:left;background:var(--surface2);border-radius:10px;padding:10px 12px">
+      <div style="font-size:11px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Açıklama</div>
+      <div class="muted" style="font-size:12px;font-weight:500;line-height:1.5;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden" th:text="${meta.description}">Açıklama</div>
+    </div>
     <script th:inline="javascript">
       /*<![CDATA[*/
       (function () {
-        var t = /*[[${meta.title}]]*/ null, a = /*[[${meta.author}]]*/ null, c = /*[[${meta.imageUrl}]]*/ null;
-        var ti = document.getElementById('title'), ai = document.getElementById('author'), ci = document.getElementById('coverUrl');
+        var t = /*[[${meta.title}]]*/ null, a = /*[[${meta.author}]]*/ null, c = /*[[${meta.imageUrl}]]*/ null, d = /*[[${meta.description}]]*/ null;
+        var ti = document.getElementById('title'), ai = document.getElementById('author'), ci = document.getElementById('coverUrl'), di = document.getElementById('description');
         if (ti && t && !ti.value) ti.value = t;
         if (ai && a && !ai.value) ai.value = a;
         if (ci && c) ci.value = c;
+        if (di && d && !di.value) di.value = d;
       })();
       /*]]>*/
     </script>

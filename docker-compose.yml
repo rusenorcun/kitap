@@ -4,20 +4,23 @@
 # dinler ve Caddy ona vekillik eder. Caddy yapılandırması: deploy/kitappla.caddy
 # (canlı Caddyfile bu dosyayı "import" eder). Adımlar: docs/canliya-gecis.md
 #
-#   copy deploy\kitapla.env.ornek .env   (ilk kurulumda; sonra .env'i doldur)
+#   copy deploy\kitappla.env.ornek .env   (ilk kurulumda; sonra .env'i doldur)
 #   docker compose up -d --build
+
+# Proje adı sabit: klasör adı ne olursa olsun konteyner, birim ve imaj adları kitappla* olur.
+name: kitappla
 
 services:
   postgres:
     image: postgres:16-alpine
-    container_name: kitapla-db
+    container_name: kitappla-db
     restart: unless-stopped
     environment:
-      POSTGRES_DB: ${KITAPLA_DB_NAME:-kitapla}
-      POSTGRES_USER: ${KITAPLA_DB_USER:-kitapla}
-      POSTGRES_PASSWORD: ${KITAPLA_DB_PASSWORD:?KITAPLA_DB_PASSWORD .env dosyasinda tanimli olmali}
+      POSTGRES_DB: ${KITAPPLA_DB_NAME:-kitappla}
+      POSTGRES_USER: ${KITAPPLA_DB_USER:-kitappla}
+      POSTGRES_PASSWORD: ${KITAPPLA_DB_PASSWORD:?KITAPPLA_DB_PASSWORD .env dosyasinda tanimli olmali}
     # Ayarlar 1000 kullanıcı hedefi için (kapasite taraması). Sorgu istatistiği için bir kez:
-    #   docker exec kitapla-db psql -U kitapla -d kitapla -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
+    #   docker exec kitappla-db psql -U kitappla -d kitappla -c "CREATE EXTENSION IF NOT EXISTS pg_stat_statements"
     command: ["postgres",
       "-c", "shared_buffers=1GB", "-c", "effective_cache_size=3GB",
       "-c", "work_mem=8MB", "-c", "maintenance_work_mem=256MB",
@@ -30,16 +33,16 @@ services:
       resources:
         limits: { cpus: "4", memory: 2g }
     volumes:
-      - kitapla-db-veri:/var/lib/postgresql/data
+      - kitappla-db-veri:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 5
 
-  kitapla:
+  kitappla:
     build: ./kitappla
-    container_name: kitapla
+    container_name: kitappla
     restart: unless-stopped
     depends_on:
       postgres:
@@ -55,14 +58,14 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: prod
       # Konteyner içinde 0.0.0.0 dinlenmeli; yalıtımı yukarıdaki 127.0.0.1 sağlar.
-      KITAPLA_BIND: "0.0.0.0"
-      KITAPLA_DB_HOST: postgres
-      KITAPLA_DB_PORT: "5432"
-      KITAPLA_DB_NAME: ${KITAPLA_DB_NAME:-kitapla}
-      KITAPLA_DB_USER: ${KITAPLA_DB_USER:-kitapla}
-      KITAPLA_DB_PASSWORD: ${KITAPLA_DB_PASSWORD}
+      KITAPPLA_BIND: "0.0.0.0"
+      KITAPPLA_DB_HOST: postgres
+      KITAPPLA_DB_PORT: "5432"
+      KITAPPLA_DB_NAME: ${KITAPPLA_DB_NAME:-kitappla}
+      KITAPPLA_DB_USER: ${KITAPPLA_DB_USER:-kitappla}
+      KITAPPLA_DB_PASSWORD: ${KITAPPLA_DB_PASSWORD}
       # Şifresi bilinen örnek hesaplar yayında asla oluşturulmaz (.env ne derse desin)
-      KITAPLA_SEED_DEMO: "false"
+      KITAPPLA_SEED_DEMO: "false"
     env_file:
       - .env
 
@@ -73,8 +76,8 @@ services:
         limits: { cpus: "6", memory: 3g }
 
     volumes:
-      - kitapla-dosya:/uygulama/uploads
+      - kitappla-dosya:/uygulama/uploads
 
 volumes:
-  kitapla-db-veri:
-  kitapla-dosya:
+  kitappla-db-veri:
+  kitappla-dosya:

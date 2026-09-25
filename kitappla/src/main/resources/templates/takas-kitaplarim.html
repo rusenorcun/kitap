@@ -102,13 +102,19 @@
 
 <!-- HTMX ile değişen önizleme parçası -->
 <div th:fragment="onizleme">
-  <div th:if="${meta != null and !bulunamadi}" class="card card-pad row gap-14" style="background:var(--surface2);border-radius:12px;margin-top:6px;align-items:center">
-    <img th:if="${meta.imageUrl}" th:src="${meta.imageUrl}" alt=""
-         style="width:54px;height:76px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
-    <div>
-      <div style="font-size:15px;font-weight:800" th:text="${meta.title}">Başlık</div>
-      <div class="muted" style="font-size:13px;font-weight:500" th:text="${meta.author} ?: 'Yazar belirtilmemiş'">Yazar</div>
-      <span class="badge badge-sage" style="margin-top:6px">Linkten alındı</span>
+  <div th:if="${meta != null and !bulunamadi}" class="card card-pad stack gap-12" style="background:var(--surface2);border-radius:12px;margin-top:6px">
+    <div class="row gap-14" style="align-items:center">
+      <img th:if="${meta.imageUrl}" th:src="${meta.imageUrl}" alt=""
+           style="width:54px;height:76px;object-fit:cover;border-radius:7px;flex-shrink:0"/>
+      <div>
+        <div style="font-size:15px;font-weight:800" th:text="${meta.title}">Başlık</div>
+        <div class="muted" style="font-size:13px;font-weight:500" th:text="${meta.author} ?: 'Yazar belirtilmemiş'">Yazar</div>
+        <span class="badge badge-sage" style="margin-top:6px">Linkten alındı</span>
+      </div>
+    </div>
+    <div th:if="${meta.description}" style="text-align:left;background:var(--surface);border-radius:8px;padding:8px 10px">
+      <div style="font-size:11px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">Açıklama</div>
+      <div class="muted" style="font-size:12px;font-weight:500;line-height:1.45;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden" th:text="${meta.description}">Açıklama</div>
     </div>
     <script th:inline="javascript">
       /*<![CDATA[*/

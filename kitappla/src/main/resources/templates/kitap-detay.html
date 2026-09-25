@@ -37,8 +37,12 @@
               th:text="${d.source.name() == 'PURCHASE'} ? 'Satın alınıp elden teslim edilecek' : 'Bağışçının kendi kopyası'">Kaynak</span>
       </div>
 
-      <p th:if="${d.description}" class="muted" style="font-size:16px;font-weight:500;line-height:1.7;margin:0 0 26px;max-width:60ch"
-         th:text="${d.description}">Açıklama</p>
+      <!-- Açıklama -->
+      <div th:if="${d.description != null or d.book.description != null}" style="margin:0 0 24px;max-width:60ch">
+        <div style="font-size:12px;font-weight:800;color:var(--faint);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px">Açıklama</div>
+        <p class="muted" style="font-size:15px;font-weight:500;line-height:1.7;margin:0"
+           th:text="${d.description} ?: ${d.book.description}">Açıklama</p>
+      </div>
 
       <div class="card card-pad row gap-12" style="max-width:520px">
         <div class="avatar" style="width:44px;height:44px" th:text="${#strings.substring(d.donorName,0,1)}">A</div>

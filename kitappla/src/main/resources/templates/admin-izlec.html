@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Canlı İzleç')}"></head>
+<body>
+<div th:replace="~{fragments :: appnav('admin')}"></div>
+
+<div class="container" style="padding-top:28px; padding-bottom:56px; max-width:1040px">
+  <div class="row" style="justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:12px">
+    <div>
+      <div class="row gap-8">
+        <h1 style="font-size:26px;font-weight:800;letter-spacing:-.6px;margin:0">Sistem ve Oturum İzleci</h1>
+        <span class="badge badge-sage" style="display:inline-flex;align-items:center;gap:6px">
+          <span style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#2e7d32;box-shadow:0 0 0 2px rgba(46,125,50,.25)"></span>
+          Canlı
+        </span>
+      </div>
+      <p class="muted" style="font-weight:500;margin:4px 0 0">Aktif oturumlar, çevrim içi üyeler ve sunucu çalışma parametreleri.</p>
+    </div>
+
+    <!-- Canlı Yenileme Butonu ve Durum -->
+    <div class="row gap-12" style="align-items:center">
+      <label class="row gap-6" style="font-size:13px;font-weight:600;color:var(--muted);cursor:pointer">
+        <input type="checkbox" id="auto-refresh-toggle" checked style="cursor:pointer"/>
+        10 sn'de bir yenile
+      </label>
+      <button class="btn btn-soft btn-sm row gap-6" id="btn-refresh" type="button" onclick="canliGuncelle(true)">
+        <svg id="refresh-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="23 4 23 10 17 10"></polyline>
+          <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+        </svg>
+        <span id="refresh-label">Yenile</span>
+      </button>
+    </div>
+  </div>
+
+  <div th:replace="~{fragments :: adminnav('izlec')}"></div>
+
+  <div th:if="${basari}" class="alert alert-ok" th:text="${basari}" role="status">Tamam</div>
+  <div th:if="${hata}" class="alert alert-error" th:text="${hata}" role="alert">Hata</div>
+
+  <!-- Oturum ve Kullanıcı Metrikleri -->
+  <h2 style="font-size:15px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--muted);margin:18px 0 12px">
+    Oturum ve Kullanıcı Durumu
+  </h2>
+  <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:24px">
+    <!-- Aktif Oturum -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Aktif Oturum</div>
+        <div class="badge badge-accent" style="padding:3px 7px;font-size:10px;font-weight:800">HTTP</div>
+      </div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;margin-top:6px;color:var(--accent)" id="val-active-sessions" th:text="${summary.activeSessions}">0</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px">Şu anda sunucuda süresi dolmamış açık oturumlar.</div>
+    </div>
+
+    <!-- Çevrim İçi Üye -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Çevrim İçi Üye</div>
+        <div class="badge badge-sage" style="padding:3px 7px;font-size:10px;font-weight:800">Tekil</div>
+      </div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;margin-top:6px;color:var(--ink)" id="val-online-users" th:text="${summary.onlineUsers}">0</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px" id="val-online-breakdown">
+        <span th:text="${summary.onlineAdmins}">0</span> yönetici, <span th:text="${summary.onlineStudents}">0</span> öğrenci
+      </div>
+    </div>
+
+    <!-- Kalıcı Oturumlar (Remember-Me) -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Kalıcı Oturum</div>
+        <div class="badge badge-soft" style="padding:3px 7px;font-size:10px;font-weight:800">Beni Hatırla</div>
+      </div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;margin-top:6px;color:var(--ink)" id="val-persistent-logins" th:text="${summary.persistentLogins}">0</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px">Veritabanında kayıtlı kalıcı giriş belirteçleri.</div>
+    </div>
+
+    <!-- Güvenlik / Giriş Denemeleri -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:flex-start">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Giriş Koruması</div>
+        <div class="badge badge-muted" style="padding:3px 7px;font-size:10px;font-weight:800">Rate Limit</div>
+      </div>
+      <div style="font-size:32px;font-weight:800;letter-spacing:-1px;margin-top:6px;color:var(--ink)" id="val-login-failures" th:text="${summary.loginFailuresTracked}">0</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px">Şu anda izlenen başarısız deneme anahtarları.</div>
+    </div>
+  </div>
+
+  <!-- Sunucu ve Çalışma Zamanı Metrikleri -->
+  <h2 style="font-size:15px;font-weight:800;letter-spacing:.3px;text-transform:uppercase;color:var(--muted);margin:18px 0 12px">
+    Sunucu ve Sistem Parametreleri
+  </h2>
+  <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:28px">
+    <!-- Uptime / Çalışma Süresi -->
+    <div class="card card-pad">
+      <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Çalışma Süresi</div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:6px;color:var(--ink)" id="val-uptime" th:text="${summary.uptimeFormatted}">0 sn</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px">
+        Açılış: <span id="val-start-time" th:text="${summary.startTime}">-</span>
+      </div>
+    </div>
+
+    <!-- JVM Bellek (RAM) -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">JVM Bellek (Heap)</div>
+        <span style="font-size:13px;font-weight:800;color:var(--accent)" id="val-memory-percent" th:text="'%' + ${summary.memoryPercent}">%0</span>
+      </div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:6px;color:var(--ink)">
+        <span id="val-used-memory" th:text="${summary.usedMemoryMb}">0</span> <span style="font-size:14px;color:var(--muted)">/ <span id="val-max-memory" th:text="${summary.maxMemoryMb}">0</span> MB</span>
+      </div>
+      <div class="ilerleme" style="height:6px;margin-top:10px">
+        <span id="bar-memory-percent" th:style="'width:' + ${summary.memoryPercent} + '%'"></span>
+      </div>
+    </div>
+
+    <!-- İşlemci ve İş Parçacıkları (Threads) -->
+    <div class="card card-pad">
+      <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">İşlemci & Thread</div>
+      <div style="font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:6px;color:var(--ink)">
+        <span id="val-threads" th:text="${summary.threadCount}">0</span> <span style="font-size:14px;color:var(--muted)">aktif thread</span>
+      </div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px">
+        <span id="val-cpus" th:text="${summary.availableProcessors}">0</span> çekirdek • Zirve: <span id="val-peak-threads" th:text="${summary.peakThreadCount}">0</span>
+      </div>
+    </div>
+
+    <!-- Veritabanı Sağlığı -->
+    <div class="card card-pad">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <div class="muted" style="font-size:12px;font-weight:700;letter-spacing:.4px;text-transform:uppercase">Veritabanı Durumu</div>
+        <span th:if="${summary.dbConnected}" class="badge badge-sage" id="badge-db-status" style="font-size:10px">Bağlı</span>
+        <span th:unless="${summary.dbConnected}" class="badge badge-accent" id="badge-db-status" style="font-size:10px">Bağlantı Yok</span>
+      </div>
+      <div style="font-size:16px;font-weight:800;margin-top:8px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="val-db-product" th:text="${summary.dbProduct}">PostgreSQL</div>
+      <div class="muted" style="font-size:12px;font-weight:500;margin-top:4px" id="val-db-pool">
+        <th:block th:if="${summary.dbActiveConnections != null}">
+          Havuz: <span th:text="${summary.dbActiveConnections}">0</span> aktif, <span th:text="${summary.dbIdleConnections}">0</span> boşta
+        </th:block>
+        <th:block th:unless="${summary.dbActiveConnections != null}">
+          JDBC bağlantısı aktif
+        </th:block>
+      </div>
+    </div>
+  </div>
+
+  <!-- Aktif Oturumlar Tablosu -->
+  <div class="row" style="justify-content:space-between;align-items:baseline;margin-bottom:12px">
+    <div>
+      <h2 style="font-size:18px;font-weight:800;letter-spacing:-.4px;margin:0">
+        Açık Oturum Listesi
+        <span class="badge badge-soft" id="badge-session-count" style="margin-left:6px" th:text="${#lists.size(sessions)} + ' oturum'">0 oturum</span>
+      </h2>
+      <p class="muted" style="font-size:13px;font-weight:500;margin:3px 0 0">
+        Sunucu üzerinde kimliği doğrulanmış aktif tarayıcı oturumları. Gerektiğinde tekil oturumu anında sonlandırabilirsiniz.
+      </p>
+    </div>
+    <div class="muted" style="font-size:12px;font-weight:600">
+      Son kontrol: <span id="son-kontrol-saati">-</span>
+    </div>
+  </div>
+
+  <!-- Oturum Yoksa -->
+  <div id="oturum-yok-mesaji" class="card card-pad" th:classappend="${#lists.isEmpty(sessions)} ? '' : 'hidden'" style="text-align:center;padding:48px 24px" th:style="${#lists.isEmpty(sessions)} ? '' : 'display:none'">
+    <div style="font-size:18px;font-weight:800;margin-bottom:6px">Aktif Oturum Bulunamadı</div>
+    <p class="muted" style="font-weight:500;margin:0">Şu anda sunucuda kayıtlı açık oturum bulunmuyor.</p>
+  </div>
+
+  <!-- Oturum Kartları / Tablosu -->
+  <div id="oturum-listesi" class="stack gap-10">
+    <div th:each="s : ${sessions}" class="card card-pad row gap-14 oturum-karti"
+         style="flex-wrap:wrap;justify-content:space-between;align-items:center"
+         th:id="'oturum-' + ${s.id}">
+      
+      <!-- Kullanıcı Bilgisi -->
+      <div class="row gap-12" style="min-width:220px;flex:1">
+        <div class="avatar" style="flex-shrink:0" th:text="${s.initials}">?</div>
+        <div>
+          <div class="row gap-8" style="flex-wrap:wrap">
+            <span style="font-size:15px;font-weight:800" th:text="${s.userName}">Kullanıcı</span>
+            <span th:if="${s.admin}" class="badge badge-accent">Yönetici</span>
+            <span th:if="${s.student}" class="badge badge-sage">Öğrenci</span>
+            <span th:if="${s.blocked}" class="badge badge-muted">Askıda</span>
+            <span th:if="${s.currentSession}" class="badge badge-sage" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9">
+              ✓ Geçerli Oturumunuz
+            </span>
+          </div>
+          <div class="muted" style="font-size:13px;font-weight:500;margin-top:2px" th:text="${s.userEmail}">eposta@ornek.com</div>
+        </div>
+      </div>
+
+      <!-- Oturum Kimliği & Son İstek -->
+      <div class="stack gap-4" style="min-width:180px">
+        <div class="row gap-6">
+          <span class="muted" style="font-size:12px;font-weight:600">Oturum ID:</span>
+          <code style="font-size:12px;background:var(--bg);padding:2px 6px;border-radius:6px;font-family:monospace"
+                th:text="${s.maskedSessionId}">a1b2...c3d4</code>
+        </div>
+        <div class="row gap-6">
+          <span class="muted" style="font-size:12px;font-weight:600">Son İşlem:</span>
+          <span style="font-size:13px;font-weight:700" th:text="${s.lastRequestRelative}">Az önce</span>
+          <span class="muted" style="font-size:11px" th:text="'(' + ${s.lastRequestTime} + ')'">(12:00:00)</span>
+        </div>
+      </div>
+
+      <!-- Eylemler -->
+      <div style="flex-shrink:0">
+        <th:block th:if="${s.currentSession}">
+          <span class="muted" style="font-size:12px;font-style:italic">Bu cihazdaki oturum</span>
+        </th:block>
+        <th:block th:unless="${s.currentSession}">
+          <form th:action="@{'/admin/izlec/oturumlar/' + ${s.id} + '/sonlandir'}" method="post" style="margin:0"
+                onsubmit="return confirm('Bu kullanıcının oturumu derhal sonlandırılsın mı? Sayfayı yenilediğinde oturumu düşecektir.')">
+            <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong);font-weight:700">
+              Oturumu Sonlandır
+            </button>
+          </form>
+        </th:block>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/*<![CDATA[*/
+(function() {
+  var toggle = document.getElementById('auto-refresh-toggle');
+  var refreshIcon = document.getElementById('refresh-icon');
+  var sonKontrol = document.getElementById('son-kontrol-saati');
+  var timer = null;
+
+  function updateTimestamp() {
+    var now = new Date();
+    var timeStr = now.toLocaleTimeString('tr-TR');
+    if (sonKontrol) sonKontrol.textContent = timeStr;
+  }
+  updateTimestamp();
+
+  window.canliGuncelle = function(isManual) {
+    if (refreshIcon) refreshIcon.style.transform = 'rotate(360deg)';
+    if (refreshIcon) refreshIcon.style.transition = 'transform .4s ease';
+
+    fetch('/admin/izlec/canli', {
+      headers: { 'Accept': 'application/json' }
+    })
+    .then(function(res) {
+      if (!res.ok) throw new Error('Ağ yanıtı başarısız');
+      return res.json();
+    })
+    .then(function(data) {
+      if (refreshIcon) {
+        setTimeout(function() {
+          refreshIcon.style.transform = '';
+          refreshIcon.style.transition = '';
+        }, 400);
+      }
+      updateTimestamp();
+
+      var s = data.summary;
+      if (s) {
+        document.getElementById('val-active-sessions').textContent = s.activeSessions;
+        document.getElementById('val-online-users').textContent = s.onlineUsers;
+        document.getElementById('val-online-breakdown').innerHTML =
+          '<span>' + s.onlineAdmins + '</span> yönetici, <span>' + s.onlineStudents + '</span> öğrenci';
+        document.getElementById('val-persistent-logins').textContent = s.persistentLogins;
+        document.getElementById('val-login-failures').textContent = s.loginFailuresTracked;
+        document.getElementById('val-uptime').textContent = s.uptimeFormatted;
+        document.getElementById('val-start-time').textContent = s.startTime;
+        document.getElementById('val-memory-percent').textContent = '%' + s.memoryPercent;
+        document.getElementById('val-used-memory').textContent = s.usedMemoryMb;
+        document.getElementById('val-max-memory').textContent = s.maxMemoryMb;
+        document.getElementById('bar-memory-percent').style.width = s.memoryPercent + '%';
+        document.getElementById('val-threads').textContent = s.threadCount;
+        document.getElementById('val-cpus').textContent = s.availableProcessors;
+        document.getElementById('val-peak-threads').textContent = s.peakThreadCount;
+        document.getElementById('val-db-product').textContent = s.dbProduct;
+
+        var poolText = s.dbActiveConnections !== null
+          ? 'Havuz: ' + s.dbActiveConnections + ' aktif, ' + s.dbIdleConnections + ' boşta'
+          : 'JDBC bağlantısı aktif';
+        document.getElementById('val-db-pool').textContent = poolText;
+      }
+
+      var sessions = data.sessions || [];
+      var badgeCount = document.getElementById('badge-session-count');
+      if (badgeCount) badgeCount.textContent = sessions.length + ' oturum';
+
+      var yokMesaji = document.getElementById('oturum-yok-mesaji');
+      var liste = document.getElementById('oturum-listesi');
+
+      if (sessions.length === 0) {
+        if (yokMesaji) yokMesaji.style.display = 'block';
+        if (liste) liste.innerHTML = '';
+      } else {
+        if (yokMesaji) yokMesaji.style.display = 'none';
+        // Oturum kartlarını dinamik güncelle
+        renderSessions(sessions);
+      }
+    })
+    .catch(function(err) {
+      if (refreshIcon) {
+        refreshIcon.style.transform = '';
+        refreshIcon.style.transition = '';
+      }
+      console.warn('İzleç güncellenirken hata:', err);
+    });
+  };
+
+  function renderSessions(sessions) {
+    var liste = document.getElementById('oturum-listesi');
+    if (!liste) return;
+
+    var html = '';
+    sessions.forEach(function(s) {
+      var badges = '';
+      if (s.admin) badges += '<span class="badge badge-accent">Yönetici</span> ';
+      if (s.student) badges += '<span class="badge badge-sage">Öğrenci</span> ';
+      if (s.blocked) badges += '<span class="badge badge-muted">Askıda</span> ';
+      if (s.currentSession) {
+        badges += '<span class="badge badge-sage" style="background:#e8f5e9;color:#2e7d32;border:1px solid #c8e6c9">✓ Geçerli Oturumunuz</span> ';
+      }
+
+      var actionHtml = '';
+      if (s.currentSession) {
+        actionHtml = '<span class="muted" style="font-size:12px;font-style:italic">Bu cihazdaki oturum</span>';
+      } else {
+        actionHtml = '<form action="/admin/izlec/oturumlar/' + s.id + '/sonlandir" method="post" style="margin:0" ' +
+          'onsubmit="return confirm(\'Bu kullanıcının oturumu derhal sonlandırılsın mı? Sayfayı yenilediğinde oturumu düşecektir.\')">' +
+          '<button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong);font-weight:700">Oturumu Sonlandır</button>' +
+          '</form>';
+      }
+
+      html += '<div class="card card-pad row gap-14 oturum-karti" style="flex-wrap:wrap;justify-content:space-between;align-items:center" id="oturum-' + s.id + '">' +
+        '<div class="row gap-12" style="min-width:220px;flex:1">' +
+          '<div class="avatar" style="flex-shrink:0">' + (s.initials || '?') + '</div>' +
+          '<div>' +
+            '<div class="row gap-8" style="flex-wrap:wrap">' +
+              '<span style="font-size:15px;font-weight:800">' + escapeHtml(s.userName) + '</span>' +
+              badges +
+            '</div>' +
+            '<div class="muted" style="font-size:13px;font-weight:500;margin-top:2px">' + escapeHtml(s.userEmail) + '</div>' +
+          '</div>' +
+        '</div>' +
+        '<div class="stack gap-4" style="min-width:180px">' +
+          '<div class="row gap-6">' +
+            '<span class="muted" style="font-size:12px;font-weight:600">Oturum ID:</span>' +
+            '<code style="font-size:12px;background:var(--bg);padding:2px 6px;border-radius:6px;font-family:monospace">' + s.maskedSessionId + '</code>' +
+          '</div>' +
+          '<div class="row gap-6">' +
+            '<span class="muted" style="font-size:12px;font-weight:600">Son İşlem:</span>' +
+            '<span style="font-size:13px;font-weight:700">' + s.lastRequestRelative + '</span>' +
+            '<span class="muted" style="font-size:11px">(' + s.lastRequestTime + ')</span>' +
+          '</div>' +
+        '</div>' +
+        '<div style="flex-shrink:0">' + actionHtml + '</div>' +
+      '</div>';
+    });
+
+    liste.innerHTML = html;
+  }
+
+  function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+  }
+
+  function startTimer() {
+    if (timer) clearInterval(timer);
+    timer = setInterval(function() {
+      if (toggle && toggle.checked) {
+        canliGuncelle(false);
+      }
+    }, 10000);
+  }
+
+  if (toggle) {
+    toggle.addEventListener('change', function() {
+      if (this.checked) {
+        startTimer();
+      } else {
+        if (timer) clearInterval(timer);
+      }
+    });
+  }
+
+  startTimer();
+})();
+/*]]>*/
+</script>
+</body>
+</html>

@@ -21,6 +21,10 @@
   </th:block>
 
   <th:block th:if="${gecerli}">
+    <!--/* Şifre sıfırlama mobil uygulamadan istendiyse önce uygulamada açmayı öner */-->
+    <th:block th:if="${uygulama}">
+      <div th:replace="~{fragments :: uygulamayaDon('sifre-sifirla?token=' + ${token}, 'Yeni şifreni KitAppLa uygulamasında belirle')}"></div>
+    </th:block>
     <p class="muted" style="margin:0 0 24px;font-weight:500">En az 6 karakterli yeni bir şifre seç.</p>
     <form th:action="@{/sifre-sifirla}" method="post">
       <input type="hidden" name="token" th:value="${token}"/>

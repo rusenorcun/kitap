@@ -59,6 +59,40 @@
     </div>
   </div>
 
+  <!-- Canlı İzleç Özeti -->
+  <div th:if="${monitor != null}" class="card card-pad" style="margin-top:14px;margin-bottom:20px;background:var(--surface)">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:14px;flex-wrap:wrap;gap:8px">
+      <div class="row gap-8">
+        <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#2e7d32;box-shadow:0 0 0 2px rgba(46,125,50,.25)"></span>
+        <h2 style="font-size:16px;font-weight:800;margin:0">Canlı Sistem ve Oturum İzleci</h2>
+      </div>
+      <a class="btn btn-soft btn-sm" th:href="@{/admin/izlec}">Detaylı İzleç ve Oturumlar →</a>
+    </div>
+
+    <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))">
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Aktif Oturum</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--accent)" th:text="${monitor.activeSessions}">0</div>
+        <div class="muted" style="font-size:12px;font-weight:500">açık HTTP oturumu</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Çevrim İçi Üye</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--ink)" th:text="${monitor.onlineUsers}">0</div>
+        <div class="muted" style="font-size:12px;font-weight:500" th:text="${monitor.onlineAdmins} + ' yön, ' + ${monitor.onlineStudents} + ' öğr'">0 yön</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">JVM Bellek</div>
+        <div style="font-size:26px;font-weight:800;letter-spacing:-.8px;margin-top:2px;color:var(--ink)" th:text="'%' + ${monitor.memoryPercent}">%0</div>
+        <div class="muted" style="font-size:12px;font-weight:500" th:text="${monitor.usedMemoryMb} + ' / ' + ${monitor.maxMemoryMb} + ' MB'">0 MB</div>
+      </div>
+      <div>
+        <div class="muted" style="font-size:12px;font-weight:700;text-transform:uppercase">Çalışma Süresi</div>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.6px;margin-top:4px;color:var(--ink)" th:text="${monitor.uptimeFormatted}">0 sn</div>
+        <div class="muted" style="font-size:12px;font-weight:500">kesintisiz açık</div>
+      </div>
+    </div>
+  </div>
+
   <h2 style="font-size:16px;font-weight:800;margin:26px 0 12px">Hareketler</h2>
   <div class="grid gap-12" style="grid-template-columns:repeat(auto-fit,minmax(168px,1fr))">
     <div class="card card-pad" th:each="s : ${ {

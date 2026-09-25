@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head(${marka.ad} + ' — Okul e-postası onayı')}"></head>
+<body>
+<div th:replace="~{fragments :: publicnav}"></div>
+
+<div class="container-narrow" style="max-width:480px;padding-top:56px;padding-bottom:64px">
+  <h1 style="font-size:24px;font-weight:800;margin:0 0 8px">Okul e-postanı doğrula</h1>
+  <p class="muted" style="font-weight:500;margin:0">
+    Bu doğrulamayı KitAppLa uygulamasından başlattın. Onayı tamamlamak için uygulamaya dön.
+  </p>
+  <div th:replace="~{fragments :: uygulamayaDon('profil/ogrenci?token=' + ${token}, 'Okul adresi onayını uygulamada tamamla')}"></div>
+  <p class="muted" style="font-weight:500;font-size:14px">
+    Uygulama yüklü değilse
+    <a th:href="@{/profil/ogrenci/eposta/onay(token=${token})}">tarayıcıda giriş yapıp onaylayabilirsin</a>.
+  </p>
+</div>
+
+<div th:replace="~{fragments :: footer}"></div>
+</body>
+</html>

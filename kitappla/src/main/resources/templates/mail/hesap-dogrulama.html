@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<body th:replace="~{mail/duzen :: govde('E-posta adresini doğrula', ~{::icerik})}">
+<div th:fragment="icerik" th:remove="tag">
+  <p>Merhaba <span th:text="${ad}">Üye</span>,</p>
+  <p>Hesabını etkinleştirmek için <strong th:text="${eposta}"></strong> adresinin sana ait olduğunu doğrula.</p>
+  <p><a th:href="${link}">E-posta adresimi doğrula</a></p>
+  <p>Bağlantıya tıklaman yeterli; hesabın hemen doğrulanır. Bağlantı süreli ve tek kullanımlıktır.
+    Süresi dolarsa giriş yapıp yenisini isteyebilirsin.</p>
+  <p th:if="${ogrenci}">Bu bir okul adresi olduğu için aynı bağlantı öğrenci önceliğini de açar.</p>
+  <p>Bu hesabı sen açmadıysan e-postayı yok sayabilirsin.</p>
+</div>
+</body>
+</html>

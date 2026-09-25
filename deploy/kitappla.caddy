@@ -2,8 +2,8 @@
 #
 #   www.kitappla.com         -> uygulama (üye sitesi + mobil API)
 #   admin.kitappla.com       -> aynı uygulama; yalnızca yönetim sayfaları (ayrım uygulamada:
-#                               YonetimAlanAdiFiltresi, KITAPLA_ADMIN_URL ile açılır)
-#   kitappla.com             -> 301 www.kitappla.com
+#                               YonetimAlanAdiFiltresi, KITAPPLA_ADMIN_URL ile açılır)
+#   kitappla.com             -> 301 www.kitappla.com (yalnızca /.well-known/assetlinks.json yönlendirilmez)
 #   kitappla.xyz             -> Natro'nun alan adı yönlendirmesiyle .com'a gider (burada tanımlı değil)
 #   kitap.rorcun.com         -> 301 www.kitappla.com; /api/* eski mobil sürümler için proxy'lenmeye devam eder
 #
@@ -64,7 +64,7 @@
 
 	# Konteyner kapalıyken çıplak 502 yerine bakım sayfası (503 + noindex)
 	handle_errors 502 503 504 {
-		root * "C:/Project/kitap/kitap/bakim"
+		root * "C:/Project/kitappla/kitappla/bakim"
 		rewrite * /index.html
 		header Cache-Control "no-store"
 		header Retry-After "120"
@@ -85,7 +85,14 @@ admin.kitappla.com {
 }
 
 kitappla.com {
-	redir https://www.kitappla.com{uri} permanent
+	# Android App Links doğrulaması: Android bu dosyayı yönlendirme izlemeden okur; kök alan adı
+	# 301 verirse kitappla.com bağlantıları uygulama yerine tarayıcıda açılır. Yalnızca bu yol vekillenir.
+	handle /.well-known/assetlinks.json {
+		import kitappla_proxy
+	}
+	handle {
+		redir https://www.kitappla.com{uri} permanent
+	}
 }
 
 # Eski adres: tarayıcılar kalıcı olarak yeni adrese gider. Mobil uygulamanın eski

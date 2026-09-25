@@ -35,6 +35,8 @@
           <span th:if="${u.admin}" class="badge badge-accent">Yönetici</span>
           <span th:if="${u.blocked}" class="badge badge-muted">Askıda</span>
           <span th:if="${u.student}" class="badge badge-sage">Öğrenci</span>
+          <span th:if="${u.schoolLevel != null}" class="badge badge-soft" th:text="${u.schoolLevel}">LISE</span>
+          <span th:if="${u.documentNo != null}" class="badge badge-muted" th:text="'Belge: ' + ${u.documentNo}">Belge: 123</span>
           <span th:if="${u.studentStatus.name() == 'PENDING'}" class="badge badge-accent">Belge incelemede</span>
           <span th:if="${u.studentStatus.name() == 'REJECTED'}" class="badge badge-muted">Belge reddedildi</span>
           <span th:if="${u.noShowCount > 0}" class="badge badge-accent"
@@ -45,8 +47,16 @@
       </div>
 
       <div class="row gap-8" style="flex-wrap:wrap">
+        <a th:if="${u.documentPath != null}" class="btn btn-soft btn-sm"
+           th:href="@{'/admin/belge/' + ${u.id}}" target="_blank">Belgeyi aç</a>
         <a th:unless="${u.admin}" class="btn btn-soft btn-sm"
            th:href="@{'/mesajlar/ac/support/' + ${u.id}}">Mesaj gönder</a>
+        <th:block th:if="${u.student}">
+          <form th:action="@{'/admin/uyeler/' + ${u.id} + '/ogrenci-kaldir'}" method="post" style="margin:0"
+                onsubmit="return confirm('Bu üyenin öğrencilik statüsü kaldırılsın mı? Varsa yüklenen belgesi silinecektir.')">
+            <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Öğrenciliği kaldır</button>
+          </form>
+        </th:block>
         <th:block th:if="${!u.blocked}">
           <form th:action="@{'/admin/uyeler/' + ${u.id} + '/askiya-al'}" method="post" style="margin:0"
                 onsubmit="return confirm('Üye askıya alınınca süren talep, istek ve takasları iptal edilir; karşı taraflara hakları iade edilir ve bildirim gider. Askı kaldırılsa da bu süreçler geri gelmez. Devam edilsin mi?')">
