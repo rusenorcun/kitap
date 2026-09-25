@@ -104,6 +104,89 @@ input[type="file"].input::-webkit-file-upload-button{ margin-right:12px; padding
   border-radius:8px; background:var(--accent-soft); color:var(--accent); cursor:pointer;
   font:700 13px/1 'Plus Jakarta Sans',system-ui,sans-serif; }
 
+/* SAYI ALANLARI VE ADET ARTTIRMA / AZALTMA (STEPPER) */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.qty-stepper {
+  display: inline-flex;
+  align-items: center;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  transition: border-color .15s ease, box-shadow .15s ease;
+  user-select: none;
+  -webkit-user-select: none;
+  width: fit-content;
+}
+.qty-stepper:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  border-color: transparent;
+}
+.qty-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  transition: background-color .15s ease, color .15s ease, opacity .15s ease;
+  flex-shrink: 0;
+}
+.qty-dec {
+  border-right: 1px solid var(--line);
+}
+.qty-inc {
+  border-left: 1px solid var(--line);
+}
+.qty-btn:hover:not(:disabled) {
+  background: var(--surface2);
+  color: var(--accent);
+}
+.qty-btn:active:not(:disabled) {
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+.qty-btn:disabled {
+  opacity: .32;
+  cursor: not-allowed;
+  color: var(--muted);
+}
+.qty-input {
+  width: 56px;
+  height: 44px;
+  text-align: center;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 800;
+  padding: 0;
+  margin: 0;
+  outline: none;
+  -moz-appearance: textfield;
+}
+.qty-input::-webkit-outer-spin-button,
+.qty-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
 /* ONAY KUTUSU VE RADYO BUTONLARI (CHECKBOX & RADIO) */
 input[type="checkbox"], input[type="radio"]{
   -webkit-appearance: none;

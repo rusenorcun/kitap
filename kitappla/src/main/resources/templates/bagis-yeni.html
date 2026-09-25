@@ -49,9 +49,25 @@
 
       <div class="field">
         <label class="label" for="quantity">Adet</label>
-        <input class="input" id="quantity" name="quantity" type="number" min="1" max="50"
-               style="max-width:180px"
-               th:value="${form != null ? form.quantity : 1}"/>
+        <div class="qty-stepper" role="group" aria-label="Adet seçimi">
+          <button type="button" class="qty-btn qty-dec" aria-label="Adeti azalt" title="Azalt">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+          <input class="qty-input" id="quantity" name="quantity" type="number" min="1" max="50" step="1"
+                 inputmode="numeric"
+                 th:value="${form != null ? form.quantity : 1}" autocomplete="off"/>
+          <button type="button" class="qty-btn qty-inc" aria-label="Adeti artır" title="Artır">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </button>
+        </div>
+        <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+          Aynı kitaptan birden fazla bağışlamak istersen adedi artırabilirsin (en fazla 50).
+        </p>
         <input type="hidden" name="targetLevel" value="HEPSI"/>
       </div>
 
