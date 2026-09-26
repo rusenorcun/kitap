@@ -40,6 +40,7 @@
           <span th:if="${r.student.student}" class="badge badge-sage">Öğrenci</span>
           <span th:if="${r.student.school != null}" class="badge badge-sage"
                 th:text="${r.student.school.label}">Kampüs</span>
+          <span th:if="${r.status.name() == 'FULFILLED' and !r.meeting.arranged}" class="badge badge-accent">Buluşma henüz kaydedilmedi</span>
         </div>
         <p th:if="${r.description}" class="muted" style="font-size:13px;font-weight:500;line-height:1.5;margin:10px 0 0"
            th:text="${r.description}">Not</p>
@@ -47,10 +48,23 @@
 
       <!-- Karşılama: kendi isteği değilse ve giriş yapılmışsa -->
       <th:block th:if="${currentUser != null and !r.student.id.equals(currentUser.id)}">
-        <a th:href="@{'/istek/' + ${r.id} + '/karsila'}" class="btn btn-primary btn-sm" style="min-width:160px;text-align:center">Bu isteği karşıla</a>
+        <th:block th:if="${r.status.name() == 'OPEN'}">
+          <a th:href="@{'/istek/' + ${r.id} + '/karsila'}" class="btn btn-primary btn-sm" style="min-width:160px;text-align:center">Bu isteği karşıla</a>
+        </th:block>
+        <th:block th:if="${r.status.name() == 'FULFILLED' and !r.meeting.arranged}">
+          <th:block th:if="${r.fulfilledBy != null and r.fulfilledBy.id.equals(currentUser.id)}">
+            <a th:href="@{/karsiladiklarim}" class="btn btn-primary btn-sm" style="min-width:160px;text-align:center">Buluşma ayarla</a>
+          </th:block>
+          <th:block th:unless="${r.fulfilledBy != null and r.fulfilledBy.id.equals(currentUser.id)}">
+            <span class="badge badge-accent" style="padding:6px 12px;font-size:12px;min-width:160px;text-align:center">Buluşma bekleniyor</span>
+          </th:block>
+        </th:block>
       </th:block>
       <span th:if="${currentUser != null and r.student.id.equals(currentUser.id)}" class="badge badge-muted">Senin isteğin</span>
-      <a th:if="${currentUser == null}" class="btn btn-soft btn-sm" th:href="@{/login}">Karşılamak için giriş yap</a>
+      <th:block th:if="${currentUser == null}">
+        <span th:if="${r.status.name() == 'FULFILLED' and !r.meeting.arranged}" class="badge badge-accent" style="padding:6px 12px;font-size:12px">Buluşma bekleniyor</span>
+        <a th:if="${r.status.name() == 'OPEN'}" class="btn btn-soft btn-sm" th:href="@{/login}">Karşılamak için giriş yap</a>
+      </th:block>
     </div>
   </div>
 

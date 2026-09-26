@@ -84,6 +84,13 @@
               onsubmit="return confirm('İsteğini kaldırmak istediğinden emin misin?')">
           <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">İsteği kaldır</button>
         </form>
+        <!-- Buluşma tarihi belirlenip kaydedilmediği sürece iptal edilebilir -->
+        <form th:if="${r.status.name() == 'FULFILLED' and !r.meeting.arranged}"
+              th:action="@{'/istek/' + ${r.id} + '/iptal'}" method="post"
+              onsubmit="return confirm('Bu karşılamayı iptal edip isteğini yeniden açmak istiyor musun?')">
+          <input type="hidden" name="geri" value="/isteklerim"/>
+          <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Karşılamayı iptal et</button>
+        </form>
         <!-- Karşılanan istekte alıcı teslim aldığını onaylar -->
         <form th:if="${r.status.name() == 'ARRANGED' or r.status.name() == 'SHIPPED'
                       or (r.status.name() == 'FULFILLED' and (features.shipping or !features.handover))}"

@@ -318,4 +318,70 @@ class RequestServiceTest {
         assertThat(requestService.openRequests("Arama Testi")).isNotEmpty();
         assertThat(requestService.openRequests("boyle-bir-kitap-yok")).isEmpty();
     }
+
+    @Test
+    void karsilananAmaBulusmasiAyarlanmayanIstekAcikListedeGorunur() {
+        User isteyen = user("isteyen-acik", true, "Ankara");
+        User karsilayan = user("karsilayan-acik", false, "İzmir");
+        Book b = bookService.findOrCreate("Görünürlük Testi " + java.util.UUID.randomUUID(), "Yazar", null, null, null, null);
+        BookRequest r = requestService.create(isteyen, b, null);
+
+        // Henüz karşılanmadı -> açık listede
+        assertThat(requestService.openRequests(b.getTitle())).hasSize(1);
+
+        // Karşılandı ama buluşma ayarlanmadı -> hâlâ açık listede diğerlerine görünür
+        requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
+        assertThat(requestService.openRequests(b.getTitle())).hasSize(1);
+
+        // Buluşma ayarlandı -> açık listeden kalkar
+        requestService.arrange(r.getId(), karsilayan, new MeetingRequest(null, "Kütüphane önü", java.time.Instant.now().plusSeconds(3600)));
+        assertThat(requestService.openRequests(b.getTitle())).isEmpty();
+    }
+
+    @Test
+    void bulusmaKaydedilmemisseKarsilamaIptalEdilebilir() {
+        User isteyen = user("isteyen-iptal", true, "Ankara");
+        User karsilayan = user("karsilayan-iptal", false, "İzmir");
+        User baskaKarsilayan = user("baska-iptal", false, "Bursa");
+        Book b = bookService.findOrCreate("İptal Testi " + java.util.UUID.randomUUID(), "Yazar", null, null, null, null);
+        BookRequest r = requestService.create(isteyen, b, null);
+
+        BookRequest fulfilled = requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
+        assertThat(fulfilled.getStatus()).isEqualTo(RequestStatus.FULFILLED);
+
+        // Karşılayan iptal eder
+        requestService.cancelFulfillment(r.getId(), karsilayan);
+
+        BookRequest sifirlanan = requests.findByIdWithDetails(r.getId()).orElseThrow();
+        assertThat(sifirlanan.getStatus()).isEqualTo(RequestStatus.OPEN);
+        assertThat(sifirlanan.getFulfilledBy()).isNull();
+        assertThat(sifirlanan.getFulfilledAt()).isNull();
+        assertThat(sifirlanan.getSource()).isNull();
+
+        // Şimdi başka biri karşılayabilir
+        requestService.fulfill(r.getId(), baskaKarsilayan, DonationSource.PURCHASE);
+        BookRequest yeniKarsilanan = requests.findByIdWithDetails(r.getId()).orElseThrow();
+        assertThat(yeniKarsilanan.getFulfilledBy().getId()).isEqualTo(baskaKarsilayan.getId());
+
+        // İsteyen kişi de buluşma öncesi karşılamayı iptal edebilir
+        requestService.cancelFulfillment(r.getId(), isteyen);
+        BookRequest isteyenIptalEtti = requests.findByIdWithDetails(r.getId()).orElseThrow();
+        assertThat(isteyenIptalEtti.getStatus()).isEqualTo(RequestStatus.OPEN);
+        assertThat(isteyenIptalEtti.getFulfilledBy()).isNull();
+    }
+
+    @Test
+    void bulusmaKaydedildiktenSonraIptalEdilemez() {
+        User isteyen = user("isteyen-kilit", true, "Ankara");
+        User karsilayan = user("karsilayan-kilit", false, "İzmir");
+        Book b = bookService.findOrCreate("Kilit Testi " + java.util.UUID.randomUUID(), "Yazar", null, null, null, null);
+        BookRequest r = requestService.create(isteyen, b, null);
+
+        requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
+        requestService.arrange(r.getId(), karsilayan, new MeetingRequest(null, "Giriş kapısı", java.time.Instant.now().plusSeconds(3600)));
+
+        assertThatThrownBy(() -> requestService.cancelFulfillment(r.getId(), karsilayan))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Buluşma kaydedildikten sonra");
+    }
 }

@@ -136,6 +136,51 @@ public class RequestService {
         return r;
     }
 
+    /**
+     * Karşılanan bir isteğin karşılama işlemini iptal eder (buluşma kaydedilmemişse).
+     * Karşılayan da isteyen de iptal edebilir.
+     * İstek yeniden OPEN durumuna döner ve başkaları tarafından karşılanabilir.
+     */
+    @Transactional
+    public BookRequest cancelFulfillment(Long requestId, User user) {
+        BookRequest r = requests.findByIdWithDetailsForUpdate(requestId)
+                .orElseThrow(() -> new IllegalStateException("İstek bulunamadı."));
+
+        boolean isteyen = r.getStudent().getId().equals(user.getId());
+        boolean karsilayan = r.getFulfilledBy() != null
+                && r.getFulfilledBy().getId().equals(user.getId());
+
+        if (!isteyen && !karsilayan)
+            throw new IllegalStateException("Bu istek sana ait değil.");
+
+        if (r.getStatus() == RequestStatus.ARRANGED || r.getMeeting().isArranged())
+            throw new IllegalStateException("Buluşma kaydedildikten sonra iptal edilemez.");
+
+        if (r.getStatus() != RequestStatus.FULFILLED)
+            throw new IllegalStateException("Yalnızca buluşması henüz kaydedilmemiş karşılanan istekler iptal edilebilir.");
+
+        User eskiKarsilayan = r.getFulfilledBy();
+        String kitap = r.getBook().getTitle();
+
+        r.setStatus(RequestStatus.OPEN);
+        r.setFulfilledBy(null);
+        r.setFulfilledAt(null);
+        r.setSource(null);
+        r.setMeeting(new Meeting());
+        requests.save(r);
+
+        if (isteyen && eskiKarsilayan != null) {
+            notifications.notify(eskiKarsilayan, "request_cancelled",
+                    "\"" + kitap + "\" için karşılama işlemi istek sahibi tarafından iptal edildi.",
+                    "/karsiladiklarim");
+        } else if (karsilayan) {
+            notifications.notify(r.getStudent(), "request_cancelled",
+                    "\"" + kitap + "\" isteğini karşılamaktan vazgeçildi. İsteğin yeniden açık.",
+                    "/isteklerim");
+        }
+        return r;
+    }
+
     /** Karşılayan kargoya verdi. Yalnızca kargo akışı açıkken kullanılır. */
     @Transactional
     public void ship(Long requestId, User fulfiller) {

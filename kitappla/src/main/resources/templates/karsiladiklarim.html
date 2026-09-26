@@ -76,6 +76,13 @@
             <th:block th:if="${r.status.name() != 'DELIVERED' and r.status.name() != 'NO_SHOW' and r.status.name() != 'CANCELLED'}">
               <form th:replace="~{bulusma-fragments :: gelmediFormu('/gelmedi/istek/' + ${r.id}, ${r.meeting}, '/karsiladiklarim')}"></form>
             </th:block>
+            <!-- Buluşma tarihi belirlenip kaydedilmediği sürece iptal et butonu -->
+            <form th:if="${r.status.name() == 'FULFILLED' and !r.meeting.arranged}"
+                  th:action="@{'/istek/' + ${r.id} + '/iptal'}" method="post" style="margin:0"
+                  onsubmit="return confirm('Bu isteği karşılamaktan vazgeçmek istediğinden emin misin? İstek yeniden açık duruma gelecektir.')">
+              <input type="hidden" name="geri" value="/karsiladiklarim"/>
+              <button class="btn btn-soft btn-sm" type="submit" style="color:var(--accent-strong)">Karşılamaktan vazgeç</button>
+            </form>
           </div>
           <div th:replace="~{bulusma-fragments :: bulusmaKarti(${r.meeting})}"></div>
           <th:block th:if="${r.status.name() != 'DELIVERED' and r.status.name() != 'NO_SHOW' and r.status.name() != 'CANCELLED'}">

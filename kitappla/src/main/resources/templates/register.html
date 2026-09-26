@@ -39,6 +39,8 @@
       <div class="field">
         <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
         <input class="input" id="phone" name="phone" th:value="${form?.phone}"/>
+        <p class="muted" style="font-size:11px;font-weight:500;margin:4px 0 0">
+          Diğer üyelere gösterilmez; yalnızca şikâyet durumunda moderatörlerin ulaşması içindir.</p>
       </div>
     </div>
     <!--/* Kargo/adres modunda öğrenci başvurusu adres ister; alan olmazsa kayıt tamamlanamıyordu. */-->
@@ -49,9 +51,9 @@
     </div>
 
     <p class="muted" style="font-size:13px;font-weight:500;margin:4px 0 0;line-height:1.6">
-      <strong>Öğrenci misin?</strong> Okulunun verdiği <strong>.edu.tr</strong> adresine gönderilen bağlantıyı onaylamalısın.
+      <strong>Öğrenci misin?</strong> Okulunun verdiği <strong>.edu.tr</strong> uzantılı e-posta adresine gönderilen bağlantıyı onaylamalısın.
       E-posta gönderilemezse normal üyeliğin kullanılabilir, öğrenci önceliğin beklemede kalır.
-      Başka bir adresle kaydolursan profilinden okul adresini ekleyebilirsin. Veya doğrudan öğrenci belgesi ile doğrulama yapabilirsin.</p>
+      Kişisel bir e-posta ile kaydolursan profilinden okul e-postanı ekleyebilir veya doğrudan <strong>Öğrenci belgesi</strong> ile doğrulama yapabilirsin.</p>
 
 
     <button class="btn btn-primary btn-block" type="submit" style="margin-top:12px">Hesabımı oluştur</button>

@@ -63,7 +63,7 @@
   <div th:if="${user.studentStatus.name() == 'PENDING'}" class="card card-pad" style="margin-bottom:18px">
     <b>Öğrencilik doğrulaman beklemede.</b>
     <span th:if="${user.documentPath != null}" class="muted">Belgen incelemede; yönetici onayı bekleniyor.</span>
-    <span th:if="${user.studentEmail != null}" class="muted">Okul adresine gönderilen bağlantıyı onaylamalısın. E-posta gelmediyse yeniden isteyebilirsin.</span>
+    <span th:if="${user.studentEmail != null}" class="muted">Okul e-postana gönderilen bağlantıyı onaylamalısın. E-posta gelmediyse yeniden isteyebilirsin.</span>
     <a th:href="@{/profil/ogrenci}">Doğrulama seçenekleri</a>
   </div>
   <div th:if="${user.studentStatus.name() == 'NONE' or user.studentStatus.name() == 'REJECTED'}"
@@ -102,6 +102,8 @@
     <div class="field">
       <label class="label" for="phone">Telefon <span class="muted" style="font-weight:500">(isteğe bağlı)</span></label>
       <input class="input" id="phone" name="phone" th:value="${user.phone}"/>
+      <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+        Diğer üyelere gösterilmez; yalnızca şikâyet veya uyuşmazlık durumunda moderatörlerin sana ulaşması için kullanılır.</p>
     </div>
     <button class="btn btn-primary" type="submit">Kaydet</button>
   </form>

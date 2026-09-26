@@ -39,15 +39,41 @@
             <option value="OWN">Elimdeki kopya</option>
           </select>
         </div>
-        <button class="btn btn-primary" type="submit" style="width:100%;padding:12px 20px;font-size:15px">
-          Kaydet ve karşı tarafa bildir
-        </button>
+
+        <th:block th:if="${features.handover}">
+          <div>
+            <label class="label" for="pointId" style="margin-bottom:6px">Teslim noktası</label>
+            <select class="input" name="pointId" id="pointId" style="padding:10px 14px;font-size:14px;width:100%">
+              <option value="">— Listeden seç (isteğe bağlı) —</option>
+              <option th:each="n : ${noktalar}" th:value="${n.id}" th:text="${n.fullName}">Nokta</option>
+            </select>
+          </div>
+          <div>
+            <label class="label" for="note" style="margin-bottom:6px">Başka bir yer ya da ek tarif <span class="muted">(isteğe bağlı)</span></label>
+            <input class="input" type="text" name="note" id="note" maxlength="300"
+                   placeholder="Örn. kütüphane girişinde, mavi çantalı" style="padding:10px 14px;font-size:14px;width:100%"/>
+          </div>
+          <div>
+            <label class="label" for="at" style="margin-bottom:6px">Buluşma zamanı</label>
+            <input class="input" type="datetime-local" name="at" id="at" style="padding:10px 14px;font-size:14px;width:100%"/>
+            <p class="muted" style="font-size:12px;font-weight:500;margin:6px 0 0">
+              Buluşma yeri ve saatini şimdi belirleyip kaydedebilir veya daha sonra "Karşıladıklarım" bölümünden ayarlayabilirsin.
+            </p>
+          </div>
+        </th:block>
+
+        <div class="row gap-8" style="margin-top:8px">
+          <a class="btn btn-soft" th:href="@{/istekler}" style="flex:1;text-align:center;padding:12px 20px;font-size:15px">Vazgeç</a>
+          <button class="btn btn-primary" type="submit" style="flex:2;padding:12px 20px;font-size:15px">
+            Kaydet ve karşı tarafa bildir
+          </button>
+        </div>
       </form>
     </div>
   </div>
 
   <p class="muted" style="font-size:12px;font-weight:500;margin-top:14px;text-align:center">
-    "Kaydet ve karşı tarafa bildir" butonuna bastığında isteği karşılamış olursun ve isteyen kişiye bildirim gider.
+    Buluşma tarihi kaydedilip bildirilmediği sürece istek açık istekler listesinde diğer kullanıcılara görünmeye devam eder ve iptal edilebilir.
   </p>
 </div>
 

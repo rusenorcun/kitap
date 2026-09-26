@@ -7,14 +7,19 @@ import app.kitappla.domain.User;
 import app.kitappla.security.AppUserDetails;
 import app.kitappla.security.CurrentUser;
 import app.kitappla.service.BookService;
+import app.kitappla.service.MeetingRequest;
 import app.kitappla.service.PickupPointService;
 import app.kitappla.service.RequestService;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -101,7 +106,14 @@ public class RequestController {
         }
         var r = opt.get();
         if (r.getStatus() != RequestStatus.OPEN) {
-            ra.addFlashAttribute("hata", "Bu istek başkası tarafından karşılandı.");
+            if (r.getStatus() == RequestStatus.FULFILLED && !r.getMeeting().isArranged()) {
+                if (r.getFulfilledBy() != null && r.getFulfilledBy().getId().equals(principal.getUser().getId())) {
+                    return "redirect:/karsiladiklarim";
+                }
+                ra.addFlashAttribute("hata", "Bu istek için şu an buluşma ayarlanıyor. İptal edilirse tekrar açık olacaktır.");
+            } else {
+                ra.addFlashAttribute("hata", "Bu istek başkası tarafından karşılandı.");
+            }
             return "redirect:/istekler";
         }
         if (r.getStudent().getId().equals(principal.getUser().getId())) {
@@ -109,24 +121,44 @@ public class RequestController {
             return "redirect:/istekler";
         }
         model.addAttribute("r", r);
+        model.addAttribute("noktalar", points.active());
         return "istek-karsila";
     }
 
     @PostMapping("/istek/{id}/karsila")
     public String karsila(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id,
-                          @RequestParam(required = false) String source, RedirectAttributes ra) {
+                          @RequestParam(required = false) String source,
+                          @RequestParam(required = false) Long pointId,
+                          @RequestParam(required = false) String note,
+                          @RequestParam(required = false)
+                          @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime at,
+                          RedirectAttributes ra) {
         try {
             DonationSource src = (source == null || source.isBlank())
                     ? DonationSource.PURCHASE : DonationSource.valueOf(source.trim().toUpperCase(java.util.Locale.ROOT));
             requestService.fulfill(id, principal.getUser(), src);
-            ra.addFlashAttribute("basari", features.isShipping()
-                    ? "İsteği karşıladın. Teslimat adresi aşağıda; kargoladığında işaretle."
-                    : "İsteği karşıladın. Karşı tarafla mesajlaşıp kampüste bir buluşma ayarlayabilirsin.");
+            if (at != null) {
+                Instant atInstant = at.atZone(ZoneId.systemDefault()).toInstant();
+                requestService.arrange(id, principal.getUser(), new MeetingRequest(pointId, note, atInstant));
+                ra.addFlashAttribute("basari", "İsteği karşıladın ve buluşma kaydedildi. Karşı tarafa bildirildi.");
+            } else {
+                ra.addFlashAttribute("basari", features.isShipping()
+                        ? "İsteği karşıladın. Teslimat adresi aşağıda; kargoladığında işaretle."
+                        : "İsteği karşıladın. Buluşma yeri ve saatini belirleyip karşı tarafa bildirebilirsin.");
+            }
             return "redirect:/karsiladiklarim";
         } catch (IllegalStateException | IllegalArgumentException ex) {
             ra.addFlashAttribute("hata", ex.getMessage());
             return "redirect:/istekler";
         }
+    }
+
+    @PostMapping("/istek/{id}/iptal")
+    public String iptal(@AuthenticationPrincipal AppUserDetails principal, @PathVariable Long id,
+                        @RequestParam(required = false) String geri, RedirectAttributes ra) {
+        String hedef = (geri != null && geri.equals("/karsiladiklarim")) ? "/karsiladiklarim" : "/isteklerim";
+        return run(ra, () -> requestService.cancelFulfillment(id, principal.getUser()),
+                "İstek karşılama iptal edildi; istek yeniden açık duruma getirildi.", hedef);
     }
 
     @PostMapping("/istek/{id}/kargola")

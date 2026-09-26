@@ -34,13 +34,17 @@ public interface BookRequestRepository extends JpaRepository<BookRequest, Long> 
            join fetch r.student st
            left join fetch r.fulfilledBy
            left join fetch r.meeting.point
-           where r.status = app.kitappla.domain.RequestStatus.OPEN and st.blocked = false
+           where (r.status = app.kitappla.domain.RequestStatus.OPEN
+                  or (r.status = app.kitappla.domain.RequestStatus.FULFILLED and r.meeting.arrangedAt is null))
+             and st.blocked = false
              and (lower(b.title) like :desen or lower(b.author) like :desen)
            order by r.createdAt desc, r.id desc
            """,
            countQuery = """
            select count(r) from BookRequest r join r.book b
-           where r.status = app.kitappla.domain.RequestStatus.OPEN and r.student.blocked = false
+           where (r.status = app.kitappla.domain.RequestStatus.OPEN
+                  or (r.status = app.kitappla.domain.RequestStatus.FULFILLED and r.meeting.arrangedAt is null))
+             and r.student.blocked = false
              and (lower(b.title) like :desen or lower(b.author) like :desen)
            """)
     Page<BookRequest> findOpenPage(@Param("desen") String desen, Pageable pageable);

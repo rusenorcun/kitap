@@ -59,8 +59,8 @@
     <p class="muted" style="font-size:12px;font-weight:500;margin:0;flex:1;min-width:220px"
        th:text="${sohbet.kind.name() == 'REPORT'} ? 'Bu sohbet şikâyetinizle ilgili yönetim ekibiyle doğrudan destek görüşmesidir.'
               : (${sohbet.kind.name() == 'SUPPORT'} ? 'Bu sohbet yönetim ekibiyle doğrudan destek görüşmesidir. Şifreni asla paylaşma.'
-              : 'Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.')">
-      Kişisel bilgilerini (adres, TC, hesap numarası) paylaşma.
+              : 'Güvenliğin için ev adresi, T.C. kimlik numarası veya hesap bilgilerini paylaşma.')">
+      Güvenliğin için ev adresi, T.C. kimlik numarası veya hesap bilgilerini paylaşma.
     </p>
     <a th:unless="${sohbet.yonetimSohbeti}" class="btn btn-soft btn-sm"
        th:href="@{'/sikayet/conversation/' + ${sohbet.id}(geri='/mesajlar/' + ${sohbet.id})}">

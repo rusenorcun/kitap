@@ -109,6 +109,14 @@ public class RequestApiController {
         return ResponseEntity.ok(new IdStatusDto(request.getId(), request.getStatus().name()));
     }
 
+    @PostMapping("/requests/{id}/cancel-fulfillment")
+    public ResponseEntity<Void> cancelFulfillment(@PathVariable Long id) {
+        User me = CurrentUser.get();
+        if (me == null) throw new IllegalStateException("Giriş yapmalısınız.");
+        requestService.cancelFulfillment(id, me);
+        return ResponseEntity.noContent().build();
+    }
+
     @PostMapping("/requests/{id}/ship")
     public ResponseEntity<Void> shipRequest(@PathVariable Long id) {
         User me = CurrentUser.get();

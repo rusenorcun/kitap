@@ -147,4 +147,85 @@ class RequestPagesTest {
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrlPattern("**/login"));
     }
+
+    @Test
+    void karsilananAmaBulusmasiOlmayanIstekIsteklerdeGorunur() throws Exception {
+        User isteyen = mk("isteyen-sayfa", "Ankara");
+        User karsilayan = mk("karsilayan-sayfa", "İzmir");
+        User baska = mk("baska-sayfa", "İstanbul");
+        String title = "Sayfa Testi " + UUID.randomUUID();
+        BookRequest r = requestService.create(isteyen,
+                bookService.findOrCreate(title, "Yazar", null, null, null, null), null);
+
+        // Karşıla ama buluşma kaydetme
+        requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
+
+        // Başka bir kullanıcı istekler sayfasında bu isteği görür
+        mvc.perform(get("/istekler").with(user(as(baska))))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(title)))
+                .andExpect(content().string(containsString("Buluşma henüz kaydedilmedi")))
+                .andExpect(content().string(containsString("Buluşma bekleniyor")));
+
+        // Anonim kullanıcı da istekler sayfasında görür
+        mvc.perform(get("/istekler"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString(title)))
+                .andExpect(content().string(containsString("Buluşma bekleniyor")));
+    }
+
+    @Test
+    void karsilamayiIptalEtmeIstegiYenidenAcikYapar() throws Exception {
+        User isteyen = mk("isteyen-iptal-web", "Ankara");
+        User karsilayan = mk("karsilayan-iptal-web", "İzmir");
+        String title = "İptal Web " + UUID.randomUUID();
+        BookRequest r = requestService.create(isteyen,
+                bookService.findOrCreate(title, "Yazar", null, null, null, null), null);
+
+        requestService.fulfill(r.getId(), karsilayan, DonationSource.OWN);
+
+        // Karşılayan iptal eder
+        mvc.perform(post("/istek/" + r.getId() + "/iptal")
+                        .with(user(as(karsilayan)))
+                        .with(csrf())
+                        .param("geri", "/karsiladiklarim"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/karsiladiklarim"));
+
+        BookRequest son = requests.findByIdWithDetails(r.getId()).orElseThrow();
+        assertThat(son.getStatus()).isEqualTo(RequestStatus.OPEN);
+        assertThat(son.getFulfilledBy()).isNull();
+
+        // İstekler sayfasında tekrar "Bu isteği karşıla" görünür
+        User baska = mk("baska-iptal-web", "Bursa");
+        mvc.perform(get("/istekler").with(user(as(baska))))
+                .andExpect(content().string(containsString(title)))
+                .andExpect(content().string(containsString("Bu isteği karşıla")));
+    }
+
+    @Test
+    void karsilamaSayfasindaBulusmaKaydedilirseArrangedOlur() throws Exception {
+        User isteyen = mk("isteyen-arrange", "Ankara");
+        User karsilayan = mk("karsilayan-arrange", "İzmir");
+        String title = "Buluşmalı Karşılama " + UUID.randomUUID();
+        BookRequest r = requestService.create(isteyen,
+                bookService.findOrCreate(title, "Yazar", null, null, null, null), null);
+
+        mvc.perform(post("/istek/" + r.getId() + "/karsila")
+                        .with(user(as(karsilayan)))
+                        .with(csrf())
+                        .param("source", "OWN")
+                        .param("note", "Kütüphane önü")
+                        .param("at", java.time.LocalDateTime.now().plusDays(2).truncatedTo(java.time.temporal.ChronoUnit.MINUTES).toString()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/karsiladiklarim"));
+
+        BookRequest son = requests.findByIdWithDetails(r.getId()).orElseThrow();
+        assertThat(son.getStatus()).isEqualTo(RequestStatus.ARRANGED);
+        assertThat(son.getMeeting().isArranged()).isTrue();
+
+        // Artık istekler sayfasında görünmez
+        mvc.perform(get("/istekler"))
+                .andExpect(content().string(not(containsString(title))));
+    }
 }
